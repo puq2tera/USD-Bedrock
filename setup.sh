@@ -1,4 +1,7 @@
 #!/bin/bash
+# This script configures the VM with all the packages it needs, builds bedrock and the core plugin, and sets up the systemd services.
+# It should be run from the VM.
+
 set -e
 
 echo "=========================================="

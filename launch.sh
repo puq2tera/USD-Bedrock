@@ -1,4 +1,7 @@
 #!/bin/bash
+# This script is used to launch a VM with Multipass and run the setup script.
+# It should be run from the host machine.
+
 set -e
 
 # Colors for output
@@ -26,14 +29,13 @@ if ! command -v multipass &> /dev/null; then
     exit 1
 fi
 
-# Detect architecture
+# Detect architecture and set image
 ARCH=$(uname -m)
+IMAGE="24.04"  # Ubuntu 24.04 LTS - Multipass auto-detects architecture (ARM on ARM Macs, x86 on x86 systems)
 if [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "aarch64" ]]; then
-    IMAGE="ubuntu/arm64"
-    echo -e "${GREEN}Detected ARM architecture - using ARM Ubuntu (native performance)${NC}"
+    echo -e "${GREEN}Detected ARM architecture - Multipass will use ARM Ubuntu (native performance)${NC}"
 else
-    IMAGE="ubuntu/amd64"
-    echo -e "${GREEN}Detected x86_64 architecture - using x86_64 Ubuntu${NC}"
+    echo -e "${GREEN}Detected x86_64 architecture - Multipass will use x86_64 Ubuntu${NC}"
 fi
 
 # Check if VM already exists
