@@ -40,12 +40,10 @@ The project runs on a single VM with two services and a modern C++ toolchain.
 - **Extras**: apt-fast for faster installs, sanitizers in debug, LTO in release
 
 ## Quick Start
-
-### Using Multipass (Recommended - 100% Free)
-
-Multipass is Canonical's official VM solution that works identically on Linux, macOS (ARM & Intel), and Windows. It's completely free and open source.
-
 1. **Install Multipass:**
+
+   Multipass is Canonical's official VM solution that works identically on Linux, macOS (ARM & Intel), and Windows. It's completely free and open source.
+
    ```bash
    # macOS
    brew install multipass
@@ -58,6 +56,7 @@ Multipass is Canonical's official VM solution that works identically on Linux, m
    ```
 
 2. **Clone and initialize:**
+
    ```bash
    git clone <repository-url>
    cd BedrockStarter
@@ -65,85 +64,42 @@ Multipass is Canonical's official VM solution that works identically on Linux, m
    ```
 
 3. **Launch the VM:**
+
    ```bash
    ./scripts/launch.sh
    ```
 
    This will:
-   - Detect your system architecture (ARM or x86)
-   - Launch an appropriate Ubuntu VM (ARM Ubuntu on ARM Macs for native performance)
+   - Detect your OS and system architecture (ARM or x86)
+   - Launch an appropriate Ubuntu VM
    - Install all dependencies
    - Build Bedrock and the Core plugin
    - Configure and start all services
    - Mount your project directory for real-time development sync
+   - Configure clangd for IDE intellisense
 
 4. **Access the VM:**
+
    ```bash
-   # SSH into the VM (equivalent to 'vagrant ssh')
+   # SSH into the VM
    multipass shell bedrock-starter
+
+   # launch.sh also aliases "bedrock-starter" to "primary", so this simpler alternative also works
+   multipass shell
 
    # Or run commands directly from host
    multipass exec bedrock-starter -- command
    ```
 
 5. **Access the services:**
+
    ```bash
    # Get VM IP address
-   multipass info bedrock-starter
-
-   # Test Bedrock database
    VM_IP=$(multipass info bedrock-starter | grep IPv4 | awk '{print $2}')
-   nc $VM_IP 8888
-   Query: SELECT 1 AS hello, 'world' AS bedrock;
 
-   # Test API
+   # Test API endpoints
    curl http://$VM_IP/api/status
-   curl http://$VM_IP/api/hello?name=Developer
-
-   # Test custom plugin
-   nc $VM_IP 8888
-   HelloWorld name=Developer
-   ```
-
-6. **Port Forwarding (Optional):**
-   ```bash
-   # Access from localhost instead of VM IP
-   multipass port-forward bedrock-starter 8888:8888  # Bedrock
-   multipass port-forward bedrock-starter 80:8080    # API (host:guest)
-
-   # Then access via localhost
-   nc localhost 8888
-   curl http://localhost:8080/api/status
-   ```
-
-### Manual Setup on Ubuntu 24.04
-
-If you prefer to set up on a physical machine or cloud VM:
-
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd BedrockStarter
-   git submodule update --init --recursive
-   ```
-
-2. **Run the setup script:**
-   ```bash
-   sudo ./scripts/setup.sh
-   ```
-
-3. **Start services:**
-   ```bash
-   sudo systemctl start bedrock
-   sudo systemctl start php8.4-fpm
-   sudo systemctl start nginx
-   ```
-
-4. **Enable services to start on boot:**
-   ```bash
-   sudo systemctl enable bedrock
-   sudo systemctl enable php8.4-fpm
-   sudo systemctl enable nginx
+   curl http://$VM_IP/api/hello?name=Rory
    ```
 
 ## Development Workflow
