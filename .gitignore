@@ -27,6 +27,7 @@
 *.exe
 *.out
 *.app
+coretest
 
 # Debug files
 *.dSYM/
@@ -86,6 +87,7 @@ obj/
 .Trashes
 ehthumbs.db
 Thumbs.db
+.fuse_hidden*
 
 # Logs
 *.log
@@ -102,3 +104,14 @@ core.[0-9]*
 # Package managers
 conan.lock
 vcpkg_installed/
+vendor/
+
+# IDE configuration (user-specific)
+.clangd
+
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+*.db-wal2
+*.db-journal

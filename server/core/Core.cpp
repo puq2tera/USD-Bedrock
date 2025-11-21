@@ -31,7 +31,7 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
     if (SIEquals(baseCommand.request.methodLine, "HelloWorld")) {
         return make_unique<HelloWorld>(std::move(baseCommand), this);
     }
-    
+
     // Not our command
     return nullptr;
 }
@@ -39,4 +39,17 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
 const string& BedrockPlugin_Core::getVersion() const {
     static const string version = "1.0.0";
     return version;
+}
+
+STable BedrockPlugin_Core::getInfo() {
+    STable info;
+    info["name"] = getName();
+    info["version"] = getVersion();
+    return info;
+}
+
+bool BedrockPlugin_Core::shouldLockCommitPageOnTableConflict(const string& tableName) const {
+    // Use default behavior (return false)
+    (void)tableName; // Unused
+    return false;
 }

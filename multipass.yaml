@@ -1,0 +1,17 @@
+#cloud-config
+# Multipass cloud-init configuration for Bedrock Starter
+# This only installs system dependencies. The full setup runs after mounting.
+
+# Update system on first boot
+package_update: true
+package_upgrade: true
+
+# Install git and multipass-sshfs (needed for mounting)
+packages:
+  - git
+  - curl
+  - software-properties-common
+
+# Install multipass-sshfs for file mounting support
+runcmd:
+  - snap install multipass-sshfs || true

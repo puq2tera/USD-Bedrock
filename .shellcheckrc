@@ -1,0 +1,2 @@
+# Allow shellcheck to follow external sources (sourced files)
+external-sources=true

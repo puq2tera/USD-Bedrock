@@ -1,0 +1,25 @@
+name: Shellcheck
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/**/*.sh'
+      - '.shellcheckrc'
+      - '.github/workflows/shellcheck.yml'
+
+jobs:
+  shellcheck:
+    name: Run shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Run shellcheck
+        run: ./scripts/shellcheck.sh
+

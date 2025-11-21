@@ -9,6 +9,7 @@ require __DIR__ . '/vendor/autoload.php';
 use Expensify\Bedrock\Client;
 use Monolog\Logger;
 use Monolog\Handler\SyslogHandler;
+use BedrockStarter\Log;
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -22,8 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 function callBedrock(string $method, array $data = []): array {
-    $pluginLogger = new Logger("ToDoApp-plugin");
-    $pluginSyslogHandler = new SyslogHandler("todo-app-plugin");
+    $pluginLogger = new Logger("BedrockStarterPlugin");
+    $pluginSyslogHandler = new SyslogHandler("bedrock-starter-plugin");
     $pluginLogger->pushHandler($pluginSyslogHandler);
     $client = Client::getInstance([
         'clusterName' => 'todo',
@@ -41,24 +42,33 @@ function callBedrock(string $method, array $data = []): array {
     ]);
 
     try {
-        // Log::info("Calling bedrock method $method");
+        Log::info("Calling bedrock method {$method}", ['data' => $data]);
         $response = $client->call($method, $data);
-        if ($response["code"] == 200) {
-            return $response['body'];    
+        if (isset($response["code"]) && $response["code"] == 200) {
+            // Bedrock returns data in 'headers' for commands that set response headers
+            // and in 'body' for commands that return content
+            if (isset($response['headers']) && !empty($response['headers'])) {
+                Log::info("Bedrock response headers received for {$method}", ['headers' => $response['headers']]);
+                return $response['headers'];
+            }
+            if (isset($response['body']) && !empty($response['body'])) {
+                Log::info("Bedrock response body received for {$method}", ['body' => $response['body']]);
+                return $response['body'];
+            }
+            return [];
         } else {
-            // Log::error('Received error response from bedrock: '.$response['codeLine']);
-
             // Try to parse status code from error message
-            $statusCode = intval($response['codeLine']);
-            // Log::error('Got status code: '.$statusCode);
+            $statusCode = isset($response['codeLine']) ? intval($response['codeLine']) : 500;
             if ($statusCode > 0) {
                 http_response_code($statusCode);
             }
 
-            return ['error' => $response['codeLine']];
+            Log::error("Received error response from Bedrock for {$method}", ['response' => $response]);
+            return ['error' => $response['codeLine'] ?? 'Unknown error'];
         }
-    } catch (BedrockError $exception) {
-        return ["error" => "Error connecting to Bedrock", "ex" => $exception];
+    } catch (\Exception $exception) {
+        Log::error("Exception while calling Bedrock method {$method}", ['exception' => $exception->getMessage()]);
+        return ["error" => "Error connecting to Bedrock", "message" => $exception->getMessage()];
     }
 }
 
@@ -75,14 +85,14 @@ switch ($path) {
             'timestamp' => date('c'),
             'php_version' => PHP_VERSION
         ];
-        
+
         echo json_encode($response, JSON_PRETTY_PRINT);
         break;
 
     case '/api/hello':
-        $name = $_POST['name'] ?? 'World';
+        $name = $_GET['name'] ?? $_POST['name'] ?? 'World';
 
-        echo json_encode(callBedrock("CreateToDoItem", ["name" => $name]));
+        echo json_encode(callBedrock("HelloWorld", ["name" => $name]));
         break;
 
     default:
