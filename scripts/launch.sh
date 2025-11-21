@@ -229,7 +229,7 @@ info "Development:"
 echo "  # Project is mounted at /bedrock-starter in the VM"
 echo "  # Edit files locally - changes sync in real-time!"
 echo "  # After editing C++ code, rebuild:"
-echo "  multipass exec ${VM_NAME} -- bash -c 'cd /opt/bedrock/server/core && ninja'"
+echo "  ./scripts/build-core-plugin.sh"
 echo
 info "Service Management:"
 echo "  multipass exec ${VM_NAME} -- sudo systemctl restart bedrock"

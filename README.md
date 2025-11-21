@@ -264,10 +264,9 @@ multipass exec bedrock-starter -- sudo systemctl restart nginx
    }
    ```
 
-3. Rebuild the plugin:
+3. Rebuild the plugin (from the host):
    ```bash
-   multipass exec bedrock-starter -- bash -c 'cd /opt/bedrock/server/core && ninja -j $(nproc)'
-   multipass exec bedrock-starter -- sudo systemctl restart bedrock
+   ./scripts/build-core-plugin.sh
    ```
 
 #### Peek vs. Process
