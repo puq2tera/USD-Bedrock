@@ -8,10 +8,10 @@ public:
     BedrockPlugin_Core(BedrockServer& s);
 
     // Destructor
-    virtual ~BedrockPlugin_Core();
+    ~BedrockPlugin_Core() override;
 
     // Required: Create command from SQLiteCommand
-    virtual unique_ptr<BedrockCommand> getCommand(SQLiteCommand&& baseCommand) override;
+    unique_ptr<BedrockCommand> getCommand(SQLiteCommand&& baseCommand) override;
 
     // Plugin name
     [[nodiscard]] const string& getName() const override;
@@ -26,7 +26,7 @@ public:
     void upgradeDatabase(SQLite& db) override;
 
     // Override shouldLockCommitPageOnTableConflict (required by BedrockPlugin)
-    bool shouldLockCommitPageOnTableConflict(const string& tableName) const override;
+    [[nodiscard]] bool shouldLockCommitPageOnTableConflict(const string& tableName) const override;
 
 private:
     static const string name;

@@ -11,11 +11,11 @@ public:
     HelloWorld(SQLiteCommand&& baseCommand, BedrockPlugin_Core* plugin);
 
     // Destructor
-    virtual ~HelloWorld();
+    ~HelloWorld() override;
 
     // Command execution - override the base class methods
-    virtual bool peek(SQLite& db) override;
-    virtual void process(SQLite& db) override;
+    bool peek(SQLite& db) override;
+    void process(SQLite& db) override;
 
     // Serialize/deserialize command data (required by BedrockCommand)
     string serializeData() const override;

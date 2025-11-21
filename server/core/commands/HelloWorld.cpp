@@ -10,9 +10,7 @@ HelloWorld::HelloWorld(SQLiteCommand&& baseCommand, BedrockPlugin_Core* plugin)
     // Initialize the command
 }
 
-HelloWorld::~HelloWorld() {
-    // Cleanup
-}
+HelloWorld::~HelloWorld() = default;
 
 bool HelloWorld::peek(SQLite& db) {
     // This command doesn't need to peek at the database

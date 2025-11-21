@@ -1,0 +1,16 @@
+---
+Checks: '-*,
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  performance-*,
+  -performance-avoid-endl,
+  -performance-inefficient-string-concatenation,
+  bugprone-*,
+  -bugprone-reserved-identifier,
+  readability-identifier-naming'
+
+WarningsAsErrors: ''
+
+HeaderFilterRegex: '/bedrock-starter/server/core/[^.].*'

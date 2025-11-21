@@ -25,9 +25,7 @@ BedrockPlugin_Core::BedrockPlugin_Core(BedrockServer& s) : BedrockPlugin(s) {
     // Initialize the plugin
 }
 
-BedrockPlugin_Core::~BedrockPlugin_Core() {
-    // Cleanup
-}
+BedrockPlugin_Core::~BedrockPlugin_Core() = default;
 
 unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCommand) {
     // Check if this is a command we handle

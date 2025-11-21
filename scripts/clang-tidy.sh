@@ -36,12 +36,17 @@ if [[ ! -f "compile_commands.json" ]]; then
     cmake -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .
 fi
 
-# Run clang-tidy on Core plugin source files
-info "Running clang-tidy on Core plugin..."
+# Run clang-tidy on Core plugin source files (including tests and headers)
+info "Running clang-tidy on Core plugin (sources + tests)..."
 echo
 
-# Find all .cpp files in the core directory (excluding test directory)
-CPP_FILES=$(find "${CORE_DIR}" -name "*.cpp" -not -path "*/test/*" -not -path "*/CMakeFiles/*")
+# Find all .cpp files in the core directory (including tests)
+CPP_FILES=$(find "${CORE_DIR}" -name "*.cpp" \
+    -not -path "*/CMakeFiles/*" \
+    -not -path "*/bedrock-starter/Bedrock/test/lib/*")
+
+# Only report issues in our core sources (ignore ../../Bedrock headers)
+HEADER_FILTER="${CORE_DIR}/[^.].*"
 
 if [[ -z "${CPP_FILES}" ]]; then
     warn "No C++ files found to analyze"
@@ -53,7 +58,7 @@ FAILED=0
 for file in ${CPP_FILES}; do
     RELATIVE_FILE="${file#"${PROJECT_DIR}"/}"
     info "Checking ${RELATIVE_FILE}..."
-    if ! clang-tidy --quiet -p "${CORE_DIR}" "${file}"; then
+    if ! clang-tidy -header-filter="${HEADER_FILTER}" -p "${CORE_DIR}" "${file}"; then
         FAILED=1
     fi
 done

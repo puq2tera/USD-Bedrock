@@ -6,7 +6,7 @@
 #include "CoreTester.h"
 
 void cleanup() {
-    cout << "Cleaning up test database files..." << endl;
+    cout << "Cleaning up test database files...\n";
     if (system("rm -f coretest_*.db") == -1) {
         SWARN("system() failed.");
     }
@@ -19,7 +19,7 @@ void cleanup() {
     if (system("rm -f coretest_*.db-journal") == -1) {
         SWARN("system() failed.");
     }
-    cout << "Cleanup complete." << endl;
+    cout << "Cleanup complete.\n";
 }
 
 int main(int argc, char* argv[]) {
@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
             SLogSetThreadPrefix("");
         });
     } catch (...) {
-        cout << "Unhandled exception running tests!" << endl;
+        cout << "Unhandled exception running tests!\n";
         cleanup();
         return 1;
     }
