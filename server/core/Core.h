@@ -22,6 +22,9 @@ public:
     // Returns plugin info (required by BedrockPlugin)
     STable getInfo() override;
 
+    // Create or upgrade database schema
+    void upgradeDatabase(SQLite& db) override;
+
     // Override shouldLockCommitPageOnTableConflict (required by BedrockPlugin)
     bool shouldLockCommitPageOnTableConflict(const string& tableName) const override;
 

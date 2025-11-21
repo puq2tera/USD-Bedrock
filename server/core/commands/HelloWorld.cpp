@@ -32,7 +32,7 @@ void HelloWorld::process(SQLite& db) {
     // Create response
     response["message"] = "Hello, " + name + "!";
     response["from"] = "Bedrock Core Plugin";
-    response["timestamp"] = STimeNow();
+    response["timestamp"] = SToStr(STimeNow());
     response["plugin_name"] = _plugin->getName();
     response["plugin_version"] = static_cast<BedrockPlugin_Core*>(_plugin)->getVersion();
 

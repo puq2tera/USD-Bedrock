@@ -40,6 +40,8 @@ include_directories(${BEDROCK_DIR}/mbedtls/include)
 set(SOURCES
     Core.cpp
     commands/HelloWorld.cpp
+    commands/CreateMessage.cpp
+    commands/GetMessages.cpp
 )
 
 # Create shared library for the plugin

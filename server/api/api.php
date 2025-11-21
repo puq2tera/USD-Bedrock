@@ -72,6 +72,20 @@ function callBedrock(string $method, array $data = []): array {
     }
 }
 
+function readRequestData(): array {
+    if (!empty($_POST)) {
+        return $_POST;
+    }
+
+    $rawInput = file_get_contents('php://input');
+    if ($rawInput === false || $rawInput === '') {
+        return [];
+    }
+
+    $decoded = json_decode($rawInput, true);
+    return is_array($decoded) ? $decoded : [];
+}
+
 
 // Simple routing
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -93,6 +107,52 @@ switch ($path) {
         $name = $_GET['name'] ?? $_POST['name'] ?? 'World';
 
         echo json_encode(callBedrock("HelloWorld", ["name" => $name]));
+        break;
+
+    case '/api/messages':
+        if ($method === 'GET') {
+            $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : null;
+            if ($limit !== null) {
+                $limit = max(1, min(100, $limit));
+            }
+
+            $params = [];
+            if ($limit !== null) {
+                $params['limit'] = (string) $limit;
+            }
+
+            $bedrockResponse = callBedrock("GetMessages", $params);
+            if (isset($bedrockResponse['messages'])) {
+                $decodedMessages = json_decode($bedrockResponse['messages'], true);
+                if (is_array($decodedMessages)) {
+                    $bedrockResponse['messages'] = $decodedMessages;
+                }
+            }
+
+            echo json_encode($bedrockResponse);
+            break;
+        }
+
+        if ($method === 'POST') {
+            $data = readRequestData();
+            $name = trim((string) ($data['name'] ?? ''));
+            $message = trim((string) ($data['message'] ?? ''));
+
+            if ($name === '' || $message === '') {
+                http_response_code(400);
+                echo json_encode(['error' => 'Both name and message are required']);
+                break;
+            }
+
+            echo json_encode(callBedrock("CreateMessage", [
+                'name' => $name,
+                'message' => $message,
+            ]));
+            break;
+        }
+
+        http_response_code(405);
+        echo json_encode(['error' => 'Method not allowed', 'allowed' => ['GET', 'POST']]);
         break;
 
     default:

@@ -1,4 +1,7 @@
 #include "Core.h"
+
+#include "commands/CreateMessage.h"
+#include "commands/GetMessages.h"
 #include "commands/HelloWorld.h"
 
 #include <BedrockServer.h>
@@ -31,13 +34,19 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
     if (SIEquals(baseCommand.request.methodLine, "HelloWorld")) {
         return make_unique<HelloWorld>(std::move(baseCommand), this);
     }
+    if (SIEquals(baseCommand.request.methodLine, "CreateMessage")) {
+        return make_unique<CreateMessage>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "GetMessages")) {
+        return make_unique<GetMessages>(std::move(baseCommand), this);
+    }
 
     // Not our command
     return nullptr;
 }
 
 const string& BedrockPlugin_Core::getVersion() const {
-    static const string version = "1.0.0";
+    static const string version = "1.1.0";
     return version;
 }
 
@@ -52,4 +61,22 @@ bool BedrockPlugin_Core::shouldLockCommitPageOnTableConflict(const string& table
     // Use default behavior (return false)
     (void)tableName; // Unused
     return false;
+}
+
+void BedrockPlugin_Core::upgradeDatabase(SQLite& db) {
+    bool created = false;
+    while (!db.verifyTable("messages",
+                           "CREATE TABLE messages ( "
+                           "messageID INTEGER PRIMARY KEY AUTOINCREMENT, "
+                           "name TEXT NOT NULL, "
+                           "message TEXT NOT NULL, "
+                           "createdAt INTEGER NOT NULL )",
+                           created)) {
+        SASSERT(db.write("DROP TABLE messages;"));
+    }
+
+    // Helpful index for fetching the most recent messages
+    db.verifyIndex("messagesCreatedAt", "messages",
+                   "(createdAt DESC)",
+                   false, true);
 }
