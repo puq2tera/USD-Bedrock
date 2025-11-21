@@ -41,24 +41,33 @@ function callBedrock(string $method, array $data = []): array {
     ]);
 
     try {
-        // Log::info("Calling bedrock method $method");
+        $pluginLogger->info("Calling bedrock method {$method}", ['data' => $data]);
         $response = $client->call($method, $data);
-        if ($response["code"] == 200) {
-            return $response['body'];
+        if (isset($response["code"]) && $response["code"] == 200) {
+            // Bedrock returns data in 'headers' for commands that set response headers
+            // and in 'body' for commands that return content
+            if (isset($response['headers']) && !empty($response['headers'])) {
+                $pluginLogger->info("Bedrock response headers received for {$method}", ['headers' => $response['headers']]);
+                return $response['headers'];
+            }
+            if (isset($response['body']) && !empty($response['body'])) {
+                $pluginLogger->info("Bedrock response body received for {$method}", ['body' => $response['body']]);
+                return $response['body'];
+            }
+            return [];
         } else {
-            // Log::error('Received error response from bedrock: '.$response['codeLine']);
-
             // Try to parse status code from error message
-            $statusCode = intval($response['codeLine']);
-            // Log::error('Got status code: '.$statusCode);
+            $statusCode = isset($response['codeLine']) ? intval($response['codeLine']) : 500;
             if ($statusCode > 0) {
                 http_response_code($statusCode);
             }
 
-            return ['error' => $response['codeLine']];
+            $pluginLogger->error("Received error response from Bedrock for {$method}", ['response' => $response]);
+            return ['error' => $response['codeLine'] ?? 'Unknown error'];
         }
-    } catch (BedrockError $exception) {
-        return ["error" => "Error connecting to Bedrock", "ex" => $exception];
+    } catch (\Exception $exception) {
+        $pluginLogger->error("Exception while calling Bedrock method {$method}", ['exception' => $exception->getMessage()]);
+        return ["error" => "Error connecting to Bedrock", "message" => $exception->getMessage()];
     }
 }
 

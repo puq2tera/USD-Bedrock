@@ -89,6 +89,8 @@ apt-fast install -y \
     php8.4-fpm \
     php8.4-cli \
     php8.4-curl \
+    php8.4-mbstring \
+    php8.4-apcu \
     nginx \
     curl
 
