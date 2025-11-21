@@ -44,7 +44,7 @@ jobs:
           cd server/core
           rm -rf CMakeCache.txt CMakeFiles/ build.ninja .ninja_* lib/ build/ || true
           cmake -G Ninja .
-          ninja coretest
+          ninja -j $(nproc) coretest
           cd test
           ./coretest
 

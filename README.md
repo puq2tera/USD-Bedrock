@@ -190,8 +190,8 @@ Your project directory is automatically mounted at `/bedrock-starter` in the VM,
 
 **C++ Plugin Changes:**
 ```bash
-# Rebuild the Core plugin
-multipass exec bedrock-starter -- bash -c 'cd /opt/bedrock/server/core && ninja'
+# Rebuild the Core plugin (using all available CPU cores)
+multipass exec bedrock-starter -- bash -c 'cd /opt/bedrock/server/core && ninja -j $(nproc)'
 
 # Restart Bedrock to load new plugin
 multipass exec bedrock-starter -- sudo systemctl restart bedrock
@@ -206,8 +206,8 @@ multipass exec bedrock-starter -- sudo systemctl restart nginx
 
 **Bedrock Changes:**
 ```bash
-# If you modify Bedrock itself
-multipass exec bedrock-starter -- bash -c 'cd /opt/bedrock/Bedrock && make'
+# If you modify Bedrock itself (using all available CPU cores)
+multipass exec bedrock-starter -- bash -c 'cd /opt/bedrock/Bedrock && make --jobs $(nproc)'
 multipass exec bedrock-starter -- sudo systemctl restart bedrock
 ```
 
@@ -312,7 +312,7 @@ multipass exec bedrock-starter -- sudo systemctl restart nginx
 
 3. Rebuild the plugin:
    ```bash
-   multipass exec bedrock-starter -- bash -c 'cd /opt/bedrock/server/core && ninja'
+   multipass exec bedrock-starter -- bash -c 'cd /opt/bedrock/server/core && ninja -j $(nproc)'
    multipass exec bedrock-starter -- sudo systemctl restart bedrock
    ```
 

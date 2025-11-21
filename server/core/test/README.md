@@ -2,9 +2,9 @@
 
 Basic test suite for the Bedrock Core plugin.
 
-## Building
+## Building and Running
 
-Use the host helper script:
+Use the helper script:
 
 ```bash
 ./scripts/test-cpp.sh

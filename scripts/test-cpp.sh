@@ -26,7 +26,7 @@ rm -rf CMakeCache.txt CMakeFiles/ build.ninja .ninja_* coretest coretest.dSYM
 cmake -G Ninja .
 
 warn "Building test target..."
-ninja coretest
+ninja -j "$(nproc)" coretest
 
 warn "Running tests..."
 cd "${CORE_DIR}/test"
