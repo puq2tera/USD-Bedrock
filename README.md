@@ -2,50 +2,21 @@
 
 A minimal starter project for [Bedrock](https://bedrockdb.com/), the rock-solid distributed database built by Expensify. This project runs on a single Ubuntu VM with systemd services, managed by Multipass.
 
-## What is Bedrock?
-
-Bedrock is a simple, modular, WAN-replicated, blockchain-based data foundation for global-scale applications. It's built on top of SQLite and provides:
-
-- **Fast** - Direct memory access to SQLite with distributed read scaling
-- **Simple** - Modern defaults that "just work" 
-- **Reliable** - Active/active distributed transactions with automatic failover
-- **Powerful** - Full SQLite feature set plus plugin system with job queue and cache
-
 ## Project Structure
 
-This starter project provides a complete development environment:
+This starter project provides a complete Bedrock + API development environment:
 
 ```
 BedrockStarter/
-├── multipass.yaml        # Multipass cloud-init configuration
-├── scripts/              # Shell scripts
-│   ├── launch.sh         # Cross-platform VM launcher script
-│   ├── setup.sh          # Manual installation script (for non-Multipass setups)
-│   └── common.sh          # Common shell utilities
-├── server/
-│   ├── api/              # PHP API Service
-│   │   ├── composer.json # PHP dependencies
-│   │   └── api.php       # REST API endpoints
-│   ├── config/           # Configuration files
-│   │   ├── nginx.conf    # Web server configuration
-│   │   └── bedrock.service # Bedrock systemd service
-│   └── core/             # Bedrock Plugin
-│       ├── .build/       # Build artifacts (generated, git-ignored)
-│       │   ├── lib/      # Compiled plugin binaries (Core.so)
-│       │   └── test/     # Test executables (coretest)
-│       ├── .clang-tidy   # C++ linter configuration
-│       ├── CMakeLists.txt # C++ build configuration
-│       ├── Core.h/.cpp   # Main plugin class (extends BedrockPlugin)
-│       ├── commands/     # Custom Bedrock commands
-│       │   ├── HelloWorld.h/.cpp   # Example command
-│       │   ├── CreateMessage.h/.cpp
-│       │   └── GetMessages.h/.cpp
-│       ├── test/         # C++ test suite
-│       │   ├── main.cpp
-│       │   ├── CoreTester.h
-│       │   └── CMakeLists.txt
-│       └── libs/         # (Reserved) Future shared C++ source libraries
-└── README.md
+├── multipass.yaml          # Multipass + cloud-init config for the dev VM
+├── scripts/                # Dev/CI helper scripts (launch, setup, tests, lint, logs)
+├── Bedrock/                # Bedrock database submodule (external dependency)
+└── server/
+    ├── api/                # PHP API service (routes in api.php, deps in composer.json)
+    ├── core/               # Custom Bedrock plugin ("Core")
+    │   ├── commands/       # Example commands (HelloWorld, message CRUD, etc.)
+    │   └── test/           # C++ tests for the Core plugin
+    └── config/             # Nginx + systemd templates for Bedrock and API
 ```
 
 ## Services Architecture
