@@ -69,3 +69,8 @@ set_target_properties(Core PROPERTIES
     OUTPUT_NAME "Core"
     PREFIX ""
 )
+
+option(BUILD_CORE_TESTS "Build the Bedrock Core plugin tests" ON)
+if(BUILD_CORE_TESTS)
+    add_subdirectory(test)
+endif()

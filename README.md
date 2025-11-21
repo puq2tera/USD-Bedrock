@@ -316,6 +316,19 @@ multipass exec bedrock-starter -- sudo systemctl restart nginx
    multipass exec bedrock-starter -- sudo systemctl restart bedrock
    ```
 
+## Running Tests
+
+Core plugin smoke tests live in `server/core/test`.
+
+```bash
+# Build and run all tests (works on host or inside the VM)
+./scripts/test.sh
+
+# Run a single test or enable verbose logging
+./scripts/test.sh -only Core_HelloWorld
+./scripts/test.sh -v
+```
+
 ## Example Queries
 
 ### Basic SQL
