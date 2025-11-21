@@ -101,6 +101,14 @@ echo -e "\n${YELLOW}Waiting for cloud-init to complete...${NC}"
 multipass exec "${VM_NAME}" -- cloud-init status --wait || true
 sleep 5
 
+# Set as primary if no primary exists (allows 'multipass shell' without name)
+PRIMARY_NAME=$(multipass get local.primary-name 2>/dev/null || echo "")
+if [ -z "$PRIMARY_NAME" ] || [ "$PRIMARY_NAME" = "None" ]; then
+    echo -e "\n${YELLOW}Setting ${VM_NAME} as primary instance...${NC}"
+    multipass set local.primary-name="${VM_NAME}" || true
+    echo -e "${GREEN}✓ You can now use 'multipass shell' without specifying the VM name${NC}"
+fi
+
 # Try to mount project directories for development
 PROJECT_MOUNT="/bedrock-starter"
 echo -e "\n${YELLOW}Mounting project directories for real-time sync...${NC}"
@@ -119,20 +127,24 @@ else
     multipass transfer "${PROJECT_DIR}/setup.sh" "${VM_NAME}:${PROJECT_MOUNT}/setup.sh"
 
     # Use tar to transfer directories recursively (multipass transfer doesn't support -r)
+    # Suppress macOS extended attribute warnings (they're harmless)
     echo -e "${YELLOW}Transferring server directory...${NC}"
-    tar czf - -C "${PROJECT_DIR}" server | multipass exec "${VM_NAME}" -- tar xzf - -C "${PROJECT_MOUNT}/"
+    COPYFILE_DISABLE=1 tar --exclude='.DS_Store' -czf - -C "${PROJECT_DIR}" server 2>/dev/null | \
+        multipass exec "${VM_NAME}" -- tar xzf - -C "${PROJECT_MOUNT}/" 2>/dev/null
     
     # Copy Bedrock if it exists (submodule)
     if [ -d "${PROJECT_DIR}/Bedrock" ]; then
         echo -e "${YELLOW}Transferring Bedrock submodule (this may take a moment)...${NC}"
-        tar czf - -C "${PROJECT_DIR}" Bedrock | multipass exec "${VM_NAME}" -- tar xzf - -C "${PROJECT_MOUNT}/"
+        COPYFILE_DISABLE=1 tar --exclude='.DS_Store' -czf - -C "${PROJECT_DIR}" Bedrock 2>/dev/null | \
+            multipass exec "${VM_NAME}" -- tar xzf - -C "${PROJECT_MOUNT}/" 2>/dev/null
     fi
 fi
 
 # Prompt user before running setup (unless -y flag is set)
 if [ "$AUTO_YES" = false ]; then
     echo -e "\n${YELLOW}VM is ready. You can now:${NC}"
-    echo -e "  - Shell into the VM: multipass shell ${VM_NAME}"
+    echo -e "  - Shell into the VM: multipass shell${NC}"
+    echo -e "    (or: multipass shell ${VM_NAME})"
     echo -e "  - Transfer files: multipass transfer <local-file> ${VM_NAME}:<remote-path>"
     echo -e "  - Install certificates or make other changes"
     echo ""
