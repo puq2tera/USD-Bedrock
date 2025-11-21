@@ -19,34 +19,25 @@ BedrockStarter/
     └── config/             # Nginx + systemd templates for Bedrock and API
 ```
 
-## Services Architecture
+## Services and Toolchain
 
-The project runs on a single VM with multiple systemd services:
+The project runs on a single VM with two services and a modern C++ toolchain.
 
 ### 🔧 **Bedrock Service** (`bedrock.service`)
-- **Service**: Systemd unit running Bedrock with Core plugin
-- **Port**: 8888
-- **Plugin**: Custom `Core` plugin with `HelloWorld` command
-- **Database**: SQLite database at `/var/lib/bedrock/bedrock.db`
-- **Installation**: `/opt/bedrock/Bedrock`
-- **Access**: Direct socket connection or MySQL protocol
+- **Unit**: Systemd service running Bedrock with the `Core` plugin
+- **Port**: `8888` (SQL + Bedrock commands)
+- **Database file**: `/var/lib/bedrock/bedrock.db`
+- **Binary directory**: `/opt/bedrock/Bedrock`
 
 ### 🌐 **API Service** (`nginx` + `php8.4-fpm`)
-- **Port**: 80
-- **Stack**: nginx + PHP 8.4 FPM
-- **Installation**: `/opt/bedrock/server/api`
-- **Endpoints**:
-  - `GET /api/status` - Service health check
-  - `GET /api/hello?name=World` - Hello world endpoint
-- **Features**: JSON responses, CORS headers, error handling
+- **Units**: `nginx` + `php8.4-fpm`
+- **Code root**: `/opt/bedrock/server/api`
+- **Port**: `80` (HTTP)
+- **Sample endpoints**: `/api/status`, `/api/hello?name=World`
 
 ### ⚙️ **Build System**
-- **C++ Compiler**: Clang with libc++ (C++20, matches Bedrock)
-- **Linker**: mold (ultra-fast linking)
-- **Build Tools**: CMake + Ninja
-- **Package Manager**: apt-fast (parallel downloads)
-- **Compiler Cache**: ccache (2GB, compressed)
-- **Optimization**: LTO, sanitizers, parallel builds
+- **Toolchain**: Clang (C++20) + libc++, CMake + Ninja, mold, ccache
+- **Extras**: apt-fast for faster installs, sanitizers in debug, LTO in release
 
 ## Quick Start
 
