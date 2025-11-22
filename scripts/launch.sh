@@ -67,10 +67,7 @@ if [[ ! -f "${PROJECT_DIR}/.clangd" ]] && [[ -f "${PROJECT_DIR}/.clangd.example"
 fi
 
 # Check if Multipass is installed
-require_command multipass "Please install Multipass:
-  macOS:   brew install multipass
-  Linux:   snap install multipass
-  Windows: Download from https://multipass.run/install"
+require_multipass
 
 # Detect architecture and set image
 ARCH=$(uname -m)

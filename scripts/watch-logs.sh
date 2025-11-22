@@ -68,8 +68,9 @@ if [[ -d "/bedrock-starter" ]] && [[ -f "/bedrock-starter/scripts/setup.sh" ]]; 
 else
     # We're on the host
     IN_VM=false
-    
-    # Check if VM is running
+
+    # Ensure Multipass is available and VM is running
+    require_multipass
     if ! multipass list | grep -q "bedrock-starter.*Running"; then
         error "VM is not running"
         echo "Start it with: ./scripts/launch.sh"

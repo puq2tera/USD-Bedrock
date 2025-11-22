@@ -12,10 +12,7 @@ VM_NAME="bedrock-starter"
 print_header "Rebuilding Core plugin in VM (${VM_NAME})"
 
 # Ensure Multipass is available on the host
-require_command multipass "Please install Multipass:
-  macOS:   brew install multipass
-  Linux:   snap install multipass
-  Windows: Download from https://multipass.run/install"
+require_multipass
 
 # Make sure the VM is running
 info "Ensuring VM '${VM_NAME}' is running..."

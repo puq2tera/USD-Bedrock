@@ -13,10 +13,7 @@ DB_PATH="/var/lib/bedrock/bedrock.db"
 print_header "SQLite CLI (Bedrock DB in VM: ${VM_NAME})"
 
 # Ensure Multipass is available on the host
-require_command multipass "Please install Multipass:
-  macOS:   brew install multipass
-  Linux:   snap install multipass
-  Windows: Download from https://multipass.run/install"
+require_multipass
 
 # Make sure the VM exists and is reachable
 if ! multipass info "${VM_NAME}" &>/dev/null; then

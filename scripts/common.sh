@@ -67,6 +67,15 @@ require_command() {
     fi
 }
 
+# Ensure Multipass is installed
+# Usage: require_multipass
+require_multipass() {
+    require_command multipass "Please install Multipass:
+  macOS:   brew install multipass
+  Linux:   snap install multipass
+  Windows: Download from https://multipass.run/install"
+}
+
 # Print a section header
 # Usage: print_header "Title"
 print_header() {
