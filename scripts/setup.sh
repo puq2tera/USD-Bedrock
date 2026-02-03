@@ -43,7 +43,8 @@ fi
 
 # Install Bedrock dependencies
 info "[3/10] Installing Bedrock dependencies..."
-"${PROJECT_DIR}/scripts/install-cpp-deps.sh" --vm
+chmod +x "${PROJECT_DIR}/scripts/"*.sh 2>/dev/null || true
+bash "${PROJECT_DIR}/scripts/install-cpp-deps.sh" --vm
 
 # Set up Clang as default compiler
 info "[4/10] Configuring Clang compiler..."
