@@ -1,0 +1,7 @@
+# Normalize text files and check out with LF everywhere
+* text=auto eol=lf
+
+# (Optional) explicit common cases
+*.sh  text eol=lf
+*.rb  text eol=lf
+*.ps1 text eol=crlf
