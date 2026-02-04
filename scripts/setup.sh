@@ -133,6 +133,17 @@ mkdir -p "$INSTALL_DIR"
 cp -r "$BEDROCK_DIR" "$INSTALL_DIR/"
 cp -r "$PROJECT_DIR/server" "$INSTALL_DIR/"
 
+# Ensure Bedrock binary exists at the systemd ExecStart path and is executable
+# (Fixes systemd status=203/EXEC when the binary is missing or not +x)
+info "Verifying Bedrock binary..."
+BEDROCK_BIN_SRC="$(find "$BEDROCK_DIR" -maxdepth 4 -type f -name bedrock | head -n1 || true)"
+if [[ -z "$BEDROCK_BIN_SRC" ]]; then
+  error "Could not find built 'bedrock' executable under $BEDROCK_DIR. Build may have failed."
+  exit 1
+fi
+install -m 0755 "$BEDROCK_BIN_SRC" "$INSTALL_DIR/Bedrock/bedrock"
+
+
 # Build Core plugin
 info "[10/10] Building Core plugin..."
 export BEDROCK_DIR="$INSTALL_DIR/Bedrock"
