@@ -1,6 +1,7 @@
 #include "Core.h"
 
 #include "commands/CreateMessage.h"
+#include "commands/CreatePoll.h"
 #include "commands/GetMessages.h"
 #include "commands/HelloWorld.h"
 
@@ -37,6 +38,9 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
     }
     if (SIEquals(baseCommand.request.methodLine, "GetMessages")) {
         return make_unique<GetMessages>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "CreatePoll")) {
+        return make_unique<CreatePoll>(std::move(baseCommand), this);
     }
 
     // Not our command
@@ -79,5 +83,43 @@ void BedrockPlugin_Core::upgradeDatabase(SQLite& db) {
     // Helpful index for fetching the most recent messages
     db.verifyIndex("messagesCreatedAt", "messages",
                    "(createdAt DESC)",
+                   false, true);
+
+    // ------------------------------------------------------------------
+    // Polls tables
+    // ------------------------------------------------------------------
+
+    // The main polls table — one row per poll
+    const string pollsTableSchema = R"(
+        CREATE TABLE polls (
+            pollID INTEGER PRIMARY KEY AUTOINCREMENT,
+            question TEXT NOT NULL,
+            createdAt INTEGER NOT NULL
+        )
+    )";
+
+    created = false;
+    while (!db.verifyTable("polls", pollsTableSchema, created)) {
+        SASSERT(db.write("DROP TABLE polls"));
+    }
+
+    // Each poll has multiple options to vote on
+    const string pollOptionsTableSchema = R"(
+        CREATE TABLE poll_options (
+            optionID INTEGER PRIMARY KEY AUTOINCREMENT,
+            pollID INTEGER NOT NULL,
+            text TEXT NOT NULL,
+            FOREIGN KEY (pollID) REFERENCES polls(pollID)
+        )
+    )";
+
+    created = false;
+    while (!db.verifyTable("poll_options", pollOptionsTableSchema, created)) {
+        SASSERT(db.write("DROP TABLE poll_options"));
+    }
+
+    // Index so we can quickly look up all options for a given poll
+    db.verifyIndex("pollOptionsPollID", "poll_options",
+                   "(pollID)",
                    false, true);
 }
