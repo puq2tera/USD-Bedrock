@@ -132,8 +132,26 @@ switch ($path) {
                 break;
             }
 
+            if ($method === 'PUT') {
+                $params = ['pollID' => $pollID];
+
+                // Both fields are optional — send whichever is provided
+                $question = Request::getString('question');
+                if ($question !== '') {
+                    $params['question'] = $question;
+                }
+
+                $options = Request::getString('options');
+                if ($options !== '') {
+                    $params['options'] = $options;
+                }
+
+                echo json_encode(Bedrock::call("EditPoll", $params));
+                break;
+            }
+
             http_response_code(405);
-            echo json_encode(['error' => 'Method not allowed', 'allowed' => ['GET']]);
+            echo json_encode(['error' => 'Method not allowed', 'allowed' => ['GET', 'PUT']]);
             break;
         }
 
