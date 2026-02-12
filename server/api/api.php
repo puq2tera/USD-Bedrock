@@ -12,7 +12,7 @@ use BedrockStarter\Request;
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
 // Handle preflight requests
@@ -75,6 +75,22 @@ switch ($path) {
 
         http_response_code(405);
         echo json_encode(['error' => 'Method not allowed', 'allowed' => ['GET', 'POST']]);
+        break;
+
+    case '/api/polls':
+        if ($method === 'POST') {
+            $question = Request::requireString('question');
+            $options = Request::requireString('options');
+
+            echo json_encode(Bedrock::call("CreatePoll", [
+                'question' => $question,
+                'options' => $options,
+            ]));
+            break;
+        }
+
+        http_response_code(405);
+        echo json_encode(['error' => 'Method not allowed', 'allowed' => ['POST']]);
         break;
 
     default:
