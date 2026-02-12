@@ -3,6 +3,7 @@
 #include "commands/CreateMessage.h"
 #include "commands/CreatePoll.h"
 #include "commands/GetMessages.h"
+#include "commands/GetPoll.h"
 #include "commands/HelloWorld.h"
 
 #include <BedrockServer.h>
@@ -41,6 +42,9 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
     }
     if (SIEquals(baseCommand.request.methodLine, "CreatePoll")) {
         return make_unique<CreatePoll>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "GetPoll")) {
+        return make_unique<GetPoll>(std::move(baseCommand), this);
     }
 
     // Not our command

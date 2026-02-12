@@ -44,6 +44,7 @@ set(SOURCES
     commands/CreateMessage.cpp
     commands/CreatePoll.cpp
     commands/GetMessages.cpp
+    commands/GetPoll.cpp
 )
 
 # Create shared library for the plugin
