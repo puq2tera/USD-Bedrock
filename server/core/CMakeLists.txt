@@ -43,6 +43,7 @@ set(SOURCES
     commands/HelloWorld.cpp
     commands/CreateMessage.cpp
     commands/CreatePoll.cpp
+    commands/DeletePoll.cpp
     commands/EditPoll.cpp
     commands/GetMessages.cpp
     commands/GetPoll.cpp

@@ -150,8 +150,13 @@ switch ($path) {
                 break;
             }
 
+            if ($method === 'DELETE') {
+                echo json_encode(Bedrock::call("DeletePoll", ['pollID' => $pollID]));
+                break;
+            }
+
             http_response_code(405);
-            echo json_encode(['error' => 'Method not allowed', 'allowed' => ['GET', 'PUT']]);
+            echo json_encode(['error' => 'Method not allowed', 'allowed' => ['GET', 'PUT', 'DELETE']]);
             break;
         }
 
