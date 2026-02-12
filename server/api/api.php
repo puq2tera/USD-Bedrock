@@ -94,7 +94,26 @@ switch ($path) {
         break;
 
     default:
-        // Match routes with dynamic IDs like /api/polls/123
+        // Match /api/polls/{id}/vote
+        if (preg_match('#^/api/polls/(\d+)/vote$#', $path, $matches)) {
+            $pollID = $matches[1];
+
+            if ($method === 'POST') {
+                $optionID = Request::requireString('optionID');
+
+                echo json_encode(Bedrock::call("SubmitVote", [
+                    'pollID' => $pollID,
+                    'optionID' => $optionID,
+                ]));
+                break;
+            }
+
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed', 'allowed' => ['POST']]);
+            break;
+        }
+
+        // Match /api/polls/{id}
         if (preg_match('#^/api/polls/(\d+)$#', $path, $matches)) {
             $pollID = $matches[1];
 

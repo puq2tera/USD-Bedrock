@@ -5,6 +5,7 @@
 #include "commands/GetMessages.h"
 #include "commands/GetPoll.h"
 #include "commands/HelloWorld.h"
+#include "commands/SubmitVote.h"
 
 #include <BedrockServer.h>
 
@@ -45,6 +46,9 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
     }
     if (SIEquals(baseCommand.request.methodLine, "GetPoll")) {
         return make_unique<GetPoll>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "SubmitVote")) {
+        return make_unique<SubmitVote>(std::move(baseCommand), this);
     }
 
     // Not our command
@@ -125,5 +129,27 @@ void BedrockPlugin_Core::upgradeDatabase(SQLite& db) {
     // Index so we can quickly look up all options for a given poll
     db.verifyIndex("pollOptionsPollID", "poll_options",
                    "(pollID)",
+                   false, true);
+
+    // Votes table — one row per vote cast
+    const string votesTableSchema = R"(
+        CREATE TABLE votes (
+            voteID INTEGER PRIMARY KEY AUTOINCREMENT,
+            pollID INTEGER NOT NULL,
+            optionID INTEGER NOT NULL,
+            createdAt INTEGER NOT NULL,
+            FOREIGN KEY (pollID) REFERENCES polls(pollID),
+            FOREIGN KEY (optionID) REFERENCES poll_options(optionID)
+        )
+    )";
+
+    created = false;
+    while (!db.verifyTable("votes", votesTableSchema, created)) {
+        SASSERT(db.write("DROP TABLE votes"));
+    }
+
+    // Index for counting votes per option
+    db.verifyIndex("votesOptionID", "votes",
+                   "(optionID)",
                    false, true);
 }
