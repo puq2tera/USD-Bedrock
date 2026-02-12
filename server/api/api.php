@@ -94,6 +94,30 @@ switch ($path) {
         break;
 
     default:
+        // Match routes with dynamic IDs like /api/polls/123
+        if (preg_match('#^/api/polls/(\d+)$#', $path, $matches)) {
+            $pollID = $matches[1];
+
+            if ($method === 'GET') {
+                $bedrockResponse = Bedrock::call("GetPoll", ['pollID' => $pollID]);
+
+                // Decode the options JSON array so the response is clean
+                if (isset($bedrockResponse['options'])) {
+                    $decoded = json_decode($bedrockResponse['options'], true);
+                    if (is_array($decoded)) {
+                        $bedrockResponse['options'] = $decoded;
+                    }
+                }
+
+                echo json_encode($bedrockResponse);
+                break;
+            }
+
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed', 'allowed' => ['GET']]);
+            break;
+        }
+
         http_response_code(404);
         echo json_encode(['error' => 'Endpoint not found']);
         break;
