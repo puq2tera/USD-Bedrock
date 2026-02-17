@@ -71,4 +71,11 @@ void SubmitVote::process(SQLite& db) {
 void SubmitVote::validateRequest() const {
     BedrockPlugin::verifyAttributeSize(request, "pollID", 1, BedrockPlugin::MAX_SIZE_SMALL);
     BedrockPlugin::verifyAttributeSize(request, "optionID", 1, BedrockPlugin::MAX_SIZE_SMALL);
+
+    if (SToInt64(request["pollID"]) <= 0) {
+        STHROW("400 pollID must be a positive integer");
+    }
+    if (SToInt64(request["optionID"]) <= 0) {
+        STHROW("400 optionID must be a positive integer");
+    }
 }

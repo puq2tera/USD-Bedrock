@@ -69,4 +69,8 @@ void DeletePoll::process(SQLite& db) {
 
 void DeletePoll::validateRequest() const {
     BedrockPlugin::verifyAttributeSize(request, "pollID", 1, BedrockPlugin::MAX_SIZE_SMALL);
+
+    if (SToInt64(request["pollID"]) <= 0) {
+        STHROW("400 pollID must be a positive integer");
+    }
 }

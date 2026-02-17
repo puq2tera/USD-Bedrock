@@ -64,18 +64,24 @@ class Bedrock
                 }
                 return [];
             } else {
-                // Try to parse status code from error message
-                $statusCode = isset($response['codeLine']) ? intval($response['codeLine']) : 500;
-                if ($statusCode > 0) {
+                // Parse status code and message from codeLine (e.g., "400 Missing required parameter: pollID")
+                $codeLine = $response['codeLine'] ?? 'Unknown error';
+                $statusCode = intval($codeLine);
+                if ($statusCode >= 400 && $statusCode < 600) {
                     http_response_code($statusCode);
+                    $message = trim(substr($codeLine, strlen((string) $statusCode)));
+                } else {
+                    http_response_code(500);
+                    $message = $codeLine;
                 }
 
                 Log::error("Received error response from Bedrock for {$method}", ['response' => $response]);
-                return ['error' => $response['codeLine'] ?? 'Unknown error'];
+                return ['error' => $message ?: 'Internal server error'];
             }
         } catch (\Exception $exception) {
             Log::error("Exception while calling Bedrock method {$method}", ['exception' => $exception->getMessage()]);
-            return ["error" => "Error connecting to Bedrock", "message" => $exception->getMessage()];
+            http_response_code(502);
+            return ['error' => 'Failed to connect to Bedrock'];
         }
     }
 }
