@@ -159,6 +159,11 @@ else
     exit 1
 fi
 
+# Fix ubuntu user file permissions
+multipass exec "${VM_NAME}" -- sudo bash usermod -aG bedrock ubuntu
+multipass exec "${VM_NAME}" -- sudo bash chmod 2775 /opt/bedrock/server
+multipass exec "${VM_NAME}" -- sudo bash chmod -R g+w /opt/bedrock/server
+
 # Run the full setup script
 info "Running setup script (this will take 5-10 minutes)..."
 info "Monitor progress in another terminal with: multipass exec ${VM_NAME} -- tail -f /var/log/cloud-init-output.log"
