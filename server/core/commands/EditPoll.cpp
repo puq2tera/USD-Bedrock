@@ -31,12 +31,23 @@ void EditPoll::process(SQLite& db) {
         STHROW("404 Poll not found");
     }
 
-    // ---- 2. Update the question if provided ----
+    // ---- 2. Require at least one field to update ----
     const string& question = request["question"];
+    const string& optionsStr = request["options"];
+    if (question.empty() && optionsStr.empty()) {
+        STHROW("400 Must provide question or options to update");
+    }
+
+    // ---- 3. Update the question if provided ----
     if (!question.empty()) {
+        const string trimmedQuestion = SStrip(question);
+        if (trimmedQuestion.empty()) {
+            STHROW("400 Question cannot be empty or blank");
+        }
+
         const string updateQuery = fmt::format(
             "UPDATE polls SET question = {} WHERE pollID = {};",
-            SQ(question), SQ(pollID)
+            SQ(trimmedQuestion), SQ(pollID)
         );
 
         if (!db.write(updateQuery)) {
@@ -44,13 +55,38 @@ void EditPoll::process(SQLite& db) {
         }
     }
 
-    // ---- 3. Replace options if provided ----
-    const string& optionsStr = request["options"];
+    // ---- 4. Replace options if provided ----
     if (!optionsStr.empty()) {
         const list<string> options = SParseJSONArray(optionsStr);
 
         if (options.size() < 2) {
             STHROW("400 A poll needs at least 2 options");
+        }
+
+        if (options.size() > 20) {
+            STHROW("400 A poll cannot have more than 20 options");
+        }
+
+        // Check for empty/blank option text and duplicates
+        set<string> seenOptions;
+        for (const string& optionText : options) {
+            const string trimmed = SStrip(optionText);
+            if (trimmed.empty()) {
+                STHROW("400 Option text cannot be empty");
+            }
+            if (!seenOptions.insert(trimmed).second) {
+                STHROW("400 Duplicate option: " + trimmed);
+            }
+        }
+
+        // Delete votes first (old optionIDs become invalid)
+        const string deleteVotes = fmt::format(
+            "DELETE FROM votes WHERE pollID = {};",
+            SQ(pollID)
+        );
+
+        if (!db.write(deleteVotes)) {
+            STHROW("502 Failed to clear votes");
         }
 
         // Delete existing options
@@ -67,7 +103,7 @@ void EditPoll::process(SQLite& db) {
         for (const string& optionText : options) {
             const string insertOption = fmt::format(
                 "INSERT INTO poll_options (pollID, text) VALUES ({}, {});",
-                SQ(pollID), SQ(optionText)
+                SQ(pollID), SQ(SStrip(optionText))
             );
 
             if (!db.write(insertOption)) {
@@ -87,6 +123,8 @@ void EditPoll::process(SQLite& db) {
 
 void EditPoll::validateRequest() const {
     BedrockPlugin::verifyAttributeSize(request, "pollID", 1, BedrockPlugin::MAX_SIZE_SMALL);
-    // At least one of question or options must be provided, but we don't
-    // enforce that here — if neither is sent, the command is a no-op.
+
+    if (SToInt64(request["pollID"]) <= 0) {
+        STHROW("400 pollID must be a positive integer");
+    }
 }

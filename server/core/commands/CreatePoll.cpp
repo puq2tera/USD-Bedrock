@@ -39,7 +39,7 @@ void CreatePoll::process(SQLite& db) {
     }
     const string pollID = idResult[0][0];
 
-    // ---- 2. Insert each option ----
+    // ---- 2. Parse and validate options ----
     // Options arrive as a JSON array: ["Red", "Blue", "Green"]
     const list<string> options = SParseJSONArray(request["options"]);
 
@@ -47,10 +47,27 @@ void CreatePoll::process(SQLite& db) {
         STHROW("400 A poll needs at least 2 options");
     }
 
+    if (options.size() > 20) {
+        STHROW("400 A poll cannot have more than 20 options");
+    }
+
+    // Check for empty/blank option text and duplicates
+    set<string> seenOptions;
+    for (const string& optionText : options) {
+        const string trimmed = SStrip(optionText);
+        if (trimmed.empty()) {
+            STHROW("400 Option text cannot be empty");
+        }
+        if (!seenOptions.insert(trimmed).second) {
+            STHROW("400 Duplicate option: " + trimmed);
+        }
+    }
+
+    // ---- 3. Insert each option ----
     for (const string& optionText : options) {
         const string insertOption = fmt::format(
             "INSERT INTO poll_options (pollID, text) VALUES ({}, {});",
-            pollID, SQ(optionText)
+            pollID, SQ(SStrip(optionText))
         );
 
         if (!db.write(insertOption)) {

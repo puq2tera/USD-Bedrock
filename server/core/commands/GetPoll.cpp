@@ -22,10 +22,13 @@ void GetPoll::process(SQLite& db) {
 }
 
 void GetPoll::buildResponse(SQLite& db) {
-    // Validate pollID is provided
+    // Validate pollID is provided and numeric
     const string& pollID = request["pollID"];
     if (pollID.empty()) {
         STHROW("400 Missing required parameter: pollID");
+    }
+    if (SToInt64(pollID) <= 0) {
+        STHROW("400 pollID must be a positive integer");
     }
 
     // ---- 1. Fetch the poll ----
