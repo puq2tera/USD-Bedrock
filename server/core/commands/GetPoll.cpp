@@ -54,6 +54,25 @@ void GetPoll::buildResponse(SQLite& db) {
         STHROW("502 Failed to fetch poll options");
     }
 
+    // ---- 3. Count votes per option ----
+    SQResult votesResult;
+    const string votesQuery = fmt::format(
+        "SELECT optionID, COUNT(*) FROM votes WHERE pollID = {} GROUP BY optionID;",
+        SQ(pollID)
+    );
+
+    // Build a map of optionID → vote count
+    map<string, string> voteCounts;
+    if (db.read(votesQuery, votesResult)) {
+        for (const auto& row : votesResult) {
+            if (row.size() >= 2) {
+                voteCounts[row[0]] = row[1];
+            }
+        }
+    }
+
+    // ---- 4. Build options array with vote counts ----
+    int64_t totalVotes = 0;
     list<string> options;
     for (const auto& row : optionsResult) {
         if (row.size() < 2) {
@@ -62,9 +81,17 @@ void GetPoll::buildResponse(SQLite& db) {
         STable option;
         option["optionID"] = row[0];
         option["text"] = row[1];
+
+        // Look up vote count for this option, default to "0"
+        auto it = voteCounts.find(row[0]);
+        const string count = (it != voteCounts.end()) ? it->second : "0";
+        option["votes"] = count;
+        totalVotes += SToInt64(count);
+
         options.emplace_back(SComposeJSONObject(option));
     }
 
     response["options"] = SComposeJSONArray(options);
     response["optionCount"] = SToStr(options.size());
+    response["totalVotes"] = SToStr(totalVotes);
 }
