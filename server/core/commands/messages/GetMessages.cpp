@@ -1,9 +1,35 @@
 #include "GetMessages.h"
 
-#include "../Core.h"
+#include "../../Core.h"
+#include "../RequestBinding.h"
+#include "../ResponseBinding.h"
 
 #include <libstuff/libstuff.h>
 #include <fmt/format.h>
+
+namespace {
+
+struct GetMessagesRequestModel {
+    size_t limit;
+
+    static GetMessagesRequestModel bind(const SData& request) {
+        const optional<int64_t> parsedLimit = RequestBinding::optionalInt64(request, "limit", 1, 100);
+        const size_t limit = parsedLimit ? static_cast<size_t>(*parsedLimit) : 20;
+        return {limit};
+    }
+};
+
+struct GetMessagesResponseModel {
+    list<string> messages;
+
+    void writeTo(SData& response) const {
+        ResponseBinding::setSize(response, "resultCount", messages.size());
+        ResponseBinding::setJSONArray(response, "messages", messages);
+        ResponseBinding::setString(response, "format", "json");
+    }
+};
+
+} // namespace
 
 GetMessages::GetMessages(SQLiteCommand&& baseCommand, BedrockPlugin_Core* plugin)
     : BedrockCommand(std::move(baseCommand), plugin) {
@@ -19,17 +45,14 @@ void GetMessages::process(SQLite& db) {
 }
 
 void GetMessages::buildResponse(SQLite& db) {
-    size_t limit = 20;
-    if (!request["limit"].empty()) {
-        limit = static_cast<size_t>(max<int64_t>(1, min<int64_t>(request.calc64("limit"), 100)));
-    }
+    const GetMessagesRequestModel input = GetMessagesRequestModel::bind(request);
 
     const string query = fmt::format(
         "SELECT messageID, name, message, createdAt "
         "FROM messages "
         "ORDER BY messageID DESC "
         "LIMIT {}",
-        limit
+        input.limit
     );
 
     SQResult result;
@@ -50,8 +73,6 @@ void GetMessages::buildResponse(SQLite& db) {
         rows.emplace_back(SComposeJSONObject(item));
     }
 
-    response["resultCount"] = SToStr(rows.size());
-    response["messages"] = SComposeJSONArray(rows);
-    response["format"] = "json";
+    const GetMessagesResponseModel output = {rows};
+    output.writeTo(response);
 }
-

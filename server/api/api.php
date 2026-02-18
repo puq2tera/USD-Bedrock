@@ -7,8 +7,19 @@ declare(strict_types=1);
 
 require __DIR__ . '/vendor/autoload.php';
 
-use BedrockStarter\Bedrock;
+use BedrockStarter\Log;
 use BedrockStarter\Request;
+use BedrockStarter\requests\framework\RouteBinder;
+use BedrockStarter\requests\messages\CreateMessageRequest;
+use BedrockStarter\requests\messages\GetMessagesRequest;
+use BedrockStarter\requests\polls\CreatePollRequest;
+use BedrockStarter\requests\polls\DeletePollRequest;
+use BedrockStarter\requests\polls\EditPollRequest;
+use BedrockStarter\requests\polls\GetPollRequest;
+use BedrockStarter\requests\polls\SubmitVoteRequest;
+use BedrockStarter\requests\system\HelloWorldRequest;
+use BedrockStarter\requests\system\StatusRequest;
+use BedrockStarter\ValidationException;
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -21,146 +32,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// Simple routing
 $path = Request::getPath();
 $method = Request::getMethod();
+$requestTypes = [
+    StatusRequest::class,
+    HelloWorldRequest::class,
+    GetMessagesRequest::class,
+    CreateMessageRequest::class,
+    CreatePollRequest::class,
+    GetPollRequest::class,
+    EditPollRequest::class,
+    DeletePollRequest::class,
+    SubmitVoteRequest::class,
+];
 
-switch ($path) {
-    case '/api/status':
-        $response = [
-            'status' => 'ok',
-            'service' => 'bedrock-starter-api',
-            'timestamp' => date('c'),
-            'php_version' => PHP_VERSION
-        ];
+try {
+    $boundRequest = RouteBinder::tryBind($method, $path, $requestTypes);
+    if ($boundRequest !== null) {
+        echo json_encode($boundRequest->execute()->toArray());
+        exit();
+    }
 
-        echo json_encode($response, JSON_PRETTY_PRINT);
-        break;
-
-    case '/api/hello':
-        $name = Request::getString('name', 'World');
-        echo json_encode(Bedrock::call("HelloWorld", ["name" => $name]));
-        break;
-
-    case '/api/messages':
-        if ($method === 'GET') {
-            $limit = Request::getInt('limit', null, 1, 100);
-
-            $params = [];
-            if ($limit !== null) {
-                $params['limit'] = (string) $limit;
-            }
-
-            $bedrockResponse = Bedrock::call("GetMessages", $params);
-            if (isset($bedrockResponse['messages'])) {
-                $decodedMessages = json_decode($bedrockResponse['messages'], true);
-                if (is_array($decodedMessages)) {
-                    $bedrockResponse['messages'] = $decodedMessages;
-                }
-            }
-
-            echo json_encode($bedrockResponse);
-            break;
-        }
-
-        if ($method === 'POST') {
-            $name = Request::requireString('name');
-            $message = Request::requireString('message');
-            echo json_encode(Bedrock::call("CreateMessage", [
-                'name' => $name,
-                'message' => $message,
-            ]));
-            break;
-        }
-
+    $allowedMethods = RouteBinder::allowedMethodsForPath($path, $requestTypes);
+    if (!empty($allowedMethods)) {
         http_response_code(405);
-        echo json_encode(['error' => 'Method not allowed', 'allowed' => ['GET', 'POST']]);
-        break;
+        echo json_encode(['error' => 'Method not allowed', 'allowed' => $allowedMethods]);
+        exit();
+    }
 
-    case '/api/polls':
-        if ($method === 'POST') {
-            $question = Request::requireString('question');
-            $options = Request::requireString('options');
-
-            echo json_encode(Bedrock::call("CreatePoll", [
-                'question' => $question,
-                'options' => $options,
-            ]));
-            break;
-        }
-
-        http_response_code(405);
-        echo json_encode(['error' => 'Method not allowed', 'allowed' => ['POST']]);
-        break;
-
-    default:
-        // Match /api/polls/{id}/vote
-        if (preg_match('#^/api/polls/(\d+)/vote$#', $path, $matches)) {
-            $pollID = $matches[1];
-
-            if ($method === 'POST') {
-                $optionID = Request::requireString('optionID');
-
-                echo json_encode(Bedrock::call("SubmitVote", [
-                    'pollID' => $pollID,
-                    'optionID' => $optionID,
-                ]));
-                break;
-            }
-
-            http_response_code(405);
-            echo json_encode(['error' => 'Method not allowed', 'allowed' => ['POST']]);
-            break;
-        }
-
-        // Match /api/polls/{id}
-        if (preg_match('#^/api/polls/(\d+)$#', $path, $matches)) {
-            $pollID = $matches[1];
-
-            if ($method === 'GET') {
-                $bedrockResponse = Bedrock::call("GetPoll", ['pollID' => $pollID]);
-
-                // Decode the options JSON array so the response is clean
-                if (isset($bedrockResponse['options'])) {
-                    $decoded = json_decode($bedrockResponse['options'], true);
-                    if (is_array($decoded)) {
-                        $bedrockResponse['options'] = $decoded;
-                    }
-                }
-
-                echo json_encode($bedrockResponse);
-                break;
-            }
-
-            if ($method === 'PUT') {
-                $params = ['pollID' => $pollID];
-
-                // Both fields are optional — send whichever is provided
-                $question = Request::getString('question');
-                if ($question !== '') {
-                    $params['question'] = $question;
-                }
-
-                $options = Request::getString('options');
-                if ($options !== '') {
-                    $params['options'] = $options;
-                }
-
-                echo json_encode(Bedrock::call("EditPoll", $params));
-                break;
-            }
-
-            if ($method === 'DELETE') {
-                echo json_encode(Bedrock::call("DeletePoll", ['pollID' => $pollID]));
-                break;
-            }
-
-            http_response_code(405);
-            echo json_encode(['error' => 'Method not allowed', 'allowed' => ['GET', 'PUT', 'DELETE']]);
-            break;
-        }
-
-        http_response_code(404);
-        echo json_encode(['error' => 'Endpoint not found']);
-        break;
+    http_response_code(404);
+    echo json_encode(['error' => 'Endpoint not found']);
+} catch (ValidationException $exception) {
+    http_response_code($exception->getStatusCode());
+    echo json_encode(['error' => $exception->getMessage()]);
+} catch (\Throwable $exception) {
+    Log::error('Unhandled API exception', ['exception' => $exception->getMessage()]);
+    http_response_code(500);
+    echo json_encode(['error' => 'Internal server error']);
 }

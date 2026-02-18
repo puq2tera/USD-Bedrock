@@ -14,7 +14,4 @@ public:
 
     // process = read-write phase (runs on leader). We do the INSERT here.
     void process(SQLite& db) override;
-
-private:
-    void validateRequest() const;
 };

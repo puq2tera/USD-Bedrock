@@ -11,7 +11,4 @@ public:
 
     bool peek(SQLite& db) override;
     void process(SQLite& db) override;
-
-private:
-    void validateRequest() const;
 };

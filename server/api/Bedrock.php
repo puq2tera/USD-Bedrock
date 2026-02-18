@@ -63,20 +63,20 @@ class Bedrock
                     return $response['body'];
                 }
                 return [];
-            } else {
-                // Try to parse status code from error message
-                $statusCode = isset($response['codeLine']) ? intval($response['codeLine']) : 500;
-                if ($statusCode > 0) {
-                    http_response_code($statusCode);
-                }
-
-                Log::error("Received error response from Bedrock for {$method}", ['response' => $response]);
-                return ['error' => $response['codeLine'] ?? 'Unknown error'];
             }
-        } catch (\Exception $exception) {
+            $codeLine = (string)($response['codeLine'] ?? 'Unknown Bedrock error');
+            $statusCode = intval($codeLine);
+            if ($statusCode < 400 || $statusCode > 599) {
+                $statusCode = 502;
+            }
+
+            Log::error("Received error response from Bedrock for {$method}", ['response' => $response]);
+            throw new ValidationException($codeLine, $statusCode);
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
             Log::error("Exception while calling Bedrock method {$method}", ['exception' => $exception->getMessage()]);
-            return ["error" => "Error connecting to Bedrock", "message" => $exception->getMessage()];
+            throw new ValidationException('Error connecting to Bedrock', 502);
         }
     }
 }
-
