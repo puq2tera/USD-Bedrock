@@ -48,6 +48,7 @@ set(SOURCES
     commands/polls/DeletePoll.cpp
     commands/polls/EditPoll.cpp
     commands/polls/GetPoll.cpp
+    commands/polls/GetPolls.cpp
     commands/polls/SubmitVote.cpp
 )
 
