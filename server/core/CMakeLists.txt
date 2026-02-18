@@ -31,6 +31,7 @@ set(BEDROCK_DIR $ENV{BEDROCK_DIR})
 if(NOT BEDROCK_DIR)
     set(BEDROCK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../Bedrock")
 endif()
+get_filename_component(BEDROCK_DIR "${BEDROCK_DIR}" REALPATH)
 
 # Set include directories
 include_directories(${BEDROCK_DIR})
@@ -40,14 +41,14 @@ include_directories(${BEDROCK_DIR}/mbedtls/include)
 # Add source files
 set(SOURCES
     Core.cpp
-    commands/HelloWorld.cpp
-    commands/CreateMessage.cpp
-    commands/CreatePoll.cpp
-    commands/DeletePoll.cpp
-    commands/EditPoll.cpp
-    commands/GetMessages.cpp
-    commands/GetPoll.cpp
-    commands/SubmitVote.cpp
+    commands/system/HelloWorld.cpp
+    commands/messages/CreateMessage.cpp
+    commands/messages/GetMessages.cpp
+    commands/polls/CreatePoll.cpp
+    commands/polls/DeletePoll.cpp
+    commands/polls/EditPoll.cpp
+    commands/polls/GetPoll.cpp
+    commands/polls/SubmitVote.cpp
 )
 
 # Create shared library for the plugin

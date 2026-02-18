@@ -119,14 +119,11 @@ Your project directory is automatically mounted at `/bedrock-starter` in the VM,
 
 **C++ Plugin Changes:**
 ```bash
-# Rebuild the Core plugin (using all available CPU cores)
-multipass exec bedrock-starter -- bash -c 'cd /opt/bedrock/server/core/.build && ninja -j $(nproc)'
+# Rebuild Core and restart Bedrock (recommended)
+./scripts/build-core-plugin.sh
 
-# Copy plugin to install location
-multipass exec bedrock-starter -- sudo cp /bedrock-starter/server/core/.build/lib/Core.so /opt/bedrock/server/core/.build/lib/
-
-# Restart Bedrock to load new plugin
-multipass exec bedrock-starter -- sudo systemctl restart bedrock
+# Equivalent manual commands (build is done in /opt, so no extra copy step)
+multipass exec bedrock-starter -- sudo bash -lc 'cmake -S /opt/bedrock/server/core -B /opt/bedrock/server/core/.build -G Ninja && cd /opt/bedrock/server/core/.build && ninja -j $(nproc) && systemctl restart bedrock'
 ```
 
 **PHP API Changes:**

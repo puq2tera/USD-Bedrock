@@ -1,13 +1,13 @@
 #include "Core.h"
 
-#include "commands/CreateMessage.h"
-#include "commands/CreatePoll.h"
-#include "commands/DeletePoll.h"
-#include "commands/EditPoll.h"
-#include "commands/GetMessages.h"
-#include "commands/GetPoll.h"
-#include "commands/HelloWorld.h"
-#include "commands/SubmitVote.h"
+#include "commands/messages/CreateMessage.h"
+#include "commands/messages/GetMessages.h"
+#include "commands/polls/CreatePoll.h"
+#include "commands/polls/DeletePoll.h"
+#include "commands/polls/EditPoll.h"
+#include "commands/polls/GetPoll.h"
+#include "commands/polls/SubmitVote.h"
+#include "commands/system/HelloWorld.h"
 
 #include <BedrockServer.h>
 

@@ -1,9 +1,41 @@
 #include "GetPoll.h"
 
-#include "../Core.h"
+#include "../../Core.h"
+#include "../RequestBinding.h"
+#include "../ResponseBinding.h"
 
 #include <libstuff/libstuff.h>
 #include <fmt/format.h>
+
+namespace {
+
+struct GetPollRequestModel {
+    int64_t pollID;
+
+    static GetPollRequestModel bind(const SData& request) {
+        return {RequestBinding::requirePositiveInt64(request, "pollID")};
+    }
+};
+
+struct GetPollResponseModel {
+    string pollID;
+    string question;
+    string createdAt;
+    list<string> options;
+    size_t optionCount;
+    int64_t totalVotes;
+
+    void writeTo(SData& response) const {
+        ResponseBinding::setString(response, "pollID", pollID);
+        ResponseBinding::setString(response, "question", question);
+        ResponseBinding::setString(response, "createdAt", createdAt);
+        ResponseBinding::setJSONArray(response, "options", options);
+        ResponseBinding::setSize(response, "optionCount", optionCount);
+        ResponseBinding::setInt64(response, "totalVotes", totalVotes);
+    }
+};
+
+} // namespace
 
 GetPoll::GetPoll(SQLiteCommand&& baseCommand, BedrockPlugin_Core* plugin)
     : BedrockCommand(std::move(baseCommand), plugin) {
@@ -22,35 +54,33 @@ void GetPoll::process(SQLite& db) {
 }
 
 void GetPoll::buildResponse(SQLite& db) {
-    // Validate pollID is provided and numeric
-    const string& pollID = request["pollID"];
-    if (pollID.empty()) {
-        STHROW("400 Missing required parameter: pollID");
-    }
-    if (SToInt64(pollID) <= 0) {
-        STHROW("400 pollID must be a positive integer");
-    }
+    const GetPollRequestModel input = GetPollRequestModel::bind(request);
 
     // ---- 1. Fetch the poll ----
     SQResult pollResult;
     const string pollQuery = fmt::format(
         "SELECT pollID, question, createdAt FROM polls WHERE pollID = {};",
-        SQ(pollID)
+        input.pollID
     );
 
     if (!db.read(pollQuery, pollResult) || pollResult.empty()) {
         STHROW("404 Poll not found");
     }
 
-    response["pollID"] = pollResult[0][0];
-    response["question"] = pollResult[0][1];
-    response["createdAt"] = pollResult[0][2];
+    GetPollResponseModel output = {
+        pollResult[0][0],
+        pollResult[0][1],
+        pollResult[0][2],
+        {},
+        0,
+        0,
+    };
 
     // ---- 2. Fetch the options for this poll ----
     SQResult optionsResult;
     const string optionsQuery = fmt::format(
         "SELECT optionID, text FROM poll_options WHERE pollID = {} ORDER BY optionID;",
-        SQ(pollID)
+        input.pollID
     );
 
     if (!db.read(optionsQuery, optionsResult)) {
@@ -61,7 +91,7 @@ void GetPoll::buildResponse(SQLite& db) {
     SQResult votesResult;
     const string votesQuery = fmt::format(
         "SELECT optionID, COUNT(*) FROM votes WHERE pollID = {} GROUP BY optionID;",
-        SQ(pollID)
+        input.pollID
     );
 
     // Build a map of optionID → vote count
@@ -94,7 +124,8 @@ void GetPoll::buildResponse(SQLite& db) {
         options.emplace_back(SComposeJSONObject(option));
     }
 
-    response["options"] = SComposeJSONArray(options);
-    response["optionCount"] = SToStr(options.size());
-    response["totalVotes"] = SToStr(totalVotes);
+    output.options = options;
+    output.optionCount = output.options.size();
+    output.totalVotes = totalVotes;
+    output.writeTo(response);
 }
