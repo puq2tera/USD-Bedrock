@@ -79,7 +79,7 @@ struct PollsTest : tpunit::TestFixture {
         req["options"] = "[\"A\",\"B\"]";
         SData resp = tester.executeWaitMultipleData({req}, 1).front();
 
-        ASSERT_TRUE(SStartsWith(resp.methodLine, "402"));
+        ASSERT_TRUE(SStartsWith(resp.methodLine, "400"));
     }
 
     void testCreatePollTooFewOptions() {

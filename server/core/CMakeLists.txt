@@ -31,6 +31,7 @@ set(BEDROCK_DIR $ENV{BEDROCK_DIR})
 if(NOT BEDROCK_DIR)
     set(BEDROCK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../Bedrock")
 endif()
+get_filename_component(BEDROCK_DIR "${BEDROCK_DIR}" REALPATH)
 
 # Set include directories
 include_directories(${BEDROCK_DIR})

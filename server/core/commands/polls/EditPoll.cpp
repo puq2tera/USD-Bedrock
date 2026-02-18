@@ -17,7 +17,20 @@ struct EditPollRequestModel {
     static EditPollRequestModel bind(const SData& request) {
         const int64_t pollID = RequestBinding::requirePositiveInt64(request, "pollID");
         const optional<string> question = RequestBinding::optionalString(request, "question", 1, BedrockPlugin::MAX_SIZE_SMALL);
-        const optional<list<string>> options = RequestBinding::optionalJSONArray(request, "options", 2);
+        optional<list<string>> options = RequestBinding::optionalJSONArray(request, "options", 2, 20);
+
+        if (options) {
+            set<string> seen;
+            for (const string& text : *options) {
+                const string trimmed = SStrip(text);
+                if (trimmed.empty()) {
+                    STHROW("400 Option text cannot be empty");
+                }
+                if (!seen.insert(trimmed).second) {
+                    STHROW("400 Duplicate option: " + trimmed);
+                }
+            }
+        }
 
         if (!question && !options) {
             STHROW("400 Missing required parameter: question or options");

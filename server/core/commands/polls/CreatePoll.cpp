@@ -14,9 +14,22 @@ struct CreatePollRequestModel {
     list<string> options;
 
     static CreatePollRequestModel bind(const SData& request) {
+        auto opts = RequestBinding::requireJSONArray(request, "options", 2, 20);
+
+        set<string> seen;
+        for (const string& text : opts) {
+            const string trimmed = SStrip(text);
+            if (trimmed.empty()) {
+                STHROW("400 Option text cannot be empty");
+            }
+            if (!seen.insert(trimmed).second) {
+                STHROW("400 Duplicate option: " + trimmed);
+            }
+        }
+
         return {
             RequestBinding::requireString(request, "question", 1, BedrockPlugin::MAX_SIZE_SMALL),
-            RequestBinding::requireJSONArray(request, "options", 2)
+            std::move(opts)
         };
     }
 };
