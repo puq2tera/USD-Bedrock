@@ -4,21 +4,21 @@ cmake_minimum_required(VERSION 3.10)
 # Find all test source files
 file(GLOB_RECURSE CORETEST_SRC "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
-# Find Bedrock test library files
+# Find Bedrock test library files (use BEDROCK_DIR to avoid symlink path conflicts)
 file(GLOB TESTCPP
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../Bedrock/test/lib/*.cpp"
+    "${BEDROCK_DIR}/test/lib/*.cpp"
 )
 
 # Remove files we don't need
-list(REMOVE_ITEM TESTCPP "${CMAKE_CURRENT_SOURCE_DIR}/../../../Bedrock/test/lib/TestHTTPS.cpp")
-list(REMOVE_ITEM TESTCPP "${CMAKE_CURRENT_SOURCE_DIR}/../../../Bedrock/test/lib/TestPlugin.cpp")
+list(REMOVE_ITEM TESTCPP "${BEDROCK_DIR}/test/lib/TestHTTPS.cpp")
+list(REMOVE_ITEM TESTCPP "${BEDROCK_DIR}/test/lib/TestPlugin.cpp")
 
 # Compiler flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -fPIC")
 
 # Skip linting for tpunit++
 set_source_files_properties(
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../Bedrock/test/lib/tpunit++.cpp
+    ${BEDROCK_DIR}/test/lib/tpunit++.cpp
     PROPERTIES SKIP_LINTING ON
 )
 
@@ -36,8 +36,8 @@ target_compile_options(coretest PRIVATE
     -Wno-unused-parameter
 )
 target_include_directories(coretest PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../Bedrock
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../
+    ${BEDROCK_DIR}
+    ${BEDROCK_DIR}/..
 )
 get_filename_component(CORE_PLUGIN_DIR "${CMAKE_BINARY_DIR}/lib" ABSOLUTE)
 set(CORE_BEDROCK_BIN "${BEDROCK_DIR}/bedrock")

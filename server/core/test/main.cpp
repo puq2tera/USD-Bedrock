@@ -7,6 +7,7 @@
 #include "TestHelpers.h"
 #include "tests/HelloWorldTest.h"
 #include "tests/MessagesTest.h"
+#include "tests/PollsTest.h"
 
 void cleanup() {
     cout << "Cleaning up test database files...\n";
@@ -31,6 +32,7 @@ int main(int argc, char* argv[]) {
     // Instantiate test fixtures
     HelloWorldTest helloWorldTest;
     MessagesTest messagesTest;
+    PollsTest pollsTest;
 
     set<string> include;
     set<string> exclude;
