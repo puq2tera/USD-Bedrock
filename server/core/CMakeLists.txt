@@ -49,6 +49,17 @@ set(SOURCES
     commands/polls/EditPoll.cpp
     commands/polls/GetPoll.cpp
     commands/polls/SubmitVote.cpp
+    commands/users/CreateUser.cpp
+    commands/users/DeleteUser.cpp
+    commands/users/EditUser.cpp
+    commands/users/GetUser.cpp
+    tables/TableUtils.cpp
+    tables/MessagesTable.cpp
+    tables/PollsTable.cpp
+    tables/PollOptionsTable.cpp
+    tables/VotesTable.cpp
+    tables/UsersTable.cpp
+    tables/Tables.cpp
 )
 
 # Create shared library for the plugin

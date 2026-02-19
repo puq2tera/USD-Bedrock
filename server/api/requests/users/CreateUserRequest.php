@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace BedrockStarter\requests\polls;
+namespace BedrockStarter\requests\users;
 
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\Request;
 use BedrockStarter\responses\framework\RouteResponse;
-use BedrockStarter\responses\polls\SubmitVoteResponse;
+use BedrockStarter\responses\users\CreateUserResponse;
 
-final class SubmitVoteRequest extends RouteBoundRequestBase
+final class CreateUserRequest extends RouteBoundRequestBase
 {
-    private const PATH_PATTERN = '#^/api/polls/(?P<pollID>\d+)/vote$#';
+    private const PATH_PATTERN = '#^/api/users$#';
     private const ALLOWED_METHODS = ['POST'];
 
     public function __construct(
-        private readonly int $pollID,
-        private readonly int $optionID,
-        private readonly int $userID
+        private readonly string $email,
+        private readonly string $firstName,
+        private readonly string $lastName
     ) {
     }
 
@@ -33,29 +33,29 @@ final class SubmitVoteRequest extends RouteBoundRequestBase
 
     public static function bedrockCommand(): ?string
     {
-        return 'SubmitVote';
+        return 'CreateUser';
     }
 
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         return new self(
-            Request::requireRouteInt($routeParams, 'pollID'),
-            Request::requireInt('optionID', 1),
-            Request::requireInt('userID', 1)
+            Request::requireString('email', 1, 256),
+            Request::requireString('firstName', 1, Request::MAX_SIZE_SMALL),
+            Request::requireString('lastName', 1, Request::MAX_SIZE_SMALL)
         );
     }
 
     public function toBedrockParams(): array
     {
         return [
-            'pollID' => (string)$this->pollID,
-            'optionID' => (string)$this->optionID,
-            'userID' => (string)$this->userID,
+            'email' => $this->email,
+            'firstName' => $this->firstName,
+            'lastName' => $this->lastName,
         ];
     }
 
     public function transformResponse(array $bedrockResponse): RouteResponse
     {
-        return new SubmitVoteResponse($bedrockResponse);
+        return new CreateUserResponse($bedrockResponse);
     }
 }

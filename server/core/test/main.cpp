@@ -8,20 +8,15 @@
 #include "tests/HelloWorldTest.h"
 #include "tests/MessagesTest.h"
 #include "tests/PollsTest.h"
+#include "tests/UsersTest.h"
 
 void cleanup() {
     cout << "Cleaning up test database files...\n";
-    if (system("rm -f coretest_*.db") == -1) {
-        SWARN("system() failed.");
-    }
-    if (system("rm -f coretest_*.db-shm") == -1) {
-        SWARN("system() failed.");
-    }
-    if (system("rm -f coretest_*.db-wal") == -1) {
-        SWARN("system() failed.");
-    }
-    if (system("rm -f coretest_*.db-journal") == -1) {
-        SWARN("system() failed.");
+    for (const string& suffix : {"db", "db-shm", "db-wal", "db-journal"}) {
+        const string command = "rm -f coretest_*." + suffix;
+        if (system(command.c_str()) == -1) {
+            SWARN("system() failed for cleanup command: " << command);
+        }
     }
     cout << "Cleanup complete.\n";
 }
@@ -29,10 +24,10 @@ void cleanup() {
 int main(int argc, char* argv[]) {
     SData args = SParseCommandLine(argc, argv);
 
-    // Instantiate test fixtures
     HelloWorldTest helloWorldTest;
     MessagesTest messagesTest;
     PollsTest pollsTest;
+    UsersTest usersTest;
 
     set<string> include;
     set<string> exclude;
@@ -76,4 +71,3 @@ int main(int argc, char* argv[]) {
     cleanup();
     return retval;
 }
-

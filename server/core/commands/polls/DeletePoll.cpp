@@ -1,6 +1,7 @@
 #include "DeletePoll.h"
 
 #include "../../Core.h"
+#include "../CommandError.h"
 #include "../RequestBinding.h"
 #include "../ResponseBinding.h"
 
@@ -50,7 +51,11 @@ void DeletePoll::process(SQLite& db) {
     );
 
     if (!db.read(pollQuery, pollResult) || pollResult.empty()) {
-        STHROW("404 Poll not found");
+        CommandError::notFound(
+            "Poll not found",
+            "DELETE_POLL_NOT_FOUND",
+            {{"command", "DeletePoll"}, {"pollID", SToStr(input.pollID)}}
+        );
     }
 
     // ---- 2. Delete votes for this poll ----
@@ -60,7 +65,12 @@ void DeletePoll::process(SQLite& db) {
     );
 
     if (!db.write(deleteVotes)) {
-        STHROW("502 Failed to delete votes");
+        CommandError::upstreamFailure(
+            db,
+            "Failed to delete votes",
+            "DELETE_POLL_VOTES_DELETE_FAILED",
+            {{"command", "DeletePoll"}, {"pollID", SToStr(input.pollID)}}
+        );
     }
 
     // ---- 3. Delete options for this poll ----
@@ -70,7 +80,12 @@ void DeletePoll::process(SQLite& db) {
     );
 
     if (!db.write(deleteOptions)) {
-        STHROW("502 Failed to delete poll options");
+        CommandError::upstreamFailure(
+            db,
+            "Failed to delete poll options",
+            "DELETE_POLL_OPTIONS_DELETE_FAILED",
+            {{"command", "DeletePoll"}, {"pollID", SToStr(input.pollID)}}
+        );
     }
 
     // ---- 4. Delete the poll itself ----
@@ -80,7 +95,12 @@ void DeletePoll::process(SQLite& db) {
     );
 
     if (!db.write(deletePoll)) {
-        STHROW("502 Failed to delete poll");
+        CommandError::upstreamFailure(
+            db,
+            "Failed to delete poll",
+            "DELETE_POLL_DELETE_FAILED",
+            {{"command", "DeletePoll"}, {"pollID", SToStr(input.pollID)}}
+        );
     }
 
     const DeletePollResponseModel output = {input.pollID, "deleted"};

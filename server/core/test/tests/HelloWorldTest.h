@@ -16,8 +16,7 @@ struct HelloWorldTest : tpunit::TestFixture {
 
         SData request("HelloWorld");
         request["name"] = "TestUser";
-        vector<SData> responses = tester.executeWaitMultipleData({request}, 1);
-        SData& response = responses.front();
+        const SData response = TestHelpers::executeSingle(tester, request);
         
         ASSERT_TRUE(SStartsWith(response.methodLine, "200 OK"));
         ASSERT_EQUAL(response["message"], "Hello, TestUser!");
@@ -30,11 +29,9 @@ struct HelloWorldTest : tpunit::TestFixture {
         BedrockTester tester = TestHelpers::createTester();
 
         SData request("HelloWorld");
-        vector<SData> responses = tester.executeWaitMultipleData({request}, 1);
-        SData& response = responses.front();
+        const SData response = TestHelpers::executeSingle(tester, request);
         
         ASSERT_TRUE(SStartsWith(response.methodLine, "200 OK"));
         ASSERT_EQUAL(response["message"], "Hello, World!");
     }
 };
-

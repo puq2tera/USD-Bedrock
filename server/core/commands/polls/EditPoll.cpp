@@ -1,6 +1,7 @@
 #include "EditPoll.h"
 
 #include "../../Core.h"
+#include "../CommandError.h"
 #include "../RequestBinding.h"
 #include "../ResponseBinding.h"
 
@@ -24,16 +25,28 @@ struct EditPollRequestModel {
             for (const string& text : *options) {
                 const string trimmed = SStrip(text);
                 if (trimmed.empty()) {
-                    STHROW("400 Option text cannot be empty");
+                    CommandError::badRequest(
+                        "Option text cannot be empty",
+                        "EDIT_POLL_OPTION_EMPTY",
+                        {{"command", "EditPoll"}}
+                    );
                 }
                 if (!seen.insert(trimmed).second) {
-                    STHROW("400 Duplicate option: " + trimmed);
+                    CommandError::badRequest(
+                        "Duplicate option: " + trimmed,
+                        "EDIT_POLL_OPTION_DUPLICATE",
+                        {{"command", "EditPoll"}, {"option", trimmed}}
+                    );
                 }
             }
         }
 
         if (!question && !options) {
-            STHROW("400 Missing required parameter: question or options");
+            CommandError::badRequest(
+                "Missing required parameter: question or options",
+                "EDIT_POLL_MISSING_FIELDS",
+                {{"command", "EditPoll"}}
+            );
         }
 
         return {pollID, question, options};
@@ -42,11 +55,13 @@ struct EditPollRequestModel {
 
 struct EditPollResponseModel {
     int64_t pollID;
+    int64_t createdBy;
     optional<size_t> optionCount;
     string result;
 
     void writeTo(SData& response) const {
         ResponseBinding::setInt64(response, "pollID", pollID);
+        ResponseBinding::setInt64(response, "createdBy", createdBy);
         if (optionCount) {
             ResponseBinding::setSize(response, "optionCount", *optionCount);
         }
@@ -72,12 +87,16 @@ void EditPoll::process(SQLite& db) {
     // ---- 1. Verify the poll exists ----
     SQResult pollResult;
     const string pollQuery = fmt::format(
-        "SELECT pollID FROM polls WHERE pollID = {};",
+        "SELECT pollID, createdBy FROM polls WHERE pollID = {};",
         input.pollID
     );
 
     if (!db.read(pollQuery, pollResult) || pollResult.empty()) {
-        STHROW("404 Poll not found");
+        CommandError::notFound(
+            "Poll not found",
+            "EDIT_POLL_NOT_FOUND",
+            {{"command", "EditPoll"}, {"pollID", SToStr(input.pollID)}}
+        );
     }
 
     optional<size_t> updatedOptionCount;
@@ -90,7 +109,12 @@ void EditPoll::process(SQLite& db) {
         );
 
         if (!db.write(updateQuery)) {
-            STHROW("502 Failed to update poll question");
+            CommandError::upstreamFailure(
+                db,
+                "Failed to update poll question",
+                "EDIT_POLL_QUESTION_UPDATE_FAILED",
+                {{"command", "EditPoll"}, {"pollID", SToStr(input.pollID)}}
+            );
         }
     }
 
@@ -103,7 +127,12 @@ void EditPoll::process(SQLite& db) {
         );
 
         if (!db.write(deleteVotesQuery)) {
-            STHROW("502 Failed to delete old votes");
+            CommandError::upstreamFailure(
+                db,
+                "Failed to delete old votes",
+                "EDIT_POLL_OLD_VOTES_DELETE_FAILED",
+                {{"command", "EditPoll"}, {"pollID", SToStr(input.pollID)}}
+            );
         }
 
         // Delete existing options
@@ -113,7 +142,12 @@ void EditPoll::process(SQLite& db) {
         );
 
         if (!db.write(deleteQuery)) {
-            STHROW("502 Failed to delete old options");
+            CommandError::upstreamFailure(
+                db,
+                "Failed to delete old options",
+                "EDIT_POLL_OLD_OPTIONS_DELETE_FAILED",
+                {{"command", "EditPoll"}, {"pollID", SToStr(input.pollID)}}
+            );
         }
 
         // Insert new options
@@ -124,7 +158,12 @@ void EditPoll::process(SQLite& db) {
             );
 
             if (!db.write(insertOption)) {
-                STHROW("502 Failed to insert poll option");
+                CommandError::upstreamFailure(
+                    db,
+                    "Failed to insert poll option",
+                    "EDIT_POLL_OPTION_INSERT_FAILED",
+                    {{"command", "EditPoll"}, {"pollID", SToStr(input.pollID)}}
+                );
             }
         }
 
@@ -134,6 +173,7 @@ void EditPoll::process(SQLite& db) {
     // ---- 4. Build the response ----
     const EditPollResponseModel output = {
         input.pollID,
+        SToInt64(pollResult[0][1]),
         updatedOptionCount,
         "updated",
     };
