@@ -17,6 +17,7 @@ final class CreatePollRequest extends RouteBoundRequestBase
 
     public function __construct(
         private readonly string $question,
+        private readonly int $createdBy,
         private readonly string $optionsJson
     ) {
     }
@@ -39,19 +40,21 @@ final class CreatePollRequest extends RouteBoundRequestBase
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         $question = Request::requireString('question', 1, Request::MAX_SIZE_SMALL);
+        $createdBy = Request::requireInt('createdBy', 1);
         $options = Request::requireJsonArray('options', 2);
         $optionsJson = json_encode($options);
         if ($optionsJson === false) {
             throw new ValidationException('Invalid parameter: options', 400);
         }
 
-        return new self($question, $optionsJson);
+        return new self($question, $createdBy, $optionsJson);
     }
 
     public function toBedrockParams(): array
     {
         return [
             'question' => $this->question,
+            'createdBy' => (string)$this->createdBy,
             'options' => $this->optionsJson,
         ];
     }

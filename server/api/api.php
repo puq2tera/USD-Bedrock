@@ -19,6 +19,10 @@ use BedrockStarter\requests\polls\GetPollRequest;
 use BedrockStarter\requests\polls\SubmitVoteRequest;
 use BedrockStarter\requests\system\HelloWorldRequest;
 use BedrockStarter\requests\system\StatusRequest;
+use BedrockStarter\requests\users\CreateUserRequest;
+use BedrockStarter\requests\users\DeleteUserRequest;
+use BedrockStarter\requests\users\EditUserRequest;
+use BedrockStarter\requests\users\GetUserRequest;
 use BedrockStarter\ValidationException;
 
 header('Content-Type: application/json');
@@ -44,6 +48,10 @@ $requestTypes = [
     EditPollRequest::class,
     DeletePollRequest::class,
     SubmitVoteRequest::class,
+    CreateUserRequest::class,
+    GetUserRequest::class,
+    EditUserRequest::class,
+    DeleteUserRequest::class,
 ];
 
 try {

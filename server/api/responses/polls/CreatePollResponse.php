@@ -16,6 +16,7 @@ final class CreatePollResponse implements RouteResponse
         return [
             'pollID' => (string)($this->payload['pollID'] ?? ''),
             'question' => (string)($this->payload['question'] ?? ''),
+            'createdBy' => (string)($this->payload['createdBy'] ?? ''),
             'optionCount' => (string)($this->payload['optionCount'] ?? '0'),
             'createdAt' => (string)($this->payload['createdAt'] ?? ''),
         ];

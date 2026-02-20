@@ -15,6 +15,7 @@ final class CreateMessageRequest extends RouteBoundRequestBase
     private const ALLOWED_METHODS = ['POST'];
 
     public function __construct(
+        private readonly int $userID,
         private readonly string $name,
         private readonly string $message
     ) {
@@ -38,6 +39,7 @@ final class CreateMessageRequest extends RouteBoundRequestBase
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         return new self(
+            Request::requireInt('userID', 1),
             Request::requireString('name', 1, Request::MAX_SIZE_SMALL),
             Request::requireString('message', 1, Request::MAX_SIZE_QUERY)
         );
@@ -46,6 +48,7 @@ final class CreateMessageRequest extends RouteBoundRequestBase
     public function toBedrockParams(): array
     {
         return [
+            'userID' => (string)$this->userID,
             'name' => $this->name,
             'message' => $this->message,
         ];

@@ -1,6 +1,7 @@
 #include "GetMessages.h"
 
 #include "../../Core.h"
+#include "../CommandError.h"
 #include "../RequestBinding.h"
 #include "../ResponseBinding.h"
 
@@ -48,7 +49,7 @@ void GetMessages::buildResponse(SQLite& db) {
     const GetMessagesRequestModel input = GetMessagesRequestModel::bind(request);
 
     const string query = fmt::format(
-        "SELECT messageID, name, message, createdAt "
+        "SELECT messageID, userID, name, message, createdAt "
         "FROM messages "
         "ORDER BY messageID DESC "
         "LIMIT {}",
@@ -57,19 +58,25 @@ void GetMessages::buildResponse(SQLite& db) {
 
     SQResult result;
     if (!db.read(query, result)) {
-        STHROW("502 Failed to fetch messages");
+        CommandError::upstreamFailure(
+            db,
+            "Failed to fetch messages",
+            "GET_MESSAGES_READ_FAILED",
+            {{"command", "GetMessages"}, {"limit", SToStr(input.limit)}}
+        );
     }
 
     list<string> rows;
     for (const auto& row : result) {
-        if (row.size() < 4) {
+        if (row.size() < 5) {
             continue;
         }
         STable item;
         item["messageID"] = row[0];
-        item["name"] = row[1];
-        item["message"] = row[2];
-        item["createdAt"] = row[3];
+        item["userID"] = row[1];
+        item["name"] = row[2];
+        item["message"] = row[3];
+        item["createdAt"] = row[4];
         rows.emplace_back(SComposeJSONObject(item));
     }
 

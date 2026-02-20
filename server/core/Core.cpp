@@ -8,6 +8,11 @@
 #include "commands/polls/GetPoll.h"
 #include "commands/polls/SubmitVote.h"
 #include "commands/system/HelloWorld.h"
+#include "commands/users/CreateUser.h"
+#include "commands/users/DeleteUser.h"
+#include "commands/users/EditUser.h"
+#include "commands/users/GetUser.h"
+#include "tables/Tables.h"
 
 #include <BedrockServer.h>
 
@@ -58,6 +63,18 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
     if (SIEquals(baseCommand.request.methodLine, "DeletePoll")) {
         return make_unique<DeletePoll>(std::move(baseCommand), this);
     }
+    if (SIEquals(baseCommand.request.methodLine, "CreateUser")) {
+        return make_unique<CreateUser>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "GetUser")) {
+        return make_unique<GetUser>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "EditUser")) {
+        return make_unique<EditUser>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "DeleteUser")) {
+        return make_unique<DeleteUser>(std::move(baseCommand), this);
+    }
 
     // Not our command
     return nullptr;
@@ -82,82 +99,5 @@ bool BedrockPlugin_Core::shouldLockCommitPageOnTableConflict(const string& table
 }
 
 void BedrockPlugin_Core::upgradeDatabase(SQLite& db) {
-    bool created = false;
-    const string messagesTableSchema = R"(
-        CREATE TABLE messages (
-            messageID INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            message TEXT NOT NULL,
-            createdAt INTEGER NOT NULL
-        )
-    )";
-
-    while (!db.verifyTable("messages", messagesTableSchema, created)) {
-        SASSERT(db.write("DROP TABLE messages"));
-    }
-
-    // Helpful index for fetching the most recent messages
-    db.verifyIndex("messagesCreatedAt", "messages",
-                   "(createdAt DESC)",
-                   false, true);
-
-    // ------------------------------------------------------------------
-    // Polls tables
-    // ------------------------------------------------------------------
-
-    // The main polls table — one row per poll
-    const string pollsTableSchema = R"(
-        CREATE TABLE polls (
-            pollID INTEGER PRIMARY KEY AUTOINCREMENT,
-            question TEXT NOT NULL,
-            createdAt INTEGER NOT NULL
-        )
-    )";
-
-    created = false;
-    while (!db.verifyTable("polls", pollsTableSchema, created)) {
-        SASSERT(db.write("DROP TABLE polls"));
-    }
-
-    // Each poll has multiple options to vote on
-    const string pollOptionsTableSchema = R"(
-        CREATE TABLE poll_options (
-            optionID INTEGER PRIMARY KEY AUTOINCREMENT,
-            pollID INTEGER NOT NULL,
-            text TEXT NOT NULL,
-            FOREIGN KEY (pollID) REFERENCES polls(pollID)
-        )
-    )";
-
-    created = false;
-    while (!db.verifyTable("poll_options", pollOptionsTableSchema, created)) {
-        SASSERT(db.write("DROP TABLE poll_options"));
-    }
-
-    // Index so we can quickly look up all options for a given poll
-    db.verifyIndex("pollOptionsPollID", "poll_options",
-                   "(pollID)",
-                   false, true);
-
-    // Votes table — one row per vote cast
-    const string votesTableSchema = R"(
-        CREATE TABLE votes (
-            voteID INTEGER PRIMARY KEY AUTOINCREMENT,
-            pollID INTEGER NOT NULL,
-            optionID INTEGER NOT NULL,
-            createdAt INTEGER NOT NULL,
-            FOREIGN KEY (pollID) REFERENCES polls(pollID),
-            FOREIGN KEY (optionID) REFERENCES poll_options(optionID)
-        )
-    )";
-
-    created = false;
-    while (!db.verifyTable("votes", votesTableSchema, created)) {
-        SASSERT(db.write("DROP TABLE votes"));
-    }
-
-    // Index for counting votes per option
-    db.verifyIndex("votesOptionID", "votes",
-                   "(optionID)",
-                   false, true);
+    Tables::verifyAll(db);
 }

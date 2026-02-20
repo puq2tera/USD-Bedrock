@@ -15,6 +15,7 @@ final class EditPollResponse implements RouteResponse
     {
         $response = [
             'pollID' => (string)($this->payload['pollID'] ?? ''),
+            'createdBy' => (string)($this->payload['createdBy'] ?? ''),
             'result' => (string)($this->payload['result'] ?? ''),
         ];
 

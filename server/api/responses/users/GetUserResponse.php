@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace BedrockStarter\responses\polls;
+namespace BedrockStarter\responses\users;
 
 use BedrockStarter\responses\framework\RouteResponse;
-final class SubmitVoteResponse implements RouteResponse
+
+final class GetUserResponse implements RouteResponse
 {
     public function __construct(private readonly array $payload)
     {
@@ -14,10 +15,10 @@ final class SubmitVoteResponse implements RouteResponse
     public function toArray(): array
     {
         return [
-            'voteID' => (string)($this->payload['voteID'] ?? ''),
-            'pollID' => (string)($this->payload['pollID'] ?? ''),
-            'optionID' => (string)($this->payload['optionID'] ?? ''),
             'userID' => (string)($this->payload['userID'] ?? ''),
+            'email' => (string)($this->payload['email'] ?? ''),
+            'firstName' => (string)($this->payload['firstName'] ?? ''),
+            'lastName' => (string)($this->payload['lastName'] ?? ''),
             'createdAt' => (string)($this->payload['createdAt'] ?? ''),
         ];
     }

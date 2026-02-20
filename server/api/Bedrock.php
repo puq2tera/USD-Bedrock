@@ -70,13 +70,49 @@ class Bedrock
                 $statusCode = 502;
             }
 
-            Log::error("Received error response from Bedrock for {$method}", ['response' => $response]);
-            throw new ValidationException($codeLine, $statusCode);
+            $headers = isset($response['headers']) && is_array($response['headers']) ? $response['headers'] : [];
+            $errorCode = isset($headers['errorCode']) ? (string)$headers['errorCode'] : '';
+            $bodyError = self::extractErrorFromBody($response['body'] ?? null);
+
+            $errorMessage = $codeLine;
+            if ($bodyError !== '' && stripos($errorMessage, $bodyError) === false) {
+                $errorMessage .= " - {$bodyError}";
+            }
+
+            Log::error("Received error response from Bedrock for {$method}", [
+                'statusCode' => $statusCode,
+                'errorMessage' => $errorMessage,
+                'errorCode' => $errorCode,
+                'response' => $response,
+            ]);
+            throw new ValidationException($errorMessage, $statusCode);
         } catch (ValidationException $exception) {
             throw $exception;
         } catch (\Throwable $exception) {
             Log::error("Exception while calling Bedrock method {$method}", ['exception' => $exception->getMessage()]);
             throw new ValidationException('Error connecting to Bedrock', 502);
         }
+    }
+
+    private static function extractErrorFromBody(mixed $rawBody): string
+    {
+        if ($rawBody === null) {
+            return '';
+        }
+
+        if (is_array($rawBody)) {
+            return isset($rawBody['error']) ? (string)$rawBody['error'] : '';
+        }
+
+        if (!is_string($rawBody) || trim($rawBody) === '') {
+            return '';
+        }
+
+        $decoded = json_decode($rawBody, true);
+        if (is_array($decoded) && isset($decoded['error'])) {
+            return (string)$decoded['error'];
+        }
+
+        return '';
     }
 }

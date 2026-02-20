@@ -16,6 +16,7 @@ final class CreateMessageResponse implements RouteResponse
         return [
             'result' => (string)($this->payload['result'] ?? ''),
             'messageID' => (string)($this->payload['messageID'] ?? ''),
+            'userID' => (string)($this->payload['userID'] ?? ''),
             'name' => (string)($this->payload['name'] ?? ''),
             'message' => (string)($this->payload['message'] ?? ''),
             'createdAt' => (string)($this->payload['createdAt'] ?? ''),

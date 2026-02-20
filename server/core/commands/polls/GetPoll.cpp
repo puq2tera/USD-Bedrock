@@ -1,6 +1,7 @@
 #include "GetPoll.h"
 
 #include "../../Core.h"
+#include "../CommandError.h"
 #include "../RequestBinding.h"
 #include "../ResponseBinding.h"
 
@@ -20,6 +21,7 @@ struct GetPollRequestModel {
 struct GetPollResponseModel {
     string pollID;
     string question;
+    string createdBy;
     string createdAt;
     list<string> options;
     size_t optionCount;
@@ -28,6 +30,7 @@ struct GetPollResponseModel {
     void writeTo(SData& response) const {
         ResponseBinding::setString(response, "pollID", pollID);
         ResponseBinding::setString(response, "question", question);
+        ResponseBinding::setString(response, "createdBy", createdBy);
         ResponseBinding::setString(response, "createdAt", createdAt);
         ResponseBinding::setJSONArray(response, "options", options);
         ResponseBinding::setSize(response, "optionCount", optionCount);
@@ -59,18 +62,23 @@ void GetPoll::buildResponse(SQLite& db) {
     // ---- 1. Fetch the poll ----
     SQResult pollResult;
     const string pollQuery = fmt::format(
-        "SELECT pollID, question, createdAt FROM polls WHERE pollID = {};",
+        "SELECT pollID, question, createdBy, createdAt FROM polls WHERE pollID = {};",
         input.pollID
     );
 
     if (!db.read(pollQuery, pollResult) || pollResult.empty()) {
-        STHROW("404 Poll not found");
+        CommandError::notFound(
+            "Poll not found",
+            "GET_POLL_NOT_FOUND",
+            {{"command", "GetPoll"}, {"pollID", SToStr(input.pollID)}}
+        );
     }
 
     GetPollResponseModel output = {
         pollResult[0][0],
         pollResult[0][1],
         pollResult[0][2],
+        pollResult[0][3],
         {},
         0,
         0,
@@ -84,7 +92,12 @@ void GetPoll::buildResponse(SQLite& db) {
     );
 
     if (!db.read(optionsQuery, optionsResult)) {
-        STHROW("502 Failed to fetch poll options");
+        CommandError::upstreamFailure(
+            db,
+            "Failed to fetch poll options",
+            "GET_POLL_OPTIONS_READ_FAILED",
+            {{"command", "GetPoll"}, {"pollID", SToStr(input.pollID)}}
+        );
     }
 
     // ---- 3. Count votes per option ----
