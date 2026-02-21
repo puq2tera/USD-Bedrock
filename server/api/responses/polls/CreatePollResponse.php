@@ -14,16 +14,6 @@ final class CreatePollResponse implements RouteResponse
 
     public function toArray(): array
     {
-<<<<<<< HEAD
         return $this->payload;
-=======
-        return [
-            'pollID' => (string)($this->payload['pollID'] ?? ''),
-            'question' => (string)($this->payload['question'] ?? ''),
-            'createdBy' => (string)($this->payload['createdBy'] ?? ''),
-            'optionCount' => (string)($this->payload['optionCount'] ?? '0'),
-            'createdAt' => (string)($this->payload['createdAt'] ?? ''),
-        ];
->>>>>>> origin/main
     }
 }

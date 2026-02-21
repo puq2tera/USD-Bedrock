@@ -17,12 +17,8 @@ final class CreateUserRequest extends RouteBoundRequestBase
     public function __construct(
         private readonly string $email,
         private readonly string $firstName,
-<<<<<<< HEAD
         private readonly string $lastName,
         private readonly ?string $displayName
-=======
-        private readonly string $lastName
->>>>>>> origin/main
     ) {
     }
 
@@ -46,35 +42,24 @@ final class CreateUserRequest extends RouteBoundRequestBase
         return new self(
             Request::requireString('email', 1, 256),
             Request::requireString('firstName', 1, Request::MAX_SIZE_SMALL),
-<<<<<<< HEAD
             Request::requireString('lastName', 1, Request::MAX_SIZE_SMALL),
             Request::getOptionalString('displayName', 1, 511)
-=======
-            Request::requireString('lastName', 1, Request::MAX_SIZE_SMALL)
->>>>>>> origin/main
         );
     }
 
     public function toBedrockParams(): array
     {
-<<<<<<< HEAD
         $params = [
-=======
-        return [
->>>>>>> origin/main
             'email' => $this->email,
             'firstName' => $this->firstName,
             'lastName' => $this->lastName,
         ];
-<<<<<<< HEAD
 
         if ($this->displayName !== null) {
             $params['displayName'] = $this->displayName;
         }
 
         return $params;
-=======
->>>>>>> origin/main
     }
 
     public function transformResponse(array $bedrockResponse): RouteResponse

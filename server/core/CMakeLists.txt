@@ -60,20 +60,15 @@ set(SOURCES
     commands/polls/DeletePollVotes.cpp
     commands/polls/EditPoll.cpp
     commands/polls/GetPoll.cpp
-<<<<<<< HEAD
     commands/polls/ListPolls.cpp
     commands/polls/PollCommandUtils.cpp
     commands/polls/SubmitPollTextResponse.cpp
     commands/polls/SubmitPollVotes.cpp
-=======
-    commands/polls/SubmitVote.cpp
->>>>>>> origin/main
     commands/users/CreateUser.cpp
     commands/users/DeleteUser.cpp
     commands/users/EditUser.cpp
     commands/users/GetUser.cpp
     tables/TableUtils.cpp
-<<<<<<< HEAD
     tables/chats/ChatsTable.cpp
     tables/chats/ChatMembersTable.cpp
     tables/chats/MessagesTable.cpp
@@ -83,13 +78,6 @@ set(SOURCES
     tables/polls/PollTextResponsesTable.cpp
     tables/polls/PollEventsTable.cpp
     tables/users/UsersTable.cpp
-=======
-    tables/MessagesTable.cpp
-    tables/PollsTable.cpp
-    tables/PollOptionsTable.cpp
-    tables/VotesTable.cpp
-    tables/UsersTable.cpp
->>>>>>> origin/main
     tables/Tables.cpp
 )
 

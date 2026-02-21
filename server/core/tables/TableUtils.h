@@ -13,8 +13,4 @@ void verifyIndex(SQLite& db,
                  const string& indexedColumns,
                  bool unique = false);
 
-<<<<<<< HEAD
 } // namespace Tables::TableUtils
-=======
-} // namespace Tables::TableUtils
->>>>>>> origin/main

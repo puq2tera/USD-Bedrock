@@ -17,38 +17,24 @@ struct EditUserRequestModel {
     optional<string> email;
     optional<string> firstName;
     optional<string> lastName;
-<<<<<<< HEAD
     optional<string> displayName;
-=======
->>>>>>> origin/main
 
     static EditUserRequestModel bind(const SData& request) {
         const int64_t userID = RequestBinding::requirePositiveInt64(request, "userID");
         const optional<string> email = UserValidation::optionalEmail(request, "email");
         const optional<string> firstName = UserValidation::optionalName(request, "firstName");
         const optional<string> lastName = UserValidation::optionalName(request, "lastName");
-<<<<<<< HEAD
         const optional<string> displayName = UserValidation::optionalDisplayName(request, "displayName");
 
         if (!email && !firstName && !lastName && !displayName) {
             CommandError::badRequest(
                 "Missing required parameter: email, firstName, lastName, or displayName",
-=======
-
-        if (!email && !firstName && !lastName) {
-            CommandError::badRequest(
-                "Missing required parameter: email, firstName, or lastName",
->>>>>>> origin/main
                 "EDIT_USER_MISSING_FIELDS",
                 {{"command", "EditUser"}}
             );
         }
 
-<<<<<<< HEAD
         return {userID, email, firstName, lastName, displayName};
-=======
-        return {userID, email, firstName, lastName};
->>>>>>> origin/main
     }
 };
 
@@ -57,10 +43,7 @@ struct EditUserResponseModel {
     string email;
     string firstName;
     string lastName;
-<<<<<<< HEAD
     string displayName;
-=======
->>>>>>> origin/main
     string createdAt;
     string result;
 
@@ -69,10 +52,7 @@ struct EditUserResponseModel {
         ResponseBinding::setString(response, "email", email);
         ResponseBinding::setString(response, "firstName", firstName);
         ResponseBinding::setString(response, "lastName", lastName);
-<<<<<<< HEAD
         ResponseBinding::setString(response, "displayName", displayName);
-=======
->>>>>>> origin/main
         ResponseBinding::setString(response, "createdAt", createdAt);
         ResponseBinding::setString(response, "result", result);
     }
@@ -147,12 +127,9 @@ void EditUser::process(SQLite& db) {
     if (input.lastName) {
         updateClauses.emplace_back(fmt::format("lastName = {}", SQ(*input.lastName)));
     }
-<<<<<<< HEAD
     if (input.displayName) {
         updateClauses.emplace_back(fmt::format("displayName = {}", SQ(*input.displayName)));
     }
-=======
->>>>>>> origin/main
 
     string setClause;
     for (size_t i = 0; i < updateClauses.size(); i++) {
@@ -177,11 +154,7 @@ void EditUser::process(SQLite& db) {
 
     SQResult updatedUserResult;
     const string updatedUserQuery = fmt::format(
-<<<<<<< HEAD
         "SELECT userID, email, firstName, lastName, displayName, createdAt FROM users WHERE userID = {};",
-=======
-        "SELECT userID, email, firstName, lastName, createdAt FROM users WHERE userID = {};",
->>>>>>> origin/main
         input.userID
     );
     if (!db.read(updatedUserQuery, updatedUserResult)) {
@@ -206,12 +179,8 @@ void EditUser::process(SQLite& db) {
         updatedUserResult[0][2],
         updatedUserResult[0][3],
         updatedUserResult[0][4],
-<<<<<<< HEAD
         updatedUserResult[0][5],
         "updated"
-=======
-        "updated",
->>>>>>> origin/main
     };
     output.writeTo(response);
 

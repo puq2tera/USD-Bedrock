@@ -16,11 +16,7 @@ struct HelloWorldTest : tpunit::TestFixture {
         SData request("HelloWorld");
         request["name"] = "TestUser";
         const SData response = TestHelpers::executeSingle(tester, request);
-<<<<<<< HEAD:server/core/test/tests/unit/system/HelloWorldTest.h
 
-=======
-        
->>>>>>> origin/main:server/core/test/tests/HelloWorldTest.h
         ASSERT_TRUE(SStartsWith(response.methodLine, "200 OK"));
         ASSERT_EQUAL(response["message"], "Hello, TestUser!");
         ASSERT_EQUAL(response["from"], "Bedrock Core Plugin");
@@ -33,11 +29,7 @@ struct HelloWorldTest : tpunit::TestFixture {
 
         SData request("HelloWorld");
         const SData response = TestHelpers::executeSingle(tester, request);
-<<<<<<< HEAD:server/core/test/tests/unit/system/HelloWorldTest.h
 
-=======
-        
->>>>>>> origin/main:server/core/test/tests/HelloWorldTest.h
         ASSERT_TRUE(SStartsWith(response.methodLine, "200 OK"));
         ASSERT_EQUAL(response["message"], "Hello, World!");
     }

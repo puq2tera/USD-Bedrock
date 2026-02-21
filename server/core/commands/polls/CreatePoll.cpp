@@ -23,14 +23,10 @@ struct CreatePollRequestModel {
     int64_t chatID;
     int64_t creatorUserID;
     string question;
-<<<<<<< HEAD
     string type;
     bool allowChangeVote;
     bool isAnonymous;
     optional<int64_t> expiresAt;
-=======
-    int64_t createdBy;
->>>>>>> origin/main
     list<string> options;
 
     static CreatePollRequestModel bind(const SData& request) {
@@ -45,7 +41,6 @@ struct CreatePollRequestModel {
             "CreatePoll"
         );
 
-<<<<<<< HEAD
         string type;
         if (!PollCommandUtils::parsePollType(
                 RequestBinding::requireString(request, "type", 1, 64),
@@ -108,29 +103,10 @@ struct CreatePollRequestModel {
 
                 normalizedOptions.emplace_back(normalizedLabel);
                 ++optionOrdinal;
-=======
-        set<string> seen;
-        for (const string& text : opts) {
-            const string trimmed = SStrip(text);
-            if (trimmed.empty()) {
-                CommandError::badRequest(
-                    "Option text cannot be empty",
-                    "CREATE_POLL_OPTION_EMPTY",
-                    {{"command", "CreatePoll"}}
-                );
-            }
-            if (!seen.insert(trimmed).second) {
-                CommandError::badRequest(
-                    "Duplicate option: " + trimmed,
-                    "CREATE_POLL_OPTION_DUPLICATE",
-                    {{"command", "CreatePoll"}, {"option", trimmed}}
-                );
->>>>>>> origin/main
             }
         }
 
         return {
-<<<<<<< HEAD
             chatID,
             creatorUserID,
             question,
@@ -139,11 +115,6 @@ struct CreatePollRequestModel {
             isAnonymous,
             expiresAt,
             normalizedOptions,
-=======
-            RequestBinding::requireString(request, "question", 1, BedrockPlugin::MAX_SIZE_SMALL),
-            RequestBinding::requirePositiveInt64(request, "createdBy"),
-            std::move(opts)
->>>>>>> origin/main
         };
     }
 };
@@ -153,7 +124,6 @@ struct CreatePollResponseModel {
     int64_t chatID;
     int64_t creatorUserID;
     string question;
-<<<<<<< HEAD
     string type;
     string status;
     bool allowChangeVote;
@@ -162,18 +132,12 @@ struct CreatePollResponseModel {
     int64_t optionCount;
     int64_t createdAt;
     int64_t updatedAt;
-=======
-    int64_t createdBy;
-    size_t optionCount;
-    string createdAt;
->>>>>>> origin/main
 
     void writeTo(SData& response) const {
         ResponseBinding::setInt64(response, "pollID", pollID);
         ResponseBinding::setInt64(response, "chatID", chatID);
         ResponseBinding::setInt64(response, "creatorUserID", creatorUserID);
         ResponseBinding::setString(response, "question", question);
-<<<<<<< HEAD
         ResponseBinding::setString(response, "type", type);
         ResponseBinding::setString(response, "status", status);
         ResponseBinding::setString(response, "allowChangeVote", boolToResponse(allowChangeVote));
@@ -182,11 +146,6 @@ struct CreatePollResponseModel {
         ResponseBinding::setInt64(response, "optionCount", optionCount);
         ResponseBinding::setInt64(response, "createdAt", createdAt);
         ResponseBinding::setInt64(response, "updatedAt", updatedAt);
-=======
-        ResponseBinding::setInt64(response, "createdBy", createdBy);
-        ResponseBinding::setSize(response, "optionCount", optionCount);
-        ResponseBinding::setString(response, "createdAt", createdAt);
->>>>>>> origin/main
     }
 };
 
@@ -205,7 +164,6 @@ bool CreatePoll::peek(SQLite& db) {
 void CreatePoll::process(SQLite& db) {
     const CreatePollRequestModel input = CreatePollRequestModel::bind(request);
 
-<<<<<<< HEAD
     PollCommandUtils::requireChatExists(
         db,
         input.chatID,
@@ -239,49 +197,15 @@ void CreatePoll::process(SQLite& db) {
     );
 
     if (!db.write(insertPollQuery)) {
-=======
-    SQResult userResult;
-    const string userQuery = fmt::format(
-        "SELECT userID FROM users WHERE userID = {};",
-        input.createdBy
-    );
-    if (!db.read(userQuery, userResult)) {
-        CommandError::upstreamFailure(
-            db,
-            "Failed to verify poll creator",
-            "CREATE_POLL_CREATOR_LOOKUP_FAILED",
-            {{"command", "CreatePoll"}, {"createdBy", SToStr(input.createdBy)}}
-        );
-    }
-    if (userResult.empty()) {
-        CommandError::notFound(
-            "User not found",
-            "CREATE_POLL_CREATOR_NOT_FOUND",
-            {{"command", "CreatePoll"}, {"createdBy", SToStr(input.createdBy)}}
-        );
-    }
-
-    // ---- 1. Insert the poll ----
-    const string insertPoll = fmt::format(
-        "INSERT INTO polls (question, createdAt, createdBy) VALUES ({}, {}, {});",
-        SQ(input.question), createdAt, input.createdBy
-    );
-
-    if (!db.write(insertPoll)) {
->>>>>>> origin/main
         CommandError::upstreamFailure(
             db,
             "Failed to insert poll",
             "CREATE_POLL_INSERT_FAILED",
-<<<<<<< HEAD
             {
                 {"command", "CreatePoll"},
                 {"chatID", SToStr(input.chatID)},
                 {"creatorUserID", SToStr(input.creatorUserID)}
             }
-=======
-            {{"command", "CreatePoll"}, {"createdBy", SToStr(input.createdBy)}}
->>>>>>> origin/main
         );
     }
 
@@ -289,15 +213,9 @@ void CreatePoll::process(SQLite& db) {
     if (!db.read("SELECT last_insert_rowid()", idResult) || idResult.empty() || idResult[0].empty()) {
         CommandError::upstreamFailure(
             db,
-<<<<<<< HEAD
             "Failed to retrieve poll ID",
             "CREATE_POLL_LAST_INSERT_ID_FAILED",
             {{"command", "CreatePoll"}}
-=======
-            "Failed to retrieve pollID",
-            "CREATE_POLL_LAST_INSERT_ID_FAILED",
-            {{"command", "CreatePoll"}, {"createdBy", SToStr(input.createdBy)}}
->>>>>>> origin/main
         );
     }
     const int64_t pollID = SToInt64(idResult[0][0]);
@@ -311,20 +229,12 @@ void CreatePoll::process(SQLite& db) {
             ord
         );
 
-<<<<<<< HEAD
         if (!db.write(insertOptionQuery)) {
-=======
-        if (!db.write(insertOption)) {
->>>>>>> origin/main
             CommandError::upstreamFailure(
                 db,
                 "Failed to insert poll option",
                 "CREATE_POLL_OPTION_INSERT_FAILED",
-<<<<<<< HEAD
                 {{"command", "CreatePoll"}, {"pollID", SToStr(pollID)}, {"ord", SToStr(ord)}}
-=======
-                {{"command", "CreatePoll"}, {"pollID", pollID}}
->>>>>>> origin/main
             );
         }
 
@@ -350,7 +260,6 @@ void CreatePoll::process(SQLite& db) {
         input.chatID,
         input.creatorUserID,
         input.question,
-<<<<<<< HEAD
         input.type,
         "open",
         input.allowChangeVote,
@@ -359,11 +268,6 @@ void CreatePoll::process(SQLite& db) {
         static_cast<int64_t>(input.options.size()),
         now,
         now,
-=======
-        input.createdBy,
-        input.options.size(),
-        createdAt,
->>>>>>> origin/main
     };
     output.writeTo(response);
 

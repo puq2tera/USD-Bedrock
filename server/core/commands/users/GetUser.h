@@ -14,8 +14,4 @@ public:
 
 private:
     void buildResponse(SQLite& db);
-<<<<<<< HEAD
 };
-=======
-};
->>>>>>> origin/main

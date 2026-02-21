@@ -110,7 +110,6 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
     if (SIEquals(baseCommand.request.methodLine, "DeletePoll")) {
         return make_unique<DeletePoll>(std::move(baseCommand), this);
     }
-<<<<<<< HEAD
     if (SIEquals(baseCommand.request.methodLine, "SubmitPollVotes")) {
         return make_unique<SubmitPollVotes>(std::move(baseCommand), this);
     }
@@ -120,8 +119,6 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
     if (SIEquals(baseCommand.request.methodLine, "SubmitPollTextResponse")) {
         return make_unique<SubmitPollTextResponse>(std::move(baseCommand), this);
     }
-=======
->>>>>>> origin/main
     if (SIEquals(baseCommand.request.methodLine, "CreateUser")) {
         return make_unique<CreateUser>(std::move(baseCommand), this);
     }
