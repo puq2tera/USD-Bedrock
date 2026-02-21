@@ -1,74 +1,38 @@
 # Core Plugin Tests
 
-Basic test suite for the Bedrock Core plugin.
+C++ tests for the Core Bedrock plugin commands.
 
-## Building and Running
-
-Use the helper script:
+## Run
 
 ```bash
 ./scripts/test-cpp.sh
 ```
 
-Pass arguments (for example, to run a specific test):
+Run a subset:
 
 ```bash
-./scripts/test-cpp.sh -only testHelloWithName
-./scripts/test-cpp.sh -only testCreateAndGet
+./scripts/test-cpp.sh -only testCreatePollSuccess
+./scripts/test-cpp.sh -only testCreateUserSuccess,testEditUserPartial
+./scripts/test-cpp.sh -except testGetMessagesDescendingOrder
 ```
 
-Enable verbose logging:
+Verbose logs:
 
 ```bash
 ./scripts/test-cpp.sh -v
 ```
 
-## Test Structure
+## Layout
 
-- `main.cpp` - Test runner entry point
-- `TestHelpers.h` - Common test utilities and tester creation
-- `tests/` - Individual test files per command/feature
-  - `HelloWorldTest.h` - Tests for HelloWorld command
-  - `MessagesTest.h` - Tests for CreateMessage/GetMessages commands
-- `CMakeLists.txt` - Build configuration
-
-## Adding Tests
-
-1. Create a new test file in `tests/` (e.g., `MyCommandTest.h`):
-
-```cpp
-#pragma once
-#include "../TestHelpers.h"
-
-struct MyCommandTest : tpunit::TestFixture {
-    MyCommandTest()
-        : tpunit::TestFixture(
-            "MyCommandTests",
-            TEST(MyCommandTest::testBasicFunctionality)
-        ) { }
-
-    void testBasicFunctionality() {
-        BedrockTester tester = TestHelpers::createTester();
-        
-        SData request("MyCommand");
-        request["param"] = "value";
-        SData response = tester.executeWaitMultipleData({request}, 1).front();
-        
-        ASSERT_TRUE(SStartsWith(response.methodLine, "200 OK"));
-        ASSERT_EQUAL(response["result"], "expected");
-    }
-};
-```
-
-2. Include it in `main.cpp`:
-
-```cpp
-#include "tests/MyCommandTest.h"
-
-int main(int argc, char* argv[]) {
-    // ...
-    MyCommandTest myCommandTest;
-    // ...
-}
-```
-
+- `main.cpp`: test runner and fixture registration.
+- `TestHelpers.h`: shared utilities only for broadly reusable test behavior. Keep command-specific helpers local to the relevant test file.
+- `tests/unit/`: unit-style command tests, grouped by domain/table family.
+- `tests/unit/system/HelloWorldTest.h`: `HelloWorld` command coverage.
+- `tests/unit/users/UsersTest.h`: `CreateUser`, `GetUser`, `EditUser`, `DeleteUser` coverage, including cascade checks.
+- `tests/unit/chats/ChatsTest.h`: `CreateChat`, `GetChat`, `ListChats`, `EditChat`, `DeleteChat`.
+- `tests/unit/chats/ChatMembersTest.h`: `AddChatMember`, `ListChatMembers`, `EditChatMemberRole`, `RemoveChatMember`.
+- `tests/unit/chats/ChatMessagesTest.h`: `CreateChatMessage`, `GetChatMessages`, `EditChatMessage`, `DeleteChatMessage`.
+- `tests/unit/polls/PollsTest.h`: `CreatePoll`, `GetPoll`, `ListPolls`, `EditPoll`, `DeletePoll`.
+- `tests/unit/polls/PollVotesTest.h`: `SubmitPollVotes`, `DeletePollVotes`.
+- `tests/unit/polls/PollTextResponsesTest.h`: `SubmitPollTextResponse`.
+- `tests/integration/`: integration-test area for future cross-feature test flows, with domain subfolders matching `tests/unit/`.

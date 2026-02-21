@@ -42,13 +42,43 @@ include_directories(${BEDROCK_DIR}/mbedtls/include)
 set(SOURCES
     Core.cpp
     commands/system/HelloWorld.cpp
-    commands/messages/CreateMessage.cpp
-    commands/messages/GetMessages.cpp
+    commands/chats/AddChatMember.cpp
+    commands/chats/CreateChat.cpp
+    commands/chats/DeleteChat.cpp
+    commands/chats/EditChat.cpp
+    commands/chats/EditChatMemberRole.cpp
+    commands/chats/GetChat.cpp
+    commands/chats/ListChatMembers.cpp
+    commands/chats/ListChats.cpp
+    commands/chats/RemoveChatMember.cpp
+    commands/chats/CreateChatMessage.cpp
+    commands/chats/DeleteChatMessage.cpp
+    commands/chats/EditChatMessage.cpp
+    commands/chats/GetChatMessages.cpp
     commands/polls/CreatePoll.cpp
     commands/polls/DeletePoll.cpp
+    commands/polls/DeletePollVotes.cpp
     commands/polls/EditPoll.cpp
     commands/polls/GetPoll.cpp
-    commands/polls/SubmitVote.cpp
+    commands/polls/ListPolls.cpp
+    commands/polls/PollCommandUtils.cpp
+    commands/polls/SubmitPollTextResponse.cpp
+    commands/polls/SubmitPollVotes.cpp
+    commands/users/CreateUser.cpp
+    commands/users/DeleteUser.cpp
+    commands/users/EditUser.cpp
+    commands/users/GetUser.cpp
+    tables/TableUtils.cpp
+    tables/chats/ChatsTable.cpp
+    tables/chats/ChatMembersTable.cpp
+    tables/chats/MessagesTable.cpp
+    tables/polls/PollsTable.cpp
+    tables/polls/PollOptionsTable.cpp
+    tables/polls/VotesTable.cpp
+    tables/polls/PollTextResponsesTable.cpp
+    tables/polls/PollEventsTable.cpp
+    tables/users/UsersTable.cpp
+    tables/Tables.cpp
 )
 
 # Create shared library for the plugin

@@ -9,16 +9,34 @@ require __DIR__ . '/vendor/autoload.php';
 
 use BedrockStarter\Log;
 use BedrockStarter\Request;
+use BedrockStarter\requests\chats\AddChatMemberRequest;
+use BedrockStarter\requests\chats\CreateChatRequest;
+use BedrockStarter\requests\chats\DeleteChatRequest;
+use BedrockStarter\requests\chats\EditChatMemberRoleRequest;
+use BedrockStarter\requests\chats\EditChatRequest;
+use BedrockStarter\requests\chats\GetChatRequest;
+use BedrockStarter\requests\chats\ListChatMembersRequest;
+use BedrockStarter\requests\chats\ListChatsRequest;
+use BedrockStarter\requests\chats\RemoveChatMemberRequest;
 use BedrockStarter\requests\framework\RouteBinder;
-use BedrockStarter\requests\messages\CreateMessageRequest;
-use BedrockStarter\requests\messages\GetMessagesRequest;
+use BedrockStarter\requests\chats\CreateChatMessageRequest;
+use BedrockStarter\requests\chats\DeleteChatMessageRequest;
+use BedrockStarter\requests\chats\EditChatMessageRequest;
+use BedrockStarter\requests\chats\GetChatMessagesRequest;
 use BedrockStarter\requests\polls\CreatePollRequest;
+use BedrockStarter\requests\polls\DeletePollVotesRequest;
 use BedrockStarter\requests\polls\DeletePollRequest;
 use BedrockStarter\requests\polls\EditPollRequest;
 use BedrockStarter\requests\polls\GetPollRequest;
-use BedrockStarter\requests\polls\SubmitVoteRequest;
+use BedrockStarter\requests\polls\ListPollsRequest;
+use BedrockStarter\requests\polls\SubmitPollTextResponseRequest;
+use BedrockStarter\requests\polls\SubmitPollVotesRequest;
 use BedrockStarter\requests\system\HelloWorldRequest;
 use BedrockStarter\requests\system\StatusRequest;
+use BedrockStarter\requests\users\CreateUserRequest;
+use BedrockStarter\requests\users\DeleteUserRequest;
+use BedrockStarter\requests\users\EditUserRequest;
+use BedrockStarter\requests\users\GetUserRequest;
 use BedrockStarter\ValidationException;
 
 header('Content-Type: application/json');
@@ -37,13 +55,31 @@ $method = Request::getMethod();
 $requestTypes = [
     StatusRequest::class,
     HelloWorldRequest::class,
-    GetMessagesRequest::class,
-    CreateMessageRequest::class,
+    CreateChatRequest::class,
+    ListChatsRequest::class,
+    GetChatRequest::class,
+    EditChatRequest::class,
+    DeleteChatRequest::class,
+    AddChatMemberRequest::class,
+    ListChatMembersRequest::class,
+    EditChatMemberRoleRequest::class,
+    RemoveChatMemberRequest::class,
+    CreateChatMessageRequest::class,
+    GetChatMessagesRequest::class,
+    EditChatMessageRequest::class,
+    DeleteChatMessageRequest::class,
     CreatePollRequest::class,
+    ListPollsRequest::class,
     GetPollRequest::class,
     EditPollRequest::class,
     DeletePollRequest::class,
-    SubmitVoteRequest::class,
+    SubmitPollVotesRequest::class,
+    DeletePollVotesRequest::class,
+    SubmitPollTextResponseRequest::class,
+    CreateUserRequest::class,
+    GetUserRequest::class,
+    EditUserRequest::class,
+    DeleteUserRequest::class,
 ];
 
 try {
