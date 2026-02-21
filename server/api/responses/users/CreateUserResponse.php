@@ -19,7 +19,10 @@ final class CreateUserResponse implements RouteResponse
             'email' => (string)($this->payload['email'] ?? ''),
             'firstName' => (string)($this->payload['firstName'] ?? ''),
             'lastName' => (string)($this->payload['lastName'] ?? ''),
+<<<<<<< HEAD
             'displayName' => (string)($this->payload['displayName'] ?? ''),
+=======
+>>>>>>> origin/main
             'createdAt' => (string)($this->payload['createdAt'] ?? ''),
         ];
     }

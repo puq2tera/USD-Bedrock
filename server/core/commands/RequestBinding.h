@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CommandError.h"
+
 #include <BedrockPlugin.h>
 #include <BedrockCommand.h>
 #include <libstuff/libstuff.h>
@@ -15,14 +17,26 @@ namespace RequestBinding {
 // These helpers are intentionally fail-fast and throw 400-level errors so command code can
 // operate on typed values without repeating parameter-validation branches.
 [[noreturn]] inline void throwMissing(const char* key) {
-    STHROW(string("400 Missing required parameter: ") + key);
+    CommandError::badRequest(
+        string("Missing required parameter: ") + key,
+        "MISSING_PARAMETER",
+        {{"parameter", key}}
+    );
 }
 
 [[noreturn]] inline void throwInvalid(const char* key, const string& detail = "") {
     if (detail.empty()) {
-        STHROW(string("400 Invalid parameter: ") + key);
+        CommandError::badRequest(
+            string("Invalid parameter: ") + key,
+            "INVALID_PARAMETER",
+            {{"parameter", key}}
+        );
     }
-    STHROW(string("400 Invalid parameter: ") + key + " (" + detail + ")");
+    CommandError::badRequest(
+        string("Invalid parameter: ") + key + " (" + detail + ")",
+        "INVALID_PARAMETER",
+        {{"parameter", key}, {"detail", detail}}
+    );
 }
 
 inline bool isPresent(const SData& request, const char* key) {

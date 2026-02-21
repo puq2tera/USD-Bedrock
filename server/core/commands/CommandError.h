@@ -65,4 +65,8 @@ inline string _body(const string& message, const string& errorCode) {
     throwCriticalError(502, message, errorCode, mergedDetails);
 }
 
+<<<<<<< HEAD
 } // namespace CommandError
+=======
+} // namespace CommandError
+>>>>>>> origin/main

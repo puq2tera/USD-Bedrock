@@ -16,6 +16,10 @@ final class DeletePollVotesRequest extends RouteBoundRequestBase
 
     public function __construct(
         private readonly int $pollID,
+<<<<<<< HEAD:server/api/requests/polls/DeletePollVotesRequest.php
+=======
+        private readonly int $optionID,
+>>>>>>> origin/main:server/api/requests/polls/SubmitVoteRequest.php
         private readonly int $userID
     ) {
     }
@@ -39,6 +43,10 @@ final class DeletePollVotesRequest extends RouteBoundRequestBase
     {
         return new self(
             Request::requireRouteInt($routeParams, 'pollID'),
+<<<<<<< HEAD:server/api/requests/polls/DeletePollVotesRequest.php
+=======
+            Request::requireInt('optionID', 1),
+>>>>>>> origin/main:server/api/requests/polls/SubmitVoteRequest.php
             Request::requireInt('userID', 1)
         );
     }
@@ -47,6 +55,10 @@ final class DeletePollVotesRequest extends RouteBoundRequestBase
     {
         return [
             'pollID' => (string)$this->pollID,
+<<<<<<< HEAD:server/api/requests/polls/DeletePollVotesRequest.php
+=======
+            'optionID' => (string)$this->optionID,
+>>>>>>> origin/main:server/api/requests/polls/SubmitVoteRequest.php
             'userID' => (string)$this->userID,
         ];
     }

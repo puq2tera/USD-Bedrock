@@ -14,6 +14,7 @@ struct CreateUserRequestModel {
     string email;
     string firstName;
     string lastName;
+<<<<<<< HEAD
     string displayName;
 
     static CreateUserRequestModel bind(const SData& request) {
@@ -26,6 +27,14 @@ struct CreateUserRequestModel {
             firstName,
             lastName,
             displayName.value_or(UserValidation::defaultDisplayName(firstName, lastName))
+=======
+
+    static CreateUserRequestModel bind(const SData& request) {
+        return {
+            UserValidation::requireEmail(request, "email"),
+            UserValidation::requireName(request, "firstName"),
+            UserValidation::requireName(request, "lastName")
+>>>>>>> origin/main
         };
     }
 };
@@ -35,7 +44,10 @@ struct CreateUserResponseModel {
     string email;
     string firstName;
     string lastName;
+<<<<<<< HEAD
     string displayName;
+=======
+>>>>>>> origin/main
     string createdAt;
 
     void writeTo(SData& response) const {
@@ -43,7 +55,10 @@ struct CreateUserResponseModel {
         ResponseBinding::setString(response, "email", email);
         ResponseBinding::setString(response, "firstName", firstName);
         ResponseBinding::setString(response, "lastName", lastName);
+<<<<<<< HEAD
         ResponseBinding::setString(response, "displayName", displayName);
+=======
+>>>>>>> origin/main
         ResponseBinding::setString(response, "createdAt", createdAt);
     }
 };
@@ -86,8 +101,13 @@ void CreateUser::process(SQLite& db) {
     }
 
     const string insertUserQuery = fmt::format(
+<<<<<<< HEAD
         "INSERT INTO users (email, firstName, lastName, displayName, createdAt) VALUES ({}, {}, {}, {}, {});",
         SQ(input.email), SQ(input.firstName), SQ(input.lastName), SQ(input.displayName), createdAt
+=======
+        "INSERT INTO users (email, firstName, lastName, createdAt) VALUES ({}, {}, {}, {});",
+        SQ(input.email), SQ(input.firstName), SQ(input.lastName), createdAt
+>>>>>>> origin/main
     );
     if (!db.write(insertUserQuery)) {
         CommandError::upstreamFailure(
@@ -113,7 +133,10 @@ void CreateUser::process(SQLite& db) {
         input.email,
         input.firstName,
         input.lastName,
+<<<<<<< HEAD
         input.displayName,
+=======
+>>>>>>> origin/main
         createdAt,
     };
     output.writeTo(response);

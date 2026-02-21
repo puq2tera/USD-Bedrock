@@ -7,14 +7,14 @@ A minimal starter project for [Bedrock](https://bedrockdb.com/), the rock-solid 
 This starter project provides a complete Bedrock + API development environment:
 
 ```
-BedrockStarter/
+<repo-root>/
 ├── multipass.yaml          # Multipass + cloud-init config for the dev VM
 ├── scripts/                # Dev/CI helper scripts (launch, setup, tests, lint, logs)
 ├── Bedrock/                # Bedrock database submodule (external dependency)
 └── server/
     ├── api/                # PHP API service (routes in api.php, deps in composer.json)
     ├── core/               # Custom Bedrock plugin ("Core")
-    │   ├── commands/       # Example commands (HelloWorld, message CRUD, etc.)
+    │   ├── commands/       # Command handlers (HelloWorld, messages, polls, users)
     │   └── test/           # C++ tests for the Core plugin
     └── config/             # Nginx + systemd templates for Bedrock and API
 ```
@@ -33,7 +33,7 @@ The project runs on a single VM with two services and a modern C++ toolchain.
 - **Units**: `nginx` + `php8.4-fpm`
 - **Code root**: `/opt/bedrock/server/api`
 - **Port**: `80` (HTTP)
-- **Sample endpoints**: `/api/status`, `/api/hello?name=World`
+- **Sample endpoints**: `/api/status`, `/api/hello?name=World`, `/api/messages`, `/api/users`, `/api/polls`
 
 ### ⚙️ **Build System**
 - **Toolchain**: Clang (C++20) + libc++, CMake + Ninja, mold, ccache
@@ -59,7 +59,7 @@ The project runs on a single VM with two services and a modern C++ toolchain.
 
    ```bash
    git clone <repository-url>
-   cd BedrockStarter
+   cd <repo-folder>
    git submodule update --init --recursive
    ```
 
@@ -84,7 +84,8 @@ The project runs on a single VM with two services and a modern C++ toolchain.
    # SSH into the VM
    multipass shell bedrock-starter
 
-   # Note: it will automatically open to `~`, but the project directory in the VM is `/bedrock-starter`
+   # Note: launch.sh mounts the project to `/bedrock-starter` in the VM.
+   # Some local setups also expose the repo via a mounted home path.
 
    # launch.sh also aliases "bedrock-starter" to "primary", so this simpler alternative also works
    multipass shell
@@ -108,7 +109,7 @@ The project runs on a single VM with two services and a modern C++ toolchain.
 
 ### Real-Time File Syncing
 
-Your project directory is automatically mounted at `/bedrock-starter` in the VM, providing **real-time bidirectional sync**:
+If you launched with `./scripts/launch.sh`, your project directory is mounted at `/bedrock-starter` in the VM and syncs in real time:
 
 - Edit files locally in your IDE
 - Changes appear immediately in the VM
@@ -211,13 +212,20 @@ multipass info bedrock-starter
 
 ### Adding New API Endpoints
 
-Edit `server/api/api.php` to add new REST endpoints:
+Create a request class in `server/api/requests/` and register it in `server/api/api.php`:
 
 ```php
-case '/api/myendpoint':
-    handleMyEndpoint();
-    break;
+$requestTypes = [
+    // ...
+    MyNewRequest::class,
+];
 ```
+
+Each request class defines:
+- a `PATH_PATTERN` regex
+- allowed HTTP methods via `allowedMethods()`
+- request binding/validation in `bindFromRouteMatch()`
+- the Bedrock command name in `bedrockCommand()`
 
 After making changes, restart nginx:
 ```bash
@@ -273,8 +281,8 @@ Core plugin unit tests live in `server/core/test`.
 # Build and run all tests (recommended inside the VM)
 ./scripts/test-cpp.sh
 
-# Run a single test or enable verbose logging
-./scripts/test-cpp.sh -only Core_HelloWorld
+# Run a single test class or enable verbose logging
+./scripts/test-cpp.sh -only HelloWorldTests
 ./scripts/test-cpp.sh -v
 ```
 

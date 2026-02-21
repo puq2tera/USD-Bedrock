@@ -78,7 +78,11 @@ void DeleteUser::process(SQLite& db) {
     }
 
     const string deletePollVotesQuery = fmt::format(
+<<<<<<< HEAD
         "DELETE FROM votes WHERE pollID IN (SELECT pollID FROM polls WHERE creatorUserID = {});",
+=======
+        "DELETE FROM votes WHERE pollID IN (SELECT pollID FROM polls WHERE createdBy = {});",
+>>>>>>> origin/main
         input.userID
     );
     if (!db.write(deletePollVotesQuery)) {
@@ -91,7 +95,11 @@ void DeleteUser::process(SQLite& db) {
     }
 
     const string deletePollOptionsQuery = fmt::format(
+<<<<<<< HEAD
         "DELETE FROM poll_options WHERE pollID IN (SELECT pollID FROM polls WHERE creatorUserID = {});",
+=======
+        "DELETE FROM poll_options WHERE pollID IN (SELECT pollID FROM polls WHERE createdBy = {});",
+>>>>>>> origin/main
         input.userID
     );
     if (!db.write(deletePollOptionsQuery)) {
@@ -103,6 +111,7 @@ void DeleteUser::process(SQLite& db) {
         );
     }
 
+<<<<<<< HEAD
     const string deletePollEventsForOwnedPollsQuery = fmt::format(
         "DELETE FROM poll_events WHERE pollID IN (SELECT pollID FROM polls WHERE creatorUserID = {});",
         input.userID
@@ -131,6 +140,10 @@ void DeleteUser::process(SQLite& db) {
 
     const string deletePollsQuery = fmt::format(
         "DELETE FROM polls WHERE creatorUserID = {};",
+=======
+    const string deletePollsQuery = fmt::format(
+        "DELETE FROM polls WHERE createdBy = {};",
+>>>>>>> origin/main
         input.userID
     );
     if (!db.write(deletePollsQuery)) {
@@ -142,6 +155,7 @@ void DeleteUser::process(SQLite& db) {
         );
     }
 
+<<<<<<< HEAD
     const string deleteUserTextResponsesQuery = fmt::format(
         "DELETE FROM poll_text_responses WHERE userID = {};",
         input.userID
@@ -155,6 +169,8 @@ void DeleteUser::process(SQLite& db) {
         );
     }
 
+=======
+>>>>>>> origin/main
     const string deleteMessagesQuery = fmt::format(
         "DELETE FROM messages WHERE userID = {};",
         input.userID
@@ -168,6 +184,7 @@ void DeleteUser::process(SQLite& db) {
         );
     }
 
+<<<<<<< HEAD
     const string deleteUserChatMembershipsQuery = fmt::format(
         "DELETE FROM chat_members WHERE userID = {};",
         input.userID
@@ -207,6 +224,8 @@ void DeleteUser::process(SQLite& db) {
         );
     }
 
+=======
+>>>>>>> origin/main
     const string deleteUserQuery = fmt::format(
         "DELETE FROM users WHERE userID = {};",
         input.userID

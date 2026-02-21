@@ -5,6 +5,7 @@
 #include <libstuff/SData.h>
 
 #include "TestHelpers.h"
+<<<<<<< HEAD
 #include "tests/unit/chats/ChatMembersTest.h"
 #include "tests/unit/chats/ChatsTest.h"
 #include "tests/unit/chats/ChatMessagesTest.h"
@@ -13,6 +14,12 @@
 #include "tests/unit/polls/PollVotesTest.h"
 #include "tests/unit/system/HelloWorldTest.h"
 #include "tests/unit/users/UsersTest.h"
+=======
+#include "tests/HelloWorldTest.h"
+#include "tests/MessagesTest.h"
+#include "tests/PollsTest.h"
+#include "tests/UsersTest.h"
+>>>>>>> origin/main
 
 void cleanup() {
     cout << "Cleaning up test database files...\n";
@@ -33,8 +40,11 @@ int main(int argc, char* argv[]) {
     ChatMembersTest chatMembersTest;
     ChatMessagesTest chatMessagesTest;
     PollsTest pollsTest;
+<<<<<<< HEAD
     PollVotesTest pollVotesTest;
     PollTextResponsesTest pollTextResponsesTest;
+=======
+>>>>>>> origin/main
     UsersTest usersTest;
 
     set<string> include;

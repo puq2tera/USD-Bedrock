@@ -4,6 +4,7 @@
 #include <libstuff/SData.h>
 #include <libstuff/libstuff.h>
 #include <test/lib/BedrockTester.h>
+#include <atomic>
 
 #ifndef CORE_TEST_PLUGIN_DIR
 #    error "CORE_TEST_PLUGIN_DIR must be defined"
@@ -35,6 +36,7 @@ public:
         return responses.front();
     }
 
+<<<<<<< HEAD
     static void executeQuery(BedrockTester& tester, const string& sql) {
         SData req("Query");
         req["Query"] = SEndsWith(sql, ";") ? sql : (sql + ";");
@@ -44,6 +46,8 @@ public:
         }
     }
 
+=======
+>>>>>>> origin/main
     static string createUserID(BedrockTester& tester,
                                const string& emailPrefix = "user",
                                const string& firstName = "Test",
@@ -51,6 +55,7 @@ public:
         return createUser(tester, emailPrefix, firstName, lastName)["userID"];
     }
 
+<<<<<<< HEAD
     static string createChatID(BedrockTester& tester,
                                const string& ownerUserID,
                                const string& title = "Test chat") {
@@ -149,6 +154,17 @@ public:
                                      const string& pollID,
                                      const string& requesterUserID = "") {
         const SData poll = getPoll(tester, pollID, requesterUserID);
+=======
+    static string createPollID(BedrockTester& tester,
+                               const string& createdBy = "",
+                               const string& question = "Test question?",
+                               const string& options = "[\"Option A\",\"Option B\",\"Option C\"]") {
+        return createPoll(tester, createdBy, question, options)["pollID"];
+    }
+
+    static STable firstOptionForPoll(BedrockTester& tester, const string& pollID) {
+        const SData poll = getPoll(tester, pollID);
+>>>>>>> origin/main
         list<string> options = SParseJSONArray(poll["options"]);
         if (options.empty()) {
             STHROW("Test helper firstOptionForPoll found no options");
@@ -160,6 +176,7 @@ public:
                             const string& pollID,
                             const string& optionID,
                             const string& userID) {
+<<<<<<< HEAD
         return submitVotes(tester, pollID, {optionID}, userID);
     }
 
@@ -183,10 +200,16 @@ public:
 
         SData req("DeletePollVotes");
         req["pollID"] = pollID;
+=======
+        SData req("SubmitVote");
+        req["pollID"] = pollID;
+        req["optionID"] = optionID;
+>>>>>>> origin/main
         req["userID"] = userID;
         return executeSingle(tester, req);
     }
 
+<<<<<<< HEAD
     static SData submitTextResponse(BedrockTester& tester,
                                     const string& pollID,
                                     const string& userID,
@@ -207,10 +230,13 @@ public:
         return createMessage(tester, userID, chatID, body)["messageID"];
     }
 
+=======
+>>>>>>> origin/main
     static string createMessageID(BedrockTester& tester,
                                   const string& userID,
                                   const string& name,
                                   const string& message) {
+<<<<<<< HEAD
         (void)name;
         const string chatID = createChatID(tester, userID, "Legacy message chat");
         return createMessage(tester, userID, chatID, message)["messageID"];
@@ -227,6 +253,12 @@ private:
         addChatMember(tester, chatID, userID, "member");
     }
 
+=======
+        return createMessage(tester, userID, name, message)["messageID"];
+    }
+
+private:
+>>>>>>> origin/main
     static string uniqueEmail(const string& prefix = "user") {
         static atomic<uint64_t> counter {0};
         return prefix + "-" + SToStr(STimeNow()) + "-" + SToStr(++counter) + "@example.com";
@@ -249,6 +281,7 @@ private:
     }
 
     static SData createPoll(BedrockTester& tester,
+<<<<<<< HEAD
                             const string& chatID,
                             const string& creatorUserID,
                             const string& question = "Test question?",
@@ -272,6 +305,17 @@ private:
         if (!expiresAt.empty()) {
             req["expiresAt"] = expiresAt;
         }
+=======
+                            const string& createdBy = "",
+                            const string& question = "Test question?",
+                            const string& options = "[\"Option A\",\"Option B\",\"Option C\"]") {
+        const string creatorID = createdBy.empty() ? createUserID(tester, "polls", "Poll", "Creator") : createdBy;
+
+        SData req("CreatePoll");
+        req["createdBy"] = creatorID;
+        req["question"] = question;
+        req["options"] = options;
+>>>>>>> origin/main
 
         SData resp = executeSingle(tester, req);
         if (!SStartsWith(resp.methodLine, "200 OK")) {
@@ -280,6 +324,7 @@ private:
         return resp;
     }
 
+<<<<<<< HEAD
     static SData createMessage(BedrockTester& tester,
                                const string& userID,
                                const string& chatID,
@@ -290,6 +335,22 @@ private:
         req["chatID"] = chatID;
         req["userID"] = userID;
         req["body"] = body;
+=======
+    static SData getPoll(BedrockTester& tester, const string& pollID) {
+        SData req("GetPoll");
+        req["pollID"] = pollID;
+        return executeSingle(tester, req);
+    }
+
+    static SData createMessage(BedrockTester& tester,
+                               const string& userID,
+                               const string& name,
+                               const string& message) {
+        SData req("CreateMessage");
+        req["userID"] = userID;
+        req["name"] = name;
+        req["message"] = message;
+>>>>>>> origin/main
 
         SData resp = executeSingle(tester, req);
         if (!SStartsWith(resp.methodLine, "200 OK")) {

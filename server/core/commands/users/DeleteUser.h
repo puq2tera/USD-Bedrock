@@ -11,4 +11,8 @@ public:
 
     bool peek(SQLite& db) override;
     void process(SQLite& db) override;
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> origin/main

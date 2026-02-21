@@ -29,7 +29,14 @@ struct GetPollRequestModel {
 };
 
 struct GetPollResponseModel {
+<<<<<<< HEAD
     PollCommandUtils::PollRecord poll;
+=======
+    string pollID;
+    string question;
+    string createdBy;
+    string createdAt;
+>>>>>>> origin/main
     list<string> options;
     list<string> responses;
     int64_t totalVotes;
@@ -37,6 +44,7 @@ struct GetPollResponseModel {
     int64_t responseCount;
 
     void writeTo(SData& response) const {
+<<<<<<< HEAD
         ResponseBinding::setInt64(response, "pollID", poll.pollID);
         ResponseBinding::setInt64(response, "chatID", poll.chatID);
         ResponseBinding::setInt64(response, "creatorUserID", poll.creatorUserID);
@@ -50,6 +58,12 @@ struct GetPollResponseModel {
         ResponseBinding::setInt64(response, "updatedAt", poll.updatedAt);
         ResponseBinding::setString(response, "closedAt", poll.closedAt ? SToStr(*poll.closedAt) : "");
 
+=======
+        ResponseBinding::setString(response, "pollID", pollID);
+        ResponseBinding::setString(response, "question", question);
+        ResponseBinding::setString(response, "createdBy", createdBy);
+        ResponseBinding::setString(response, "createdAt", createdAt);
+>>>>>>> origin/main
         ResponseBinding::setJSONArray(response, "options", options);
         ResponseBinding::setJSONArray(response, "responses", responses);
         ResponseBinding::setInt64(response, "optionCount", static_cast<int64_t>(options.size()));
@@ -78,6 +92,7 @@ void GetPoll::process(SQLite& db) {
 void GetPoll::buildResponse(SQLite& db) {
     const GetPollRequestModel input = GetPollRequestModel::bind(request);
 
+<<<<<<< HEAD
     PollCommandUtils::PollRecord poll = PollCommandUtils::getPollOrThrow(
         db,
         input.pollID,
@@ -101,6 +116,54 @@ void GetPoll::buildResponse(SQLite& db) {
         "GetPoll",
         "GET_POLL_CHAT_MEMBER_LOOKUP_FAILED",
         "GET_POLL_REQUESTER_NOT_CHAT_MEMBER"
+=======
+    // ---- 1. Fetch the poll ----
+    SQResult pollResult;
+    const string pollQuery = fmt::format(
+        "SELECT pollID, question, createdBy, createdAt FROM polls WHERE pollID = {};",
+        input.pollID
+    );
+
+    if (!db.read(pollQuery, pollResult) || pollResult.empty()) {
+        CommandError::notFound(
+            "Poll not found",
+            "GET_POLL_NOT_FOUND",
+            {{"command", "GetPoll"}, {"pollID", SToStr(input.pollID)}}
+        );
+    }
+
+    GetPollResponseModel output = {
+        pollResult[0][0],
+        pollResult[0][1],
+        pollResult[0][2],
+        pollResult[0][3],
+        {},
+        0,
+        0,
+    };
+
+    // ---- 2. Fetch the options for this poll ----
+    SQResult optionsResult;
+    const string optionsQuery = fmt::format(
+        "SELECT optionID, text FROM poll_options WHERE pollID = {} ORDER BY optionID;",
+        input.pollID
+    );
+
+    if (!db.read(optionsQuery, optionsResult)) {
+        CommandError::upstreamFailure(
+            db,
+            "Failed to fetch poll options",
+            "GET_POLL_OPTIONS_READ_FAILED",
+            {{"command", "GetPoll"}, {"pollID", SToStr(input.pollID)}}
+        );
+    }
+
+    // ---- 3. Count votes per option ----
+    SQResult votesResult;
+    const string votesQuery = fmt::format(
+        "SELECT optionID, COUNT(*) FROM votes WHERE pollID = {} GROUP BY optionID;",
+        input.pollID
+>>>>>>> origin/main
     );
 
     list<string> options;

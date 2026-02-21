@@ -11,8 +11,11 @@ inline constexpr size_t MAX_EMAIL_LENGTH = 254;
 inline constexpr size_t MIN_EMAIL_LENGTH = 6;
 inline constexpr size_t MIN_USERNAME_LENGTH = 1;
 inline constexpr size_t MAX_USERNAME_LENGTH = 64;
+<<<<<<< HEAD
 inline constexpr size_t MIN_DISPLAY_NAME_LENGTH = 1;
 inline constexpr size_t MAX_DISPLAY_NAME_LENGTH = 511;
+=======
+>>>>>>> origin/main
 
 inline const string& emailRegexPattern() {
     static const string pattern = R"EMAIL(^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$)EMAIL";
@@ -92,6 +95,7 @@ inline optional<string> optionalName(const SData& request, const char* key, size
     return trimmed;
 }
 
+<<<<<<< HEAD
 inline string requireDisplayName(const SData& request, const char* key = "displayName") {
     return requireName(request, key, MAX_DISPLAY_NAME_LENGTH);
 }
@@ -108,4 +112,6 @@ inline string defaultDisplayName(const string& firstName, const string& lastName
     return displayName;
 }
 
+=======
+>>>>>>> origin/main
 } // namespace UserValidation

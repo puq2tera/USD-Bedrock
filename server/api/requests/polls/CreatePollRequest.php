@@ -19,11 +19,16 @@ final class CreatePollRequest extends RouteBoundRequestBase
         private readonly int $chatID,
         private readonly int $creatorUserID,
         private readonly string $question,
+<<<<<<< HEAD
         private readonly string $type,
         private readonly bool $allowChangeVote,
         private readonly bool $isAnonymous,
         private readonly ?int $expiresAt,
         private readonly ?string $optionsJson
+=======
+        private readonly int $createdBy,
+        private readonly string $optionsJson
+>>>>>>> origin/main
     ) {
     }
 
@@ -47,6 +52,7 @@ final class CreatePollRequest extends RouteBoundRequestBase
         $chatID = Request::requireRouteInt($routeParams, 'chatID');
         $creatorUserID = Request::requireInt('creatorUserID', 1);
         $question = Request::requireString('question', 1, Request::MAX_SIZE_SMALL);
+<<<<<<< HEAD
         $type = Request::requireString('type', 1, 64);
 
         $allowChangeVote = Request::hasParam('allowChangeVote') ? Request::requireBool('allowChangeVote') : false;
@@ -78,6 +84,16 @@ final class CreatePollRequest extends RouteBoundRequestBase
             $expiresAt,
             $optionsJson
         );
+=======
+        $createdBy = Request::requireInt('createdBy', 1);
+        $options = Request::requireJsonArray('options', 2);
+        $optionsJson = json_encode($options);
+        if ($optionsJson === false) {
+            throw new ValidationException('Invalid parameter: options', 400);
+        }
+
+        return new self($question, $createdBy, $optionsJson);
+>>>>>>> origin/main
     }
 
     public function toBedrockParams(): array
@@ -86,9 +102,14 @@ final class CreatePollRequest extends RouteBoundRequestBase
             'chatID' => (string)$this->chatID,
             'creatorUserID' => (string)$this->creatorUserID,
             'question' => $this->question,
+<<<<<<< HEAD
             'type' => $this->type,
             'allowChangeVote' => $this->allowChangeVote ? 'true' : 'false',
             'isAnonymous' => $this->isAnonymous ? 'true' : 'false',
+=======
+            'createdBy' => (string)$this->createdBy,
+            'options' => $this->optionsJson,
+>>>>>>> origin/main
         ];
 
         if ($this->expiresAt !== null) {

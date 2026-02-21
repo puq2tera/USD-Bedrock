@@ -73,9 +73,13 @@ $requestTypes = [
     GetPollRequest::class,
     EditPollRequest::class,
     DeletePollRequest::class,
+<<<<<<< HEAD
     SubmitPollVotesRequest::class,
     DeletePollVotesRequest::class,
     SubmitPollTextResponseRequest::class,
+=======
+    SubmitVoteRequest::class,
+>>>>>>> origin/main
     CreateUserRequest::class,
     GetUserRequest::class,
     EditUserRequest::class,

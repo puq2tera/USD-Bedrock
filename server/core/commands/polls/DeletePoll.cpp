@@ -56,6 +56,7 @@ void DeletePoll::process(SQLite& db) {
         "DELETE_POLL_NOT_FOUND"
     );
 
+<<<<<<< HEAD
     PollCommandUtils::closePollIfExpired(
         db,
         poll,
@@ -83,6 +84,43 @@ void DeletePoll::process(SQLite& db) {
                 {"actorUserID", SToStr(input.actorUserID)},
                 {"creatorUserID", SToStr(poll.creatorUserID)}
             }
+=======
+    if (!db.read(pollQuery, pollResult) || pollResult.empty()) {
+        CommandError::notFound(
+            "Poll not found",
+            "DELETE_POLL_NOT_FOUND",
+            {{"command", "DeletePoll"}, {"pollID", SToStr(input.pollID)}}
+        );
+    }
+
+    // ---- 2. Delete votes for this poll ----
+    const string deleteVotes = fmt::format(
+        "DELETE FROM votes WHERE pollID = {};",
+        input.pollID
+    );
+
+    if (!db.write(deleteVotes)) {
+        CommandError::upstreamFailure(
+            db,
+            "Failed to delete votes",
+            "DELETE_POLL_VOTES_DELETE_FAILED",
+            {{"command", "DeletePoll"}, {"pollID", SToStr(input.pollID)}}
+        );
+    }
+
+    // ---- 3. Delete options for this poll ----
+    const string deleteOptions = fmt::format(
+        "DELETE FROM poll_options WHERE pollID = {};",
+        input.pollID
+    );
+
+    if (!db.write(deleteOptions)) {
+        CommandError::upstreamFailure(
+            db,
+            "Failed to delete poll options",
+            "DELETE_POLL_OPTIONS_DELETE_FAILED",
+            {{"command", "DeletePoll"}, {"pollID", SToStr(input.pollID)}}
+>>>>>>> origin/main
         );
     }
 
@@ -100,7 +138,12 @@ void DeletePoll::process(SQLite& db) {
         "DELETE FROM polls WHERE pollID = {};",
         input.pollID
     );
+<<<<<<< HEAD
     if (!db.write(deletePollQuery)) {
+=======
+
+    if (!db.write(deletePoll)) {
+>>>>>>> origin/main
         CommandError::upstreamFailure(
             db,
             "Failed to delete poll",
