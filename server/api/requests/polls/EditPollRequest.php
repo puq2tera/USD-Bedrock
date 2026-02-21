@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\polls;
 
+use BedrockStarter\config\AppConfig;
 use BedrockStarter\Request;
 use BedrockStarter\ValidationException;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
@@ -55,6 +56,8 @@ final class EditPollRequest extends RouteBoundRequestBase
         $expiresAt = null;
         if (Request::hasParam('expiresAt')) {
             $rawExpiresAt = trim(Request::getString('expiresAt'));
+            // For partial updates, we send literal "null" to mean "clear expiresAt".
+            // If expiresAt is omitted entirely, command layer treats it as "leave unchanged".
             if ($rawExpiresAt === '' || strtolower($rawExpiresAt) === 'null') {
                 $expiresAt = 'null';
             } else {
@@ -64,7 +67,7 @@ final class EditPollRequest extends RouteBoundRequestBase
 
         $optionsJson = null;
         if (Request::hasParam('options')) {
-            $options = Request::requireJsonArray('options', 0, 20);
+            $options = Request::requireJsonArray('options', 0, AppConfig::POLL_REQUEST_MAX_OPTIONS);
             $encoded = json_encode($options);
             if ($encoded === false) {
                 throw new ValidationException('Invalid parameter: options', 400);
@@ -74,6 +77,7 @@ final class EditPollRequest extends RouteBoundRequestBase
 
         if ($question === null && $allowChangeVote === null && $isAnonymous === null
             && $status === null && $expiresAt === null && $optionsJson === null) {
+            // Reject empty edit requests: at least one editable field must be provided.
             throw new ValidationException('Missing required parameter: at least one editable field', 400);
         }
 

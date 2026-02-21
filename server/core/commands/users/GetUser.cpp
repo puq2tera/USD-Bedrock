@@ -11,7 +11,7 @@
 namespace {
 
 struct GetUserRequestModel {
-    int64_t userID;
+    int64_t userID; // Target user record to fetch.
 
     static GetUserRequestModel bind(const SData& request) {
         return {RequestBinding::requirePositiveInt64(request, "userID")};

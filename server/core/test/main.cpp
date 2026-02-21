@@ -8,6 +8,7 @@
 #include "tests/unit/chats/ChatMembersTest.h"
 #include "tests/unit/chats/ChatsTest.h"
 #include "tests/unit/chats/ChatMessagesTest.h"
+#include "tests/unit/polls/PollFeaturesTest.h"
 #include "tests/unit/polls/PollsTest.h"
 #include "tests/unit/polls/PollTextResponsesTest.h"
 #include "tests/unit/polls/PollVotesTest.h"
@@ -32,6 +33,7 @@ int main(int argc, char* argv[]) {
     ChatsTest chatsTest;
     ChatMembersTest chatMembersTest;
     ChatMessagesTest chatMessagesTest;
+    PollFeaturesTest pollFeaturesTest;
     PollsTest pollsTest;
     PollVotesTest pollVotesTest;
     PollTextResponsesTest pollTextResponsesTest;

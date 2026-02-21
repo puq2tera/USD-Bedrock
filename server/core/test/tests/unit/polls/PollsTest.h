@@ -17,6 +17,12 @@ struct PollsTest : tpunit::TestFixture {
             TEST(PollsTest::testEditPollRequiresCreator),
             TEST(PollsTest::testEditPollMissingEditableFields),
             TEST(PollsTest::testEditPollRejectsOptionsForFreeText),
+            TEST(PollsTest::testRankedChoiceSubmitAndGet),
+            TEST(PollsTest::testRankedChoiceRequiresFullRanking),
+            TEST(PollsTest::testGetPollParticipationNonAnonymous),
+            TEST(PollsTest::testGetPollParticipationAnonymousHidesIDs),
+            TEST(PollsTest::testManualCloseCreatesSummaryMessageOnce),
+            TEST(PollsTest::testExpiryAutoCloseCreatesSummaryMessageOnce),
             TEST(PollsTest::testDeletePollSuccess),
             TEST(PollsTest::testDeletePollRequiresCreator),
             TEST(PollsTest::testDeletePollNotFound),
@@ -48,6 +54,16 @@ struct PollsTest : tpunit::TestFixture {
         SData resp = TestHelpers::executeSingle(tester, req);
         EXPECT_TRUE(SStartsWith(resp.methodLine, "200 OK"));
         return resp["pollID"];
+    }
+
+    list<string> optionIDsForPoll(BedrockTester& tester, const string& pollID, const string& requesterUserID) {
+        const SData poll = TestHelpers::getPoll(tester, pollID, requesterUserID);
+        list<string> optionRows = SParseJSONArray(poll["options"]);
+        list<string> optionIDs;
+        for (const string& row : optionRows) {
+            optionIDs.emplace_back(SParseJSONObject(row).at("optionID"));
+        }
+        return optionIDs;
     }
 
     void testCreatePollSuccess() {
@@ -278,6 +294,178 @@ struct PollsTest : tpunit::TestFixture {
         const SData editResp = TestHelpers::executeSingle(tester, editReq);
 
         ASSERT_TRUE(SStartsWith(editResp.methodLine, "400"));
+    }
+
+    void testRankedChoiceSubmitAndGet() {
+        BedrockTester tester = TestHelpers::createTester();
+        const string creatorID = TestHelpers::createUserID(tester, "ranked-owner", "Ranked", "Owner");
+        const string voterID = TestHelpers::createUserID(tester, "ranked-voter", "Ranked", "Voter");
+        const string chatID = TestHelpers::createChatID(tester, creatorID, "Ranked poll");
+
+        const string pollID = createPollInChat(
+            tester,
+            chatID,
+            creatorID,
+            "ranked_choice",
+            "[\"Alpha\",\"Beta\",\"Gamma\"]"
+        );
+        const list<string> optionIDs = optionIDsForPoll(tester, pollID, creatorID);
+        ASSERT_EQUAL(optionIDs.size(), static_cast<size_t>(3));
+
+        const SData submitResp = TestHelpers::submitVotes(tester, pollID, optionIDs, voterID);
+        ASSERT_TRUE(SStartsWith(submitResp.methodLine, "200 OK"));
+        ASSERT_EQUAL(submitResp["submittedCount"], "3");
+
+        const SData pollResp = TestHelpers::getPoll(tester, pollID, creatorID);
+        ASSERT_TRUE(SStartsWith(pollResp.methodLine, "200 OK"));
+        ASSERT_EQUAL(pollResp["type"], "ranked_choice");
+        ASSERT_EQUAL(pollResp["totalVotes"], "1");
+        ASSERT_EQUAL(pollResp["totalVoters"], "1");
+
+        list<string> options = SParseJSONArray(pollResp["options"]);
+        ASSERT_EQUAL(options.size(), static_cast<size_t>(3));
+        ASSERT_EQUAL(SParseJSONObject(options.front()).at("voteCount"), "1");
+    }
+
+    void testRankedChoiceRequiresFullRanking() {
+        BedrockTester tester = TestHelpers::createTester();
+        const string creatorID = TestHelpers::createUserID(tester, "ranked-incomplete-owner", "Ranked", "Owner");
+        const string voterID = TestHelpers::createUserID(tester, "ranked-incomplete-voter", "Ranked", "Voter");
+        const string chatID = TestHelpers::createChatID(tester, creatorID, "Ranked poll");
+        const string pollID = createPollInChat(
+            tester,
+            chatID,
+            creatorID,
+            "ranked_choice",
+            "[\"One\",\"Two\",\"Three\"]"
+        );
+
+        const list<string> optionIDs = optionIDsForPoll(tester, pollID, creatorID);
+        ASSERT_EQUAL(optionIDs.size(), static_cast<size_t>(3));
+
+        const SData submitResp = TestHelpers::submitVotes(
+            tester,
+            pollID,
+            {optionIDs.front(), *next(optionIDs.begin())},
+            voterID
+        );
+        ASSERT_TRUE(SStartsWith(submitResp.methodLine, "400"));
+    }
+
+    void testGetPollParticipationNonAnonymous() {
+        BedrockTester tester = TestHelpers::createTester();
+        const string ownerID = TestHelpers::createUserID(tester, "participation-owner", "Part", "Owner");
+        const string voterID = TestHelpers::createUserID(tester, "participation-voter", "Part", "Voter");
+        const string nonVoterID = TestHelpers::createUserID(tester, "participation-nonvoter", "Part", "NonVoter");
+        const string chatID = TestHelpers::createChatID(tester, ownerID, "Participation chat");
+        TestHelpers::addChatMember(tester, chatID, ownerID, voterID, "member");
+        TestHelpers::addChatMember(tester, chatID, ownerID, nonVoterID, "member");
+
+        const string pollID = createPollInChat(tester, chatID, ownerID, "single_choice", "[\"A\",\"B\"]");
+        const string optionID = optionIDsForPoll(tester, pollID, ownerID).front();
+        (void)TestHelpers::submitVote(tester, pollID, optionID, voterID);
+
+        SData req("GetPollParticipation");
+        req["pollID"] = pollID;
+        req["requesterUserID"] = ownerID;
+        const SData resp = TestHelpers::executeSingle(tester, req);
+        ASSERT_TRUE(SStartsWith(resp.methodLine, "200 OK"));
+        ASSERT_EQUAL(resp["eligibleCount"], "3");
+        ASSERT_EQUAL(resp["votedCount"], "1");
+        ASSERT_EQUAL(resp["notVotedCount"], "2");
+
+        const list<string> votedUserIDs = SParseJSONArray(resp["votedUserIDs"]);
+        ASSERT_EQUAL(votedUserIDs.size(), static_cast<size_t>(1));
+        ASSERT_EQUAL(votedUserIDs.front(), voterID);
+    }
+
+    void testGetPollParticipationAnonymousHidesIDs() {
+        BedrockTester tester = TestHelpers::createTester();
+        const string ownerID = TestHelpers::createUserID(tester, "participation-anon-owner", "Part", "Owner");
+        const string responderID = TestHelpers::createUserID(tester, "participation-anon-responder", "Part", "Responder");
+        const string chatID = TestHelpers::createChatID(tester, ownerID, "Participation anon chat");
+        TestHelpers::addChatMember(tester, chatID, ownerID, responderID, "member");
+        const string pollID = createPollInChat(tester, chatID, ownerID, "free_text", "", false, true);
+        (void)TestHelpers::submitTextResponse(tester, pollID, responderID, "Anonymous response");
+
+        SData req("GetPollParticipation");
+        req["pollID"] = pollID;
+        req["requesterUserID"] = ownerID;
+        const SData resp = TestHelpers::executeSingle(tester, req);
+        ASSERT_TRUE(SStartsWith(resp.methodLine, "200 OK"));
+        ASSERT_EQUAL(resp["isAnonymous"], "true");
+        ASSERT_EQUAL(resp["eligibleCount"], "2");
+        ASSERT_EQUAL(resp["votedCount"], "1");
+        ASSERT_EQUAL(resp["notVotedCount"], "1");
+        ASSERT_TRUE(resp["votedUserIDs"].empty());
+        ASSERT_TRUE(resp["notVotedUserIDs"].empty());
+    }
+
+    void testManualCloseCreatesSummaryMessageOnce() {
+        BedrockTester tester = TestHelpers::createTester();
+        const string ownerID = TestHelpers::createUserID(tester, "summary-manual-owner", "Summary", "Owner");
+        const string chatID = TestHelpers::createChatID(tester, ownerID, "Summary chat");
+        const string pollID = createPollInChat(tester, chatID, ownerID, "single_choice", "[\"A\",\"B\"]");
+
+        SData closeReq("EditPoll");
+        closeReq["pollID"] = pollID;
+        closeReq["actorUserID"] = ownerID;
+        closeReq["status"] = "closed";
+        const SData closeResp = TestHelpers::executeSingle(tester, closeReq);
+        ASSERT_TRUE(SStartsWith(closeResp.methodLine, "200 OK"));
+
+        const SData firstGetResp = TestHelpers::getPoll(tester, pollID, ownerID);
+        ASSERT_TRUE(SStartsWith(firstGetResp.methodLine, "200 OK"));
+        ASSERT_FALSE(firstGetResp["summaryMessageID"].empty());
+        const string summaryMessageID = firstGetResp["summaryMessageID"];
+
+        const string firstCount = tester.readDB(
+            "SELECT COUNT(*) FROM poll_summary_messages WHERE pollID = " + pollID + ";"
+        );
+        ASSERT_EQUAL(firstCount, "1");
+
+        const SData secondGetResp = TestHelpers::getPoll(tester, pollID, ownerID);
+        ASSERT_TRUE(SStartsWith(secondGetResp.methodLine, "200 OK"));
+        ASSERT_EQUAL(secondGetResp["summaryMessageID"], summaryMessageID);
+        const string secondCount = tester.readDB(
+            "SELECT COUNT(*) FROM poll_summary_messages WHERE pollID = " + pollID + ";"
+        );
+        ASSERT_EQUAL(secondCount, "1");
+    }
+
+    void testExpiryAutoCloseCreatesSummaryMessageOnce() {
+        BedrockTester tester = TestHelpers::createTester();
+        const string ownerID = TestHelpers::createUserID(tester, "summary-expiry-owner", "Summary", "Owner");
+        const string chatID = TestHelpers::createChatID(tester, ownerID, "Summary expiry chat");
+        const string expiredAt = SToStr(STimeNow() - 1);
+        const string pollID = createPollInChat(
+            tester,
+            chatID,
+            ownerID,
+            "single_choice",
+            "[\"Now\",\"Later\"]",
+            false,
+            false,
+            expiredAt
+        );
+
+        const SData firstGetResp = TestHelpers::getPoll(tester, pollID, ownerID);
+        ASSERT_TRUE(SStartsWith(firstGetResp.methodLine, "200 OK"));
+        ASSERT_EQUAL(firstGetResp["status"], "closed");
+        ASSERT_FALSE(firstGetResp["summaryMessageID"].empty());
+
+        const string firstCount = tester.readDB(
+            "SELECT COUNT(*) FROM poll_summary_messages WHERE pollID = " + pollID + ";"
+        );
+        ASSERT_EQUAL(firstCount, "1");
+
+        const SData secondGetResp = TestHelpers::getPoll(tester, pollID, ownerID);
+        ASSERT_TRUE(SStartsWith(secondGetResp.methodLine, "200 OK"));
+        ASSERT_EQUAL(secondGetResp["summaryMessageID"], firstGetResp["summaryMessageID"]);
+        const string secondCount = tester.readDB(
+            "SELECT COUNT(*) FROM poll_summary_messages WHERE pollID = " + pollID + ";"
+        );
+        ASSERT_EQUAL(secondCount, "1");
     }
 
     void testDeletePollSuccess() {

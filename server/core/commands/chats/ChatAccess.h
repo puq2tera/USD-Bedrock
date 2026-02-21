@@ -123,6 +123,7 @@ inline string requireMembershipRole(SQLite& db,
     );
 
     if (!role) {
+        // Return 403 instead of 404 for non-members so callers cannot infer chat membership/existence by probing.
         CommandError::throwError(
             403,
             forbiddenMessage,

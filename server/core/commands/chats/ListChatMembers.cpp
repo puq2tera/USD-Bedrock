@@ -13,7 +13,7 @@ namespace {
 
 struct ListChatMembersRequestModel {
     int64_t chatID;
-    int64_t userID;
+    int64_t userID; // Caller requesting membership list; must be an owner.
 
     static ListChatMembersRequestModel bind(const SData& request) {
         return {

@@ -13,7 +13,7 @@ namespace {
 
 struct GetChatRequestModel {
     int64_t chatID;
-    int64_t userID;
+    int64_t userID; // Caller requesting chat details.
 
     static GetChatRequestModel bind(const SData& request) {
         return {
@@ -28,7 +28,7 @@ struct GetChatResponseModel {
     int64_t createdByUserID;
     string title;
     string createdAt;
-    string requesterRole;
+    string requesterRole; // Requester's membership role within this chat.
     size_t memberCount;
     size_t ownerCount;
 

@@ -28,6 +28,7 @@ use BedrockStarter\requests\polls\DeletePollVotesRequest;
 use BedrockStarter\requests\polls\DeletePollRequest;
 use BedrockStarter\requests\polls\EditPollRequest;
 use BedrockStarter\requests\polls\GetPollRequest;
+use BedrockStarter\requests\polls\GetPollParticipationRequest;
 use BedrockStarter\requests\polls\ListPollsRequest;
 use BedrockStarter\requests\polls\SubmitPollTextResponseRequest;
 use BedrockStarter\requests\polls\SubmitPollVotesRequest;
@@ -71,6 +72,7 @@ $requestTypes = [
     CreatePollRequest::class,
     ListPollsRequest::class,
     GetPollRequest::class,
+    GetPollParticipationRequest::class,
     EditPollRequest::class,
     DeletePollRequest::class,
     SubmitPollVotesRequest::class,

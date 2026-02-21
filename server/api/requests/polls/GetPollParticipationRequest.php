@@ -7,17 +7,16 @@ namespace BedrockStarter\requests\polls;
 use BedrockStarter\Request;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\responses\framework\RouteResponse;
-use BedrockStarter\responses\polls\ListPollsResponse;
+use BedrockStarter\responses\polls\GetPollParticipationResponse;
 
-final class ListPollsRequest extends RouteBoundRequestBase
+final class GetPollParticipationRequest extends RouteBoundRequestBase
 {
-    private const PATH_PATTERN = '#^/api/chats/(?P<chatID>\d+)/polls$#';
+    private const PATH_PATTERN = '#^/api/polls/(?P<pollID>\d+)/participation$#';
     private const ALLOWED_METHODS = ['GET'];
 
     public function __construct(
-        private readonly int $chatID,
-        private readonly int $requesterUserID,
-        private readonly bool $includeClosed
+        private readonly int $pollID,
+        private readonly int $requesterUserID
     ) {
     }
 
@@ -33,30 +32,27 @@ final class ListPollsRequest extends RouteBoundRequestBase
 
     public static function bedrockCommand(): ?string
     {
-        return 'ListPolls';
+        return 'GetPollParticipation';
     }
 
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         return new self(
-            Request::requireRouteInt($routeParams, 'chatID'),
-            Request::requireInt('requesterUserID', 1),
-            // Default to true so existing clients still receive both open and closed polls.
-            Request::hasParam('includeClosed') ? Request::requireBool('includeClosed') : true
+            Request::requireRouteInt($routeParams, 'pollID'),
+            Request::requireInt('requesterUserID', 1)
         );
     }
 
     public function toBedrockParams(): array
     {
         return [
-            'chatID' => (string)$this->chatID,
+            'pollID' => (string)$this->pollID,
             'requesterUserID' => (string)$this->requesterUserID,
-            'includeClosed' => $this->includeClosed ? 'true' : 'false',
         ];
     }
 
     public function transformResponse(array $bedrockResponse): RouteResponse
     {
-        return new ListPollsResponse($bedrockResponse);
+        return new GetPollParticipationResponse($bedrockResponse);
     }
 }

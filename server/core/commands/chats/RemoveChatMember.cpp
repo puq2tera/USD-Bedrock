@@ -13,7 +13,7 @@ namespace {
 
 struct RemoveChatMemberRequestModel {
     int64_t chatID;
-    int64_t actingUserID;
+    int64_t actingUserID; // Caller requesting the removal; must be an owner.
     int64_t userID;
 
     static RemoveChatMemberRequestModel bind(const SData& request) {

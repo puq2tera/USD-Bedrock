@@ -50,8 +50,14 @@
 
 ## Commenting policy
 - Add comments only when they materially improve understanding.
-- Focus on intent, assumptions, invariants, and tradeoffs in non-obvious logic.
+- Focus comments on intent, assumptions, invariants, and tradeoffs in non-obvious logic.
+- Prefer plain language over shorthand/jargon. If you use a domain term, make the meaning obvious from the sentence.
+- A good comment should answer at least one of these: why this is done, what could break if changed, or what behavior this preserves.
 - Avoid comments that restate obvious code behavior.
+- Avoid ultra-brief comments that are technically correct but not useful (for example, “idempotent behavior” with no context).
+- Prefer 1-2 clear sentences over cryptic one-liners when logic is subtle.
+- Keep comments local to the non-obvious line/block they explain.
+- Before finishing, reread added comments from a new contributor perspective and rewrite any that are unclear without extra context.
 - Prefer fewer, high-signal comments over many shallow ones.
 
 ## Data and schema conventions

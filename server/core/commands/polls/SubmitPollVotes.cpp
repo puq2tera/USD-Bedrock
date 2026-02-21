@@ -19,14 +19,19 @@ string boolToResponse(bool value) {
 
 struct SubmitPollVotesRequestModel {
     int64_t pollID;
-    int64_t userID;
-    vector<int64_t> optionIDs;
+    int64_t userID; // Caller submitting the vote set.
+    vector<int64_t> optionIDs; // Submitted selection order; for ranked_choice this is rank 1..N.
 
     static SubmitPollVotesRequestModel bind(const SData& request) {
         const int64_t pollID = RequestBinding::requirePositiveInt64(request, "pollID");
         const int64_t userID = RequestBinding::requirePositiveInt64(request, "userID");
 
-        const list<string> rawOptionIDs = RequestBinding::requireJSONArray(request, "optionIDs", 1, 20);
+        const list<string> rawOptionIDs = RequestBinding::requireJSONArray(
+            request,
+            "optionIDs",
+            1,
+            PollCommandUtils::REQUEST_MAX_OPTIONS
+        );
         vector<int64_t> optionIDs;
         set<int64_t> seen;
         for (const string& rawOptionID : rawOptionIDs) {
@@ -57,7 +62,7 @@ struct SubmitPollVotesResponseModel {
     int64_t userID;
     list<string> optionIDs;
     int64_t submittedCount;
-    bool replaced;
+    bool replaced; // True when an existing vote set was overwritten.
     int64_t updatedAt;
 
     void writeTo(SData& response) const {
@@ -169,6 +174,19 @@ void SubmitPollVotes::process(SQLite& db) {
             );
         }
     }
+    // Ranked-choice uses the caller's array order as rank, so all active options must be present exactly once.
+    if (poll.type == "ranked_choice" && input.optionIDs.size() != validOptionIDs.size()) {
+        CommandError::badRequest(
+            "Ranked-choice polls require a complete ranking of all options",
+            "SUBMIT_POLL_VOTES_RANKED_REQUIRES_ALL_OPTIONS",
+            {
+                {"command", "SubmitPollVotes"},
+                {"pollID", SToStr(input.pollID)},
+                {"submittedOptionCount", SToStr(input.optionIDs.size())},
+                {"requiredOptionCount", SToStr(validOptionIDs.size())}
+            }
+        );
+    }
 
     SQResult existingVotes;
     const string existingVotesQuery = fmt::format(
@@ -203,6 +221,7 @@ void SubmitPollVotes::process(SQLite& db) {
     }
 
     if (hasExistingVotes) {
+        // Vote updates are delete-then-insert so rank values are rebuilt as a clean contiguous sequence.
         const string deleteVotesQuery = fmt::format(
             "DELETE FROM votes WHERE pollID = {} AND userID = {};",
             input.pollID,
@@ -226,7 +245,11 @@ void SubmitPollVotes::process(SQLite& db) {
     size_t voteIndex = 0;
     list<string> responseOptionIDs;
     for (const int64_t optionID : input.optionIDs) {
-        const string rankValue = (poll.type == "multiple_choice") ? SToStr(voteIndex + 1) : "NULL";
+        // `rank` stores caller order (1-based) for ranked/multiple polls.
+        // Single-choice keeps rank as NULL.
+        const string rankValue = (poll.type == "multiple_choice" || poll.type == "ranked_choice")
+            ? SToStr(voteIndex + 1)
+            : "NULL";
         const string insertVoteQuery = fmt::format(
             "INSERT INTO votes (pollID, optionID, userID, rank, createdAt, updatedAt) "
             "VALUES ({}, {}, {}, {}, {}, {});",

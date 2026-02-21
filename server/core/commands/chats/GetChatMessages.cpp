@@ -13,9 +13,9 @@ namespace {
 
 struct GetChatMessagesRequestModel {
     int64_t chatID;
-    int64_t userID;
-    size_t limit;
-    optional<int64_t> beforeMessageID;
+    int64_t userID; // Caller requesting message history; must be a chat member.
+    size_t limit; // Page size for message history.
+    optional<int64_t> beforeMessageID; // Cursor: return only messages with messageID < this value.
 
     static GetChatMessagesRequestModel bind(const SData& request) {
         const int64_t chatID = RequestBinding::requirePositiveInt64(request, "chatID");
@@ -39,7 +39,7 @@ struct GetChatMessagesRequestModel {
 
 struct GetChatMessagesResponseModel {
     list<string> messages;
-    optional<int64_t> nextBeforeMessageID;
+    optional<int64_t> nextBeforeMessageID; // Cursor for the next page (oldest ID in this page).
 
     void writeTo(SData& response) const {
         ResponseBinding::setSize(response, "resultCount", messages.size());
