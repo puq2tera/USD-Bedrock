@@ -19,7 +19,8 @@ final class EditUserRequest extends RouteBoundRequestBase
         private readonly int $userID,
         private readonly ?string $email,
         private readonly ?string $firstName,
-        private readonly ?string $lastName
+        private readonly ?string $lastName,
+        private readonly ?string $displayName
     ) {
     }
 
@@ -44,12 +45,13 @@ final class EditUserRequest extends RouteBoundRequestBase
         $email = Request::getOptionalString('email', 1, 256);
         $firstName = Request::getOptionalString('firstName', 1, Request::MAX_SIZE_SMALL);
         $lastName = Request::getOptionalString('lastName', 1, Request::MAX_SIZE_SMALL);
+        $displayName = Request::getOptionalString('displayName', 1, 511);
 
-        if ($email === null && $firstName === null && $lastName === null) {
-            throw new ValidationException('Missing required parameter: email, firstName, or lastName', 400);
+        if ($email === null && $firstName === null && $lastName === null && $displayName === null) {
+            throw new ValidationException('Missing required parameter: email, firstName, lastName, or displayName', 400);
         }
 
-        return new self($userID, $email, $firstName, $lastName);
+        return new self($userID, $email, $firstName, $lastName, $displayName);
     }
 
     public function toBedrockParams(): array
@@ -64,6 +66,9 @@ final class EditUserRequest extends RouteBoundRequestBase
         }
         if ($this->lastName !== null) {
             $params['lastName'] = $this->lastName;
+        }
+        if ($this->displayName !== null) {
+            $params['displayName'] = $this->displayName;
         }
 
         return $params;

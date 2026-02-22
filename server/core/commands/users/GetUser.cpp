@@ -23,6 +23,7 @@ struct GetUserResponseModel {
     string email;
     string firstName;
     string lastName;
+    string displayName;
     string createdAt;
 
     void writeTo(SData& response) const {
@@ -30,6 +31,7 @@ struct GetUserResponseModel {
         ResponseBinding::setString(response, "email", email);
         ResponseBinding::setString(response, "firstName", firstName);
         ResponseBinding::setString(response, "lastName", lastName);
+        ResponseBinding::setString(response, "displayName", displayName);
         ResponseBinding::setString(response, "createdAt", createdAt);
     }
 };
@@ -54,7 +56,7 @@ void GetUser::buildResponse(SQLite& db) {
 
     SQResult result;
     const string query = fmt::format(
-        "SELECT userID, email, firstName, lastName, createdAt FROM users WHERE userID = {};",
+        "SELECT userID, email, firstName, lastName, displayName, createdAt FROM users WHERE userID = {};",
         input.userID
     );
     if (!db.read(query, result)) {
@@ -79,6 +81,7 @@ void GetUser::buildResponse(SQLite& db) {
         result[0][2],
         result[0][3],
         result[0][4],
+        result[0][5],
     };
     output.writeTo(response);
 }

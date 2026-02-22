@@ -14,12 +14,18 @@ struct CreateUserRequestModel {
     string email;
     string firstName;
     string lastName;
+    string displayName;
 
     static CreateUserRequestModel bind(const SData& request) {
+        const string firstName = UserValidation::requireName(request, "firstName");
+        const string lastName = UserValidation::requireName(request, "lastName");
+        const optional<string> displayName = UserValidation::optionalDisplayName(request, "displayName");
+
         return {
             UserValidation::requireEmail(request, "email"),
-            UserValidation::requireName(request, "firstName"),
-            UserValidation::requireName(request, "lastName")
+            firstName,
+            lastName,
+            displayName.value_or(UserValidation::defaultDisplayName(firstName, lastName))
         };
     }
 };
@@ -29,6 +35,7 @@ struct CreateUserResponseModel {
     string email;
     string firstName;
     string lastName;
+    string displayName;
     string createdAt;
 
     void writeTo(SData& response) const {
@@ -36,6 +43,7 @@ struct CreateUserResponseModel {
         ResponseBinding::setString(response, "email", email);
         ResponseBinding::setString(response, "firstName", firstName);
         ResponseBinding::setString(response, "lastName", lastName);
+        ResponseBinding::setString(response, "displayName", displayName);
         ResponseBinding::setString(response, "createdAt", createdAt);
     }
 };
@@ -78,8 +86,8 @@ void CreateUser::process(SQLite& db) {
     }
 
     const string insertUserQuery = fmt::format(
-        "INSERT INTO users (email, firstName, lastName, createdAt) VALUES ({}, {}, {}, {});",
-        SQ(input.email), SQ(input.firstName), SQ(input.lastName), createdAt
+        "INSERT INTO users (email, firstName, lastName, displayName, createdAt) VALUES ({}, {}, {}, {}, {});",
+        SQ(input.email), SQ(input.firstName), SQ(input.lastName), SQ(input.displayName), createdAt
     );
     if (!db.write(insertUserQuery)) {
         CommandError::upstreamFailure(
@@ -105,6 +113,7 @@ void CreateUser::process(SQLite& db) {
         input.email,
         input.firstName,
         input.lastName,
+        input.displayName,
         createdAt,
     };
     output.writeTo(response);

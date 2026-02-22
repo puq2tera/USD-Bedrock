@@ -1,12 +1,26 @@
 #include "Core.h"
 
-#include "commands/messages/CreateMessage.h"
-#include "commands/messages/GetMessages.h"
+#include "commands/chats/AddChatMember.h"
+#include "commands/chats/CreateChat.h"
+#include "commands/chats/DeleteChat.h"
+#include "commands/chats/EditChat.h"
+#include "commands/chats/EditChatMemberRole.h"
+#include "commands/chats/GetChat.h"
+#include "commands/chats/ListChatMembers.h"
+#include "commands/chats/ListChats.h"
+#include "commands/chats/RemoveChatMember.h"
+#include "commands/chats/CreateChatMessage.h"
+#include "commands/chats/DeleteChatMessage.h"
+#include "commands/chats/EditChatMessage.h"
+#include "commands/chats/GetChatMessages.h"
 #include "commands/polls/CreatePoll.h"
 #include "commands/polls/DeletePoll.h"
+#include "commands/polls/DeletePollVotes.h"
 #include "commands/polls/EditPoll.h"
 #include "commands/polls/GetPoll.h"
-#include "commands/polls/SubmitVote.h"
+#include "commands/polls/ListPolls.h"
+#include "commands/polls/SubmitPollTextResponse.h"
+#include "commands/polls/SubmitPollVotes.h"
 #include "commands/system/HelloWorld.h"
 #include "commands/users/CreateUser.h"
 #include "commands/users/DeleteUser.h"
@@ -42,11 +56,44 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
     if (SIEquals(baseCommand.request.methodLine, "HelloWorld")) {
         return make_unique<HelloWorld>(std::move(baseCommand), this);
     }
-    if (SIEquals(baseCommand.request.methodLine, "CreateMessage")) {
-        return make_unique<CreateMessage>(std::move(baseCommand), this);
+    if (SIEquals(baseCommand.request.methodLine, "CreateChat")) {
+        return make_unique<CreateChat>(std::move(baseCommand), this);
     }
-    if (SIEquals(baseCommand.request.methodLine, "GetMessages")) {
-        return make_unique<GetMessages>(std::move(baseCommand), this);
+    if (SIEquals(baseCommand.request.methodLine, "GetChat")) {
+        return make_unique<GetChat>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "ListChats")) {
+        return make_unique<ListChats>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "EditChat")) {
+        return make_unique<EditChat>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "DeleteChat")) {
+        return make_unique<DeleteChat>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "AddChatMember")) {
+        return make_unique<AddChatMember>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "ListChatMembers")) {
+        return make_unique<ListChatMembers>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "EditChatMemberRole")) {
+        return make_unique<EditChatMemberRole>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "RemoveChatMember")) {
+        return make_unique<RemoveChatMember>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "CreateChatMessage")) {
+        return make_unique<CreateChatMessage>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "GetChatMessages")) {
+        return make_unique<GetChatMessages>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "EditChatMessage")) {
+        return make_unique<EditChatMessage>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "DeleteChatMessage")) {
+        return make_unique<DeleteChatMessage>(std::move(baseCommand), this);
     }
     if (SIEquals(baseCommand.request.methodLine, "CreatePoll")) {
         return make_unique<CreatePoll>(std::move(baseCommand), this);
@@ -54,14 +101,23 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
     if (SIEquals(baseCommand.request.methodLine, "GetPoll")) {
         return make_unique<GetPoll>(std::move(baseCommand), this);
     }
-    if (SIEquals(baseCommand.request.methodLine, "SubmitVote")) {
-        return make_unique<SubmitVote>(std::move(baseCommand), this);
+    if (SIEquals(baseCommand.request.methodLine, "ListPolls")) {
+        return make_unique<ListPolls>(std::move(baseCommand), this);
     }
     if (SIEquals(baseCommand.request.methodLine, "EditPoll")) {
         return make_unique<EditPoll>(std::move(baseCommand), this);
     }
     if (SIEquals(baseCommand.request.methodLine, "DeletePoll")) {
         return make_unique<DeletePoll>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "SubmitPollVotes")) {
+        return make_unique<SubmitPollVotes>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "DeletePollVotes")) {
+        return make_unique<DeletePollVotes>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "SubmitPollTextResponse")) {
+        return make_unique<SubmitPollTextResponse>(std::move(baseCommand), this);
     }
     if (SIEquals(baseCommand.request.methodLine, "CreateUser")) {
         return make_unique<CreateUser>(std::move(baseCommand), this);

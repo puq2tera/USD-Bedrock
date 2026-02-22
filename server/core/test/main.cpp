@@ -5,10 +5,14 @@
 #include <libstuff/SData.h>
 
 #include "TestHelpers.h"
-#include "tests/HelloWorldTest.h"
-#include "tests/MessagesTest.h"
-#include "tests/PollsTest.h"
-#include "tests/UsersTest.h"
+#include "tests/unit/chats/ChatMembersTest.h"
+#include "tests/unit/chats/ChatsTest.h"
+#include "tests/unit/chats/ChatMessagesTest.h"
+#include "tests/unit/polls/PollsTest.h"
+#include "tests/unit/polls/PollTextResponsesTest.h"
+#include "tests/unit/polls/PollVotesTest.h"
+#include "tests/unit/system/HelloWorldTest.h"
+#include "tests/unit/users/UsersTest.h"
 
 void cleanup() {
     cout << "Cleaning up test database files...\n";
@@ -25,8 +29,12 @@ int main(int argc, char* argv[]) {
     SData args = SParseCommandLine(argc, argv);
 
     HelloWorldTest helloWorldTest;
-    MessagesTest messagesTest;
+    ChatsTest chatsTest;
+    ChatMembersTest chatMembersTest;
+    ChatMessagesTest chatMessagesTest;
     PollsTest pollsTest;
+    PollVotesTest pollVotesTest;
+    PollTextResponsesTest pollTextResponsesTest;
     UsersTest usersTest;
 
     set<string> include;

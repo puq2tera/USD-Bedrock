@@ -162,7 +162,25 @@ class Request
      */
     public static function requireBool(string $key): bool
     {
-        $value = strtolower(self::requireString($key));
+        $rawValue = self::getRawParam($key);
+        if ($rawValue === null) {
+            throw new ValidationException("Missing required parameter: {$key}", 400);
+        }
+
+        if (is_bool($rawValue)) {
+            return $rawValue;
+        }
+
+        if (is_int($rawValue)) {
+            if ($rawValue === 1) {
+                return true;
+            }
+            if ($rawValue === 0) {
+                return false;
+            }
+        }
+
+        $value = strtolower(trim((string)$rawValue));
         if ($value === 'true' || $value === '1') {
             return true;
         }
