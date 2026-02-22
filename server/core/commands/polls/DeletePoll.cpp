@@ -1,20 +1,25 @@
 #include "DeletePoll.h"
 
+#include "PollCommandUtils.h"
 #include "../../Core.h"
 #include "../CommandError.h"
 #include "../RequestBinding.h"
 #include "../ResponseBinding.h"
 
-#include <libstuff/libstuff.h>
 #include <fmt/format.h>
+#include <libstuff/libstuff.h>
 
 namespace {
 
 struct DeletePollRequestModel {
     int64_t pollID;
+    int64_t actorUserID;
 
     static DeletePollRequestModel bind(const SData& request) {
-        return {RequestBinding::requirePositiveInt64(request, "pollID")};
+        return {
+            RequestBinding::requirePositiveInt64(request, "pollID"),
+            RequestBinding::requirePositiveInt64(request, "actorUserID")
+        };
     }
 };
 
@@ -37,64 +42,65 @@ DeletePoll::DeletePoll(SQLiteCommand&& baseCommand, BedrockPlugin_Core* plugin)
 bool DeletePoll::peek(SQLite& db) {
     (void)db;
     (void)DeletePollRequestModel::bind(request);
-    return false; // Need the write phase
+    return false;
 }
 
 void DeletePoll::process(SQLite& db) {
     const DeletePollRequestModel input = DeletePollRequestModel::bind(request);
 
-    // ---- 1. Verify the poll exists ----
-    SQResult pollResult;
-    const string pollQuery = fmt::format(
-        "SELECT pollID FROM polls WHERE pollID = {};",
-        input.pollID
+    PollCommandUtils::PollRecord poll = PollCommandUtils::getPollOrThrow(
+        db,
+        input.pollID,
+        "DeletePoll",
+        "DELETE_POLL_LOOKUP_FAILED",
+        "DELETE_POLL_NOT_FOUND"
     );
 
-    if (!db.read(pollQuery, pollResult) || pollResult.empty()) {
-        CommandError::notFound(
-            "Poll not found",
-            "DELETE_POLL_NOT_FOUND",
-            {{"command", "DeletePoll"}, {"pollID", SToStr(input.pollID)}}
+    PollCommandUtils::closePollIfExpired(
+        db,
+        poll,
+        "DeletePoll",
+        "DELETE_POLL_CLOSE_EXPIRED_FAILED",
+        "DELETE_POLL_EVENT_CLOSE_INSERT_FAILED"
+    );
+
+    PollCommandUtils::requireChatMember(
+        db,
+        poll.chatID,
+        input.actorUserID,
+        "DeletePoll",
+        "DELETE_POLL_CHAT_MEMBER_LOOKUP_FAILED",
+        "DELETE_POLL_ACTOR_NOT_CHAT_MEMBER"
+    );
+
+    if (poll.creatorUserID != input.actorUserID) {
+        CommandError::conflict(
+            "Only the poll creator can delete this poll",
+            "DELETE_POLL_FORBIDDEN",
+            {
+                {"command", "DeletePoll"},
+                {"pollID", SToStr(input.pollID)},
+                {"actorUserID", SToStr(input.actorUserID)},
+                {"creatorUserID", SToStr(poll.creatorUserID)}
+            }
         );
     }
 
-    // ---- 2. Delete votes for this poll ----
-    const string deleteVotes = fmt::format(
-        "DELETE FROM votes WHERE pollID = {};",
-        input.pollID
+    PollCommandUtils::emitPollEvent(
+        db,
+        input.pollID,
+        input.actorUserID,
+        "deleted",
+        {{"chatID", SToStr(poll.chatID)}},
+        "DeletePoll",
+        "DELETE_POLL_EVENT_INSERT_FAILED"
     );
 
-    if (!db.write(deleteVotes)) {
-        CommandError::upstreamFailure(
-            db,
-            "Failed to delete votes",
-            "DELETE_POLL_VOTES_DELETE_FAILED",
-            {{"command", "DeletePoll"}, {"pollID", SToStr(input.pollID)}}
-        );
-    }
-
-    // ---- 3. Delete options for this poll ----
-    const string deleteOptions = fmt::format(
-        "DELETE FROM poll_options WHERE pollID = {};",
-        input.pollID
-    );
-
-    if (!db.write(deleteOptions)) {
-        CommandError::upstreamFailure(
-            db,
-            "Failed to delete poll options",
-            "DELETE_POLL_OPTIONS_DELETE_FAILED",
-            {{"command", "DeletePoll"}, {"pollID", SToStr(input.pollID)}}
-        );
-    }
-
-    // ---- 4. Delete the poll itself ----
-    const string deletePoll = fmt::format(
+    const string deletePollQuery = fmt::format(
         "DELETE FROM polls WHERE pollID = {};",
         input.pollID
     );
-
-    if (!db.write(deletePoll)) {
+    if (!db.write(deletePollQuery)) {
         CommandError::upstreamFailure(
             db,
             "Failed to delete poll",
@@ -106,5 +112,5 @@ void DeletePoll::process(SQLite& db) {
     const DeletePollResponseModel output = {input.pollID, "deleted"};
     output.writeTo(response);
 
-    SINFO("Deleted poll " << input.pollID << " with its options and votes");
+    SINFO("Deleted poll " << input.pollID);
 }

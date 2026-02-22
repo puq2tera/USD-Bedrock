@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\polls;
 
-use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\Request;
 use BedrockStarter\ValidationException;
-use BedrockStarter\responses\polls\EditPollResponse;
+use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\responses\framework\RouteResponse;
+use BedrockStarter\responses\polls\EditPollResponse;
 
 final class EditPollRequest extends RouteBoundRequestBase
 {
@@ -17,7 +17,12 @@ final class EditPollRequest extends RouteBoundRequestBase
 
     public function __construct(
         private readonly int $pollID,
+        private readonly int $actorUserID,
         private readonly ?string $question,
+        private readonly ?bool $allowChangeVote,
+        private readonly ?bool $isAnonymous,
+        private readonly ?string $status,
+        private readonly ?string $expiresAt,
         private readonly ?string $optionsJson
     ) {
     }
@@ -40,15 +45,26 @@ final class EditPollRequest extends RouteBoundRequestBase
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         $pollID = Request::requireRouteInt($routeParams, 'pollID');
-        $question = Request::getOptionalString('question', 1, Request::MAX_SIZE_SMALL);
-        $options = Request::getOptionalJsonArray('options', 2);
+        $actorUserID = Request::requireInt('actorUserID', 1);
 
-        if ($question === null && $options === null) {
-            throw new ValidationException('Missing required parameter: question or options', 400);
+        $question = Request::getOptionalString('question', 1, Request::MAX_SIZE_SMALL);
+        $allowChangeVote = Request::hasParam('allowChangeVote') ? Request::requireBool('allowChangeVote') : null;
+        $isAnonymous = Request::hasParam('isAnonymous') ? Request::requireBool('isAnonymous') : null;
+        $status = Request::getOptionalString('status', 1, 64);
+
+        $expiresAt = null;
+        if (Request::hasParam('expiresAt')) {
+            $rawExpiresAt = trim(Request::getString('expiresAt'));
+            if ($rawExpiresAt === '' || strtolower($rawExpiresAt) === 'null') {
+                $expiresAt = 'null';
+            } else {
+                $expiresAt = (string)Request::requireInt('expiresAt', 1);
+            }
         }
 
         $optionsJson = null;
-        if ($options !== null) {
+        if (Request::hasParam('options')) {
+            $options = Request::requireJsonArray('options', 0, 20);
             $encoded = json_encode($options);
             if ($encoded === false) {
                 throw new ValidationException('Invalid parameter: options', 400);
@@ -56,17 +72,45 @@ final class EditPollRequest extends RouteBoundRequestBase
             $optionsJson = $encoded;
         }
 
-        return new self($pollID, $question, $optionsJson);
+        if ($question === null && $allowChangeVote === null && $isAnonymous === null
+            && $status === null && $expiresAt === null && $optionsJson === null) {
+            throw new ValidationException('Missing required parameter: at least one editable field', 400);
+        }
+
+        return new self(
+            $pollID,
+            $actorUserID,
+            $question,
+            $allowChangeVote,
+            $isAnonymous,
+            $status,
+            $expiresAt,
+            $optionsJson
+        );
     }
 
     public function toBedrockParams(): array
     {
-        $params = ['pollID' => (string)$this->pollID];
+        $params = [
+            'pollID' => (string)$this->pollID,
+            'actorUserID' => (string)$this->actorUserID,
+        ];
 
         if ($this->question !== null) {
             $params['question'] = $this->question;
         }
-
+        if ($this->allowChangeVote !== null) {
+            $params['allowChangeVote'] = $this->allowChangeVote ? 'true' : 'false';
+        }
+        if ($this->isAnonymous !== null) {
+            $params['isAnonymous'] = $this->isAnonymous ? 'true' : 'false';
+        }
+        if ($this->status !== null) {
+            $params['status'] = $this->status;
+        }
+        if ($this->expiresAt !== null) {
+            $params['expiresAt'] = $this->expiresAt;
+        }
         if ($this->optionsJson !== null) {
             $params['options'] = $this->optionsJson;
         }

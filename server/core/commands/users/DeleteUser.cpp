@@ -78,7 +78,7 @@ void DeleteUser::process(SQLite& db) {
     }
 
     const string deletePollVotesQuery = fmt::format(
-        "DELETE FROM votes WHERE pollID IN (SELECT pollID FROM polls WHERE createdBy = {});",
+        "DELETE FROM votes WHERE pollID IN (SELECT pollID FROM polls WHERE creatorUserID = {});",
         input.userID
     );
     if (!db.write(deletePollVotesQuery)) {
@@ -91,7 +91,7 @@ void DeleteUser::process(SQLite& db) {
     }
 
     const string deletePollOptionsQuery = fmt::format(
-        "DELETE FROM poll_options WHERE pollID IN (SELECT pollID FROM polls WHERE createdBy = {});",
+        "DELETE FROM poll_options WHERE pollID IN (SELECT pollID FROM polls WHERE creatorUserID = {});",
         input.userID
     );
     if (!db.write(deletePollOptionsQuery)) {
@@ -103,8 +103,34 @@ void DeleteUser::process(SQLite& db) {
         );
     }
 
+    const string deletePollEventsForOwnedPollsQuery = fmt::format(
+        "DELETE FROM poll_events WHERE pollID IN (SELECT pollID FROM polls WHERE creatorUserID = {});",
+        input.userID
+    );
+    if (!db.write(deletePollEventsForOwnedPollsQuery)) {
+        CommandError::upstreamFailure(
+            db,
+            "Failed to delete poll events for user polls",
+            "DELETE_USER_POLL_EVENTS_DELETE_FAILED",
+            {{"command", "DeleteUser"}, {"userID", SToStr(input.userID)}}
+        );
+    }
+
+    const string deleteUserPollEventsQuery = fmt::format(
+        "DELETE FROM poll_events WHERE actorUserID = {};",
+        input.userID
+    );
+    if (!db.write(deleteUserPollEventsQuery)) {
+        CommandError::upstreamFailure(
+            db,
+            "Failed to delete user poll events",
+            "DELETE_USER_POLL_ACTOR_EVENTS_DELETE_FAILED",
+            {{"command", "DeleteUser"}, {"userID", SToStr(input.userID)}}
+        );
+    }
+
     const string deletePollsQuery = fmt::format(
-        "DELETE FROM polls WHERE createdBy = {};",
+        "DELETE FROM polls WHERE creatorUserID = {};",
         input.userID
     );
     if (!db.write(deletePollsQuery)) {
@@ -112,6 +138,19 @@ void DeleteUser::process(SQLite& db) {
             db,
             "Failed to delete user polls",
             "DELETE_USER_POLLS_DELETE_FAILED",
+            {{"command", "DeleteUser"}, {"userID", SToStr(input.userID)}}
+        );
+    }
+
+    const string deleteUserTextResponsesQuery = fmt::format(
+        "DELETE FROM poll_text_responses WHERE userID = {};",
+        input.userID
+    );
+    if (!db.write(deleteUserTextResponsesQuery)) {
+        CommandError::upstreamFailure(
+            db,
+            "Failed to delete user poll text responses",
+            "DELETE_USER_POLL_TEXT_RESPONSES_DELETE_FAILED",
             {{"command", "DeleteUser"}, {"userID", SToStr(input.userID)}}
         );
     }
@@ -125,6 +164,45 @@ void DeleteUser::process(SQLite& db) {
             db,
             "Failed to delete user messages",
             "DELETE_USER_MESSAGES_DELETE_FAILED",
+            {{"command", "DeleteUser"}, {"userID", SToStr(input.userID)}}
+        );
+    }
+
+    const string deleteUserChatMembershipsQuery = fmt::format(
+        "DELETE FROM chat_members WHERE userID = {};",
+        input.userID
+    );
+    if (!db.write(deleteUserChatMembershipsQuery)) {
+        CommandError::upstreamFailure(
+            db,
+            "Failed to delete user chat memberships",
+            "DELETE_USER_CHAT_MEMBERSHIPS_DELETE_FAILED",
+            {{"command", "DeleteUser"}, {"userID", SToStr(input.userID)}}
+        );
+    }
+
+    const string deleteChatMembersForOwnedChatsQuery = fmt::format(
+        "DELETE FROM chat_members WHERE chatID IN (SELECT chatID FROM chats WHERE createdByUserID = {});",
+        input.userID
+    );
+    if (!db.write(deleteChatMembersForOwnedChatsQuery)) {
+        CommandError::upstreamFailure(
+            db,
+            "Failed to delete members for user chats",
+            "DELETE_USER_CHAT_MEMBERS_FOR_OWNED_CHATS_FAILED",
+            {{"command", "DeleteUser"}, {"userID", SToStr(input.userID)}}
+        );
+    }
+
+    const string deleteUserChatsQuery = fmt::format(
+        "DELETE FROM chats WHERE createdByUserID = {};",
+        input.userID
+    );
+    if (!db.write(deleteUserChatsQuery)) {
+        CommandError::upstreamFailure(
+            db,
+            "Failed to delete user chats",
+            "DELETE_USER_CHATS_DELETE_FAILED",
             {{"command", "DeleteUser"}, {"userID", SToStr(input.userID)}}
         );
     }

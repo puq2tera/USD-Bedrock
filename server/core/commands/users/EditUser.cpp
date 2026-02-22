@@ -17,22 +17,24 @@ struct EditUserRequestModel {
     optional<string> email;
     optional<string> firstName;
     optional<string> lastName;
+    optional<string> displayName;
 
     static EditUserRequestModel bind(const SData& request) {
         const int64_t userID = RequestBinding::requirePositiveInt64(request, "userID");
         const optional<string> email = UserValidation::optionalEmail(request, "email");
         const optional<string> firstName = UserValidation::optionalName(request, "firstName");
         const optional<string> lastName = UserValidation::optionalName(request, "lastName");
+        const optional<string> displayName = UserValidation::optionalDisplayName(request, "displayName");
 
-        if (!email && !firstName && !lastName) {
+        if (!email && !firstName && !lastName && !displayName) {
             CommandError::badRequest(
-                "Missing required parameter: email, firstName, or lastName",
+                "Missing required parameter: email, firstName, lastName, or displayName",
                 "EDIT_USER_MISSING_FIELDS",
                 {{"command", "EditUser"}}
             );
         }
 
-        return {userID, email, firstName, lastName};
+        return {userID, email, firstName, lastName, displayName};
     }
 };
 
@@ -41,6 +43,7 @@ struct EditUserResponseModel {
     string email;
     string firstName;
     string lastName;
+    string displayName;
     string createdAt;
     string result;
 
@@ -49,6 +52,7 @@ struct EditUserResponseModel {
         ResponseBinding::setString(response, "email", email);
         ResponseBinding::setString(response, "firstName", firstName);
         ResponseBinding::setString(response, "lastName", lastName);
+        ResponseBinding::setString(response, "displayName", displayName);
         ResponseBinding::setString(response, "createdAt", createdAt);
         ResponseBinding::setString(response, "result", result);
     }
@@ -123,6 +127,9 @@ void EditUser::process(SQLite& db) {
     if (input.lastName) {
         updateClauses.emplace_back(fmt::format("lastName = {}", SQ(*input.lastName)));
     }
+    if (input.displayName) {
+        updateClauses.emplace_back(fmt::format("displayName = {}", SQ(*input.displayName)));
+    }
 
     string setClause;
     for (size_t i = 0; i < updateClauses.size(); i++) {
@@ -147,7 +154,7 @@ void EditUser::process(SQLite& db) {
 
     SQResult updatedUserResult;
     const string updatedUserQuery = fmt::format(
-        "SELECT userID, email, firstName, lastName, createdAt FROM users WHERE userID = {};",
+        "SELECT userID, email, firstName, lastName, displayName, createdAt FROM users WHERE userID = {};",
         input.userID
     );
     if (!db.read(updatedUserQuery, updatedUserResult)) {
@@ -172,7 +179,8 @@ void EditUser::process(SQLite& db) {
         updatedUserResult[0][2],
         updatedUserResult[0][3],
         updatedUserResult[0][4],
-        "updated",
+        updatedUserResult[0][5],
+        "updated"
     };
     output.writeTo(response);
 

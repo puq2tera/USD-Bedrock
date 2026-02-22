@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\polls;
 
-use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\Request;
-use BedrockStarter\responses\polls\GetPollResponse;
+use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\responses\framework\RouteResponse;
+use BedrockStarter\responses\polls\GetPollResponse;
 
 final class GetPollRequest extends RouteBoundRequestBase
 {
     private const PATH_PATTERN = '#^/api/polls/(?P<pollID>\d+)$#';
     private const ALLOWED_METHODS = ['GET'];
 
-    public function __construct(private readonly int $pollID)
-    {
+    public function __construct(
+        private readonly int $pollID,
+        private readonly int $requesterUserID
+    ) {
     }
 
     public static function pathPattern(): string
@@ -35,12 +37,18 @@ final class GetPollRequest extends RouteBoundRequestBase
 
     protected static function bindFromRouteMatch(array $routeParams): self
     {
-        return new self(Request::requireRouteInt($routeParams, 'pollID'));
+        return new self(
+            Request::requireRouteInt($routeParams, 'pollID'),
+            Request::requireInt('requesterUserID', 1)
+        );
     }
 
     public function toBedrockParams(): array
     {
-        return ['pollID' => (string)$this->pollID];
+        return [
+            'pollID' => (string)$this->pollID,
+            'requesterUserID' => (string)$this->requesterUserID,
+        ];
     }
 
     public function transformResponse(array $bedrockResponse): RouteResponse

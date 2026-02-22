@@ -278,12 +278,87 @@ Bedrock commands have two main lifecycle methods: `peek()` and `process()`.
 Core plugin unit tests live in `server/core/test`.
 
 ```bash
-# Build and run all tests (works on host or inside the VM)
+# Build and run all tests (recommended inside the VM)
 ./scripts/test-cpp.sh
 
 # Run a single test class or enable verbose logging
 ./scripts/test-cpp.sh -only HelloWorldTests
 ./scripts/test-cpp.sh -v
+```
+
+If you run tests on the host, you must have the same build toolchain installed locally (`cmake`, `ninja`, clang toolchain, etc.).
+
+## Troubleshooting Build/Run Issues
+
+### 1) CMake cache source-path mismatch
+
+Symptom:
+- `CMake Error: ... CMakeCache.txt directory ... is different than the directory ... where CMakeCache.txt was created`
+
+Cause:
+- Reusing `server/core/.build` after switching source roots (for example: `/bedrock-starter`, `/tmp/USD-Bedrock`, `/opt/bedrock`).
+
+Fix:
+```bash
+rm -rf server/core/.build
+./scripts/test-cpp.sh
+```
+For `/opt/bedrock` builds in the VM:
+```bash
+multipass exec bedrock-starter -- sudo rm -rf /opt/bedrock/server/core/.build
+./scripts/build-core-plugin.sh
+```
+
+### 2) Multipass mount shows readable files, but compiler gets "Permission denied"
+
+Symptom:
+- `clang++ ... error reading '.../server/core/tables/<file>.cpp': Permission denied`
+- `ls -l` may still show normal permissions.
+
+Cause:
+- Rare mount-level read anomaly on the host-mounted path.
+
+Working workaround:
+```bash
+multipass exec bedrock-starter -- bash -lc 'rm -rf /tmp/USD-Bedrock'
+multipass transfer -r "$PWD" bedrock-starter:/tmp/USD-Bedrock
+multipass exec bedrock-starter -- bash -lc 'cd /tmp/USD-Bedrock && rm -rf server/core/.build && ./scripts/test-cpp.sh'
+```
+
+### 3) Running host-only scripts from inside the VM
+
+Symptom:
+- `./scripts/build-core-plugin.sh` reports `multipass is not installed`.
+
+Cause:
+- `scripts/build-core-plugin.sh` is a host-side wrapper that calls `multipass`.
+
+Fix:
+- Run `./scripts/build-core-plugin.sh` on the host, not inside the VM.
+
+### 4) API returns 500 after syncing `/opt/bedrock`
+
+Symptom:
+- `/api/status` returns 500.
+- Nginx error log shows missing `vendor/autoload.php`.
+
+Cause:
+- Sync operations (especially `rsync --delete`) can remove `server/api/vendor` or change ownership.
+
+Fix:
+```bash
+multipass exec bedrock-starter -- sudo bash -lc 'mkdir -p /opt/bedrock/server/api/vendor && chown -R bedrock:bedrock /opt/bedrock'
+multipass exec bedrock-starter -- sudo -Hu bedrock composer install --no-interaction --prefer-dist --working-dir /opt/bedrock/server/api
+```
+
+### Quick health checks
+
+```bash
+# Bedrock command port
+multipass exec bedrock-starter -- bash -lc 'printf "Status\n" | nc -w 2 127.0.0.1 8888'
+
+# API status endpoint
+multipass exec bedrock-starter -- bash -lc 'curl -i -m 10 http://127.0.0.1/api/status'
 ```
 
 ## Continuous Integration
