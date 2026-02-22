@@ -16,6 +16,7 @@ use BedrockStarter\requests\polls\CreatePollRequest;
 use BedrockStarter\requests\polls\DeletePollRequest;
 use BedrockStarter\requests\polls\EditPollRequest;
 use BedrockStarter\requests\polls\GetPollRequest;
+use BedrockStarter\requests\polls\GetPollsRequest;
 use BedrockStarter\requests\polls\SubmitVoteRequest;
 use BedrockStarter\requests\system\HelloWorldRequest;
 use BedrockStarter\requests\system\StatusRequest;
@@ -44,6 +45,7 @@ $requestTypes = [
     GetMessagesRequest::class,
     CreateMessageRequest::class,
     CreatePollRequest::class,
+    GetPollsRequest::class,
     GetPollRequest::class,
     EditPollRequest::class,
     DeletePollRequest::class,
