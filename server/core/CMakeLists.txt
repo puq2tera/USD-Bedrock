@@ -60,6 +60,7 @@ set(SOURCES
     commands/polls/DeletePollVotes.cpp
     commands/polls/EditPoll.cpp
     commands/polls/GetPoll.cpp
+    commands/polls/GetPollParticipation.cpp
     commands/polls/ListPolls.cpp
     commands/polls/PollCommandUtils.cpp
     commands/polls/SubmitPollTextResponse.cpp
@@ -74,6 +75,7 @@ set(SOURCES
     tables/chats/MessagesTable.cpp
     tables/polls/PollsTable.cpp
     tables/polls/PollOptionsTable.cpp
+    tables/polls/PollSummaryMessagesTable.cpp
     tables/polls/VotesTable.cpp
     tables/polls/PollTextResponsesTable.cpp
     tables/polls/PollEventsTable.cpp

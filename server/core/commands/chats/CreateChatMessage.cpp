@@ -13,7 +13,7 @@ namespace {
 
 struct CreateChatMessageRequestModel {
     int64_t chatID;
-    int64_t userID;
+    int64_t userID; // Message author (and caller).
     string body;
 
     static CreateChatMessageRequestModel bind(const SData& request) {

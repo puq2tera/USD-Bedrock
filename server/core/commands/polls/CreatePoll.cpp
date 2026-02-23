@@ -13,8 +13,6 @@
 
 namespace {
 
-constexpr size_t MAX_OPTIONS = 20;
-
 string boolToResponse(bool value) {
     return value ? "true" : "false";
 }
@@ -26,8 +24,8 @@ struct CreatePollRequestModel {
     string type;
     bool allowChangeVote;
     bool isAnonymous;
-    optional<int64_t> expiresAt;
-    list<string> options;
+    optional<int64_t> expiresAt; // Optional auto-close timestamp (unix epoch seconds).
+    list<string> options; // Choice labels in display order; empty only for free_text polls.
 
     static CreatePollRequestModel bind(const SData& request) {
         const int64_t chatID = RequestBinding::requirePositiveInt64(request, "chatID");
@@ -61,9 +59,16 @@ struct CreatePollRequestModel {
             numeric_limits<int64_t>::max()
         );
 
-        optional<list<string>> parsedOptions = RequestBinding::optionalJSONArray(request, "options", 0, MAX_OPTIONS);
+        // API sends options as a JSON string. Parse it here so later logic works with typed labels.
+        optional<list<string>> parsedOptions = RequestBinding::optionalJSONArray(
+            request,
+            "options",
+            0,
+            PollCommandUtils::REQUEST_MAX_OPTIONS
+        );
         list<string> normalizedOptions;
 
+        // Free-text polls do not have selectable options.
         if (type == "free_text") {
             if (parsedOptions && !parsedOptions->empty()) {
                 CommandError::badRequest(
@@ -73,9 +78,9 @@ struct CreatePollRequestModel {
                 );
             }
         } else {
-            if (!parsedOptions || parsedOptions->size() < 2 || parsedOptions->size() > MAX_OPTIONS) {
+            if (!parsedOptions || parsedOptions->empty()) {
                 CommandError::badRequest(
-                    "Choice polls must include 2-20 options",
+                    "Choice polls must include options",
                     "CREATE_POLL_INVALID_OPTION_COUNT",
                     {{"command", "CreatePoll"}}
                 );
@@ -94,6 +99,7 @@ struct CreatePollRequestModel {
                 );
 
                 if (!seenLabels.insert(normalizedLabel).second) {
+                    // Duplicate labels make results ambiguous, so reject before writing.
                     CommandError::badRequest(
                         "Duplicate poll option",
                         "CREATE_POLL_DUPLICATE_OPTION",
@@ -129,7 +135,7 @@ struct CreatePollResponseModel {
     bool allowChangeVote;
     bool isAnonymous;
     optional<int64_t> expiresAt;
-    int64_t optionCount;
+    int64_t optionCount; // Number of persisted poll_options rows.
     int64_t createdAt;
     int64_t updatedAt;
 
@@ -180,6 +186,20 @@ void CreatePoll::process(SQLite& db) {
         "CREATE_POLL_CREATOR_NOT_CHAT_MEMBER"
     );
 
+    if (input.type != "free_text" &&
+        (input.options.size() < PollCommandUtils::MIN_OPTIONS ||
+         input.options.size() > PollCommandUtils::MAX_OPTIONS)) {
+        CommandError::badRequest(
+            fmt::format(
+                "Choice polls must include {}-{} options",
+                PollCommandUtils::MIN_OPTIONS,
+                PollCommandUtils::MAX_OPTIONS
+            ),
+            "CREATE_POLL_INVALID_OPTION_COUNT",
+            {{"command", "CreatePoll"}}
+        );
+    }
+
     const int64_t now = PollCommandUtils::nowUnix();
     const string insertPollQuery = fmt::format(
         "INSERT INTO polls (chatID, creatorUserID, question, type, allowChangeVote, isAnonymous, status, "
@@ -218,6 +238,7 @@ void CreatePoll::process(SQLite& db) {
             {{"command", "CreatePoll"}}
         );
     }
+    // last_insert_rowid() is scoped to this DB connection, so this is the poll we just inserted.
     const int64_t pollID = SToInt64(idResult[0][0]);
 
     size_t ord = 0;

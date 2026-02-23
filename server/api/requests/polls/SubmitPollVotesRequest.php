@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\polls;
 
+use BedrockStarter\config\AppConfig;
 use BedrockStarter\Request;
 use BedrockStarter\ValidationException;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
@@ -39,7 +40,8 @@ final class SubmitPollVotesRequest extends RouteBoundRequestBase
 
     protected static function bindFromRouteMatch(array $routeParams): self
     {
-        $optionIDs = Request::requireJsonArray('optionIDs', 1, 20);
+        $optionIDs = Request::requireJsonArray('optionIDs', 1, AppConfig::POLL_REQUEST_MAX_OPTIONS);
+        // Keep array order intact when encoding; ranked-choice uses this order as rank.
         $optionIDsJson = json_encode($optionIDs);
         if ($optionIDsJson === false) {
             throw new ValidationException('Invalid parameter: optionIDs', 400);

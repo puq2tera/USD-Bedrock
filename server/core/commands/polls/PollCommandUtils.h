@@ -1,13 +1,21 @@
 #pragma once
 
+#include "../../config/AppConfig.h"
 #include "../CommandError.h"
 
 #include <libstuff/libstuff.h>
 #include <sqlitecluster/SQLite.h>
 
+#include <cstddef>
 #include <optional>
 
 namespace PollCommandUtils {
+
+inline constexpr size_t MIN_OPTIONS = AppConfig::Poll::MIN_OPTIONS;
+inline constexpr size_t MAX_OPTIONS = AppConfig::Poll::MAX_OPTIONS;
+// Hard cap while parsing incoming JSON arrays.
+// Command-specific rules (for example min/max options by poll type) are validated later.
+inline constexpr size_t REQUEST_MAX_OPTIONS = AppConfig::Poll::REQUEST_MAX_OPTIONS;
 
 struct PollRecord {
     int64_t pollID;
@@ -67,6 +75,16 @@ void autoCloseExpiredPollsInChat(SQLite& db,
                                  const string& lookupErrorCode,
                                  const string& closeErrorCode,
                                  const string& eventErrorCode);
+
+optional<int64_t> getPollSummaryMessageID(SQLite& db,
+                                          int64_t pollID,
+                                          const string& commandName,
+                                          const string& errorCode);
+optional<int64_t> ensurePollSummaryMessage(SQLite& db,
+                                           const PollRecord& poll,
+                                           const string& commandName,
+                                           const string& readErrorCode,
+                                           const string& writeErrorCode);
 
 string sqlNullableInt(const optional<int64_t>& value);
 string trimAndValidateText(const string& rawValue,

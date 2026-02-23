@@ -13,7 +13,7 @@ namespace {
 
 struct DeleteChatRequestModel {
     int64_t chatID;
-    int64_t userID;
+    int64_t userID; // Caller attempting deletion; must be an owner.
 
     static DeleteChatRequestModel bind(const SData& request) {
         return {

@@ -11,7 +11,7 @@
 namespace {
 
 struct DeleteUserRequestModel {
-    int64_t userID;
+    int64_t userID; // Target user record to delete.
 
     static DeleteUserRequestModel bind(const SData& request) {
         return {RequestBinding::requirePositiveInt64(request, "userID")};
@@ -64,6 +64,8 @@ void DeleteUser::process(SQLite& db) {
         );
     }
 
+    // We delete related data explicitly instead of relying on database-level cascade rules.
+    // Order matters: delete child/dependent rows before parent polls/chats/users.
     const string deleteUserVotesQuery = fmt::format(
         "DELETE FROM votes WHERE userID = {};",
         input.userID
@@ -78,6 +80,7 @@ void DeleteUser::process(SQLite& db) {
     }
 
     const string deletePollVotesQuery = fmt::format(
+        // Remove votes cast on polls this user created (before deleting the polls themselves).
         "DELETE FROM votes WHERE pollID IN (SELECT pollID FROM polls WHERE creatorUserID = {});",
         input.userID
     );
@@ -91,6 +94,7 @@ void DeleteUser::process(SQLite& db) {
     }
 
     const string deletePollOptionsQuery = fmt::format(
+        // Remove options for polls owned by this user to avoid dangling option rows.
         "DELETE FROM poll_options WHERE pollID IN (SELECT pollID FROM polls WHERE creatorUserID = {});",
         input.userID
     );
@@ -104,6 +108,7 @@ void DeleteUser::process(SQLite& db) {
     }
 
     const string deletePollEventsForOwnedPollsQuery = fmt::format(
+        // Remove event history tied to polls owned by this user.
         "DELETE FROM poll_events WHERE pollID IN (SELECT pollID FROM polls WHERE creatorUserID = {});",
         input.userID
     );
@@ -182,6 +187,7 @@ void DeleteUser::process(SQLite& db) {
     }
 
     const string deleteChatMembersForOwnedChatsQuery = fmt::format(
+        // Clear memberships in chats owned by this user before deleting the chats.
         "DELETE FROM chat_members WHERE chatID IN (SELECT chatID FROM chats WHERE createdByUserID = {});",
         input.userID
     );

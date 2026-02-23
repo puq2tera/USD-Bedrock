@@ -13,8 +13,8 @@ namespace {
 
 struct ListPollsRequestModel {
     int64_t chatID;
-    int64_t requesterUserID;
-    bool includeClosed;
+    int64_t requesterUserID; // Caller requesting poll list.
+    bool includeClosed; // When false, return only open polls.
 
     static ListPollsRequestModel bind(const SData& request) {
         return {
@@ -67,6 +67,7 @@ void ListPolls::process(SQLite& db) {
         "LIST_POLLS_REQUESTER_NOT_CHAT_MEMBER"
     );
 
+    // Close expired polls first so the list response reflects current status.
     PollCommandUtils::autoCloseExpiredPollsInChat(
         db,
         input.chatID,
@@ -78,13 +79,18 @@ void ListPolls::process(SQLite& db) {
 
     SQResult pollResult;
     const string statusFilter = input.includeClosed ? "" : " AND p.status = 'open'";
+    // Pull poll fields plus summary counters in one query to keep list responses fast and consistent.
+    // Counters include optionCount, totalVotes, totalVoters, responseCount, and summaryMessageID.
+    // For ranked-choice polls, totalVotes counts first-choice picks only (rank = 1).
     const string query = fmt::format(
         "SELECT p.pollID, p.creatorUserID, p.question, p.type, p.allowChangeVote, p.isAnonymous, p.status, "
         "IFNULL(p.expiresAt, ''), p.createdAt, p.updatedAt, IFNULL(p.closedAt, ''), "
         "(SELECT COUNT(*) FROM poll_options po WHERE po.pollID = p.pollID), "
-        "(SELECT COUNT(*) FROM votes v WHERE v.pollID = p.pollID), "
+        "(SELECT COUNT(*) FROM votes v WHERE v.pollID = p.pollID "
+        "AND (p.type <> 'ranked_choice' OR IFNULL(v.rank, 0) = 1)), "
         "(SELECT COUNT(DISTINCT v.userID) FROM votes v WHERE v.pollID = p.pollID), "
-        "(SELECT COUNT(*) FROM poll_text_responses r WHERE r.pollID = p.pollID) "
+        "(SELECT COUNT(*) FROM poll_text_responses r WHERE r.pollID = p.pollID), "
+        "IFNULL((SELECT psm.messageID FROM poll_summary_messages psm WHERE psm.pollID = p.pollID), '') "
         "FROM polls p "
         "WHERE p.chatID = {}{} "
         "ORDER BY p.pollID DESC;",
@@ -103,7 +109,8 @@ void ListPolls::process(SQLite& db) {
 
     list<string> polls;
     for (const SQResultRow& row : pollResult) {
-        if (row.size() < 15) {
+        // Safety check: skip malformed rows if the result shape is not what we expect.
+        if (row.size() < 16) {
             continue;
         }
 
@@ -124,6 +131,7 @@ void ListPolls::process(SQLite& db) {
         poll["totalVotes"] = row[12];
         poll["totalVoters"] = row[13];
         poll["responseCount"] = row[14];
+        poll["summaryMessageID"] = row[15];
 
         polls.emplace_back(SComposeJSONObject(poll));
     }

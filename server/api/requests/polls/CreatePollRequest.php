@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\polls;
 
+use BedrockStarter\config\AppConfig;
 use BedrockStarter\Request;
 use BedrockStarter\ValidationException;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
@@ -55,14 +56,20 @@ final class CreatePollRequest extends RouteBoundRequestBase
 
         $optionsJson = null;
         if (strtolower($type) !== 'free_text') {
-            $options = Request::requireJsonArray('options', 2, 20);
+            $options = Request::requireJsonArray(
+                'options',
+                AppConfig::POLL_MIN_OPTIONS,
+                AppConfig::POLL_REQUEST_MAX_OPTIONS
+            );
+            // Bedrock commands receive array fields as JSON strings, so we encode once here.
             $encoded = json_encode($options);
             if ($encoded === false) {
                 throw new ValidationException('Invalid parameter: options', 400);
             }
             $optionsJson = $encoded;
         } elseif (Request::hasParam('options')) {
-            $options = Request::requireJsonArray('options', 0, 20);
+            // Free-text polls do not support choices. If options is sent, it must be an empty array.
+            $options = Request::requireJsonArray('options', 0, AppConfig::POLL_REQUEST_MAX_OPTIONS);
             if (!empty($options)) {
                 throw new ValidationException('Invalid parameter: options', 400);
             }

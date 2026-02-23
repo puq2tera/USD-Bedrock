@@ -18,7 +18,7 @@ string boolToResponse(bool value) {
 
 struct GetPollRequestModel {
     int64_t pollID;
-    int64_t requesterUserID;
+    int64_t requesterUserID; // Caller requesting poll details.
 
     static GetPollRequestModel bind(const SData& request) {
         return {
@@ -30,11 +30,12 @@ struct GetPollRequestModel {
 
 struct GetPollResponseModel {
     PollCommandUtils::PollRecord poll;
+    optional<int64_t> summaryMessageID; // Linked chat message summarizing close results, if created.
     list<string> options;
     list<string> responses;
-    int64_t totalVotes;
-    int64_t totalVoters;
-    int64_t responseCount;
+    int64_t totalVotes; // Count of vote rows (or first-choice rows for ranked_choice).
+    int64_t totalVoters; // Distinct users who voted via votes table.
+    int64_t responseCount; // Count of free-text responses for free_text polls.
 
     void writeTo(SData& response) const {
         ResponseBinding::setInt64(response, "pollID", poll.pollID);
@@ -49,6 +50,11 @@ struct GetPollResponseModel {
         ResponseBinding::setInt64(response, "createdAt", poll.createdAt);
         ResponseBinding::setInt64(response, "updatedAt", poll.updatedAt);
         ResponseBinding::setString(response, "closedAt", poll.closedAt ? SToStr(*poll.closedAt) : "");
+        ResponseBinding::setString(
+            response,
+            "summaryMessageID",
+            summaryMessageID ? SToStr(*summaryMessageID) : ""
+        );
 
         ResponseBinding::setJSONArray(response, "options", options);
         ResponseBinding::setJSONArray(response, "responses", responses);
@@ -108,9 +114,16 @@ void GetPoll::buildResponse(SQLite& db) {
     int64_t totalVotes = 0;
     int64_t totalVoters = 0;
     int64_t responseCount = 0;
+    const optional<int64_t> summaryMessageID = PollCommandUtils::getPollSummaryMessageID(
+        db,
+        poll.pollID,
+        "GetPoll",
+        "GET_POLL_SUMMARY_LOOKUP_FAILED"
+    );
 
-    if (poll.type == "single_choice" || poll.type == "multiple_choice") {
+    if (poll.type == "single_choice" || poll.type == "multiple_choice" || poll.type == "ranked_choice") {
         SQResult optionResult;
+        // Keep option listing stable by original author-defined order, then optionID as tie-breaker.
         const string optionQuery = fmt::format(
             "SELECT optionID, label, ord, isActive "
             "FROM poll_options WHERE pollID = {} "
@@ -128,10 +141,16 @@ void GetPoll::buildResponse(SQLite& db) {
         }
 
         SQResult voteCountsResult;
-        const string voteCountsQuery = fmt::format(
-            "SELECT optionID, COUNT(*) FROM votes WHERE pollID = {} GROUP BY optionID;",
-            poll.pollID
-        );
+        // For ranked-choice polls, each option's displayed voteCount uses first-choice votes only.
+        const string voteCountsQuery = (poll.type == "ranked_choice")
+            ? fmt::format(
+                "SELECT optionID, COUNT(*) FROM votes WHERE pollID = {} AND rank = 1 GROUP BY optionID;",
+                poll.pollID
+            )
+            : fmt::format(
+                "SELECT optionID, COUNT(*) FROM votes WHERE pollID = {} GROUP BY optionID;",
+                poll.pollID
+            );
         if (!db.read(voteCountsQuery, voteCountsResult)) {
             CommandError::upstreamFailure(
                 db,
@@ -151,6 +170,7 @@ void GetPoll::buildResponse(SQLite& db) {
         }
 
         SQResult voterCountResult;
+        // totalVoters is always distinct users from votes, even when totalVotes uses rank=1 for ranked polls.
         const string voterCountQuery = fmt::format(
             "SELECT COUNT(DISTINCT userID) FROM votes WHERE pollID = {};",
             poll.pollID
@@ -206,6 +226,7 @@ void GetPoll::buildResponse(SQLite& db) {
             STable responseRow;
             responseRow["responseID"] = row[0];
             if (!poll.isAnonymous) {
+                // In anonymous polls we keep response text but hide who submitted it.
                 responseRow["userID"] = row[1];
             }
             responseRow["textValue"] = row[2];
@@ -218,6 +239,7 @@ void GetPoll::buildResponse(SQLite& db) {
 
     const GetPollResponseModel output = {
         poll,
+        summaryMessageID,
         options,
         responses,
         totalVotes,

@@ -10,6 +10,7 @@ final class ChatRole
 {
     public static function requireKnown(string $role): string
     {
+        // Mirror the same role set enforced in core commands so API and plugin rules stay in sync.
         if ($role !== 'owner' && $role !== 'member') {
             throw new ValidationException('Invalid parameter: role', 400);
         }

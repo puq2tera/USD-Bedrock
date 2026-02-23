@@ -13,7 +13,7 @@ namespace {
 
 struct EditChatMemberRoleRequestModel {
     int64_t chatID;
-    int64_t actingUserID;
+    int64_t actingUserID; // Caller requesting the role change; must be an owner.
     int64_t userID;
     string role;
 

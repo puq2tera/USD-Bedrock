@@ -5,6 +5,7 @@
 #include "chats/MessagesTable.h"
 #include "polls/PollEventsTable.h"
 #include "polls/PollOptionsTable.h"
+#include "polls/PollSummaryMessagesTable.h"
 #include "polls/PollTextResponsesTable.h"
 #include "polls/PollsTable.h"
 #include "polls/VotesTable.h"
@@ -22,6 +23,7 @@ void verifyAll(SQLite& db) {
     VotesTable::verify(db);
     PollTextResponsesTable::verify(db);
     PollEventsTable::verify(db);
+    PollSummaryMessagesTable::verify(db);
 }
 
 } // namespace Tables

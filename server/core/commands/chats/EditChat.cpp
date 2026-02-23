@@ -13,7 +13,7 @@ namespace {
 
 struct EditChatRequestModel {
     int64_t chatID;
-    int64_t userID;
+    int64_t userID; // Caller requesting the title update; must be an owner.
     string title;
 
     static EditChatRequestModel bind(const SData& request) {

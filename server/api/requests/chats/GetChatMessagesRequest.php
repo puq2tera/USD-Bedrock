@@ -42,7 +42,10 @@ final class GetChatMessagesRequest extends RouteBoundRequestBase
         return new self(
             Request::requireRouteInt($routeParams, 'chatID'),
             Request::requireInt('userID', 1),
+            // Validate limit early so clients cannot request unbounded message pages.
+            // When limit is omitted, command layer applies the default page size.
             Request::getIntStrict('limit', null, 1, 100),
+            // Cursor pagination: return messages with IDs lower than beforeMessageID.
             Request::getIntStrict('beforeMessageID', null, 1)
         );
     }

@@ -24,7 +24,7 @@ void verify(SQLite& db) {
             FOREIGN KEY (chatID) REFERENCES chats(chatID) ON DELETE CASCADE ON UPDATE CASCADE,
             FOREIGN KEY (creatorUserID) REFERENCES users(userID) ON DELETE CASCADE ON UPDATE CASCADE,
             CHECK (length(trim(question)) BETWEEN 1 AND 1000),
-            CHECK (type IN ('single_choice', 'multiple_choice', 'free_text')),
+            CHECK (type IN ('single_choice', 'multiple_choice', 'free_text', 'ranked_choice')),
             CHECK (allowChangeVote IN (0, 1)),
             CHECK (isAnonymous IN (0, 1)),
             CHECK (status IN ('open', 'closed')),

@@ -13,7 +13,7 @@ namespace {
 
 struct DeletePollVotesRequestModel {
     int64_t pollID;
-    int64_t userID;
+    int64_t userID; // Caller whose own votes should be deleted.
 
     static DeletePollVotesRequestModel bind(const SData& request) {
         return {
@@ -26,7 +26,7 @@ struct DeletePollVotesRequestModel {
 struct DeletePollVotesResponseModel {
     int64_t pollID;
     int64_t userID;
-    int64_t removedCount;
+    int64_t removedCount; // Number of vote rows deleted for this user on this poll.
 
     void writeTo(SData& response) const {
         ResponseBinding::setInt64(response, "pollID", pollID);
@@ -92,6 +92,7 @@ void DeletePollVotes::process(SQLite& db) {
     }
 
     SQResult voteCountResult;
+    // Read count before delete so the response can report exactly how many rows were removed (including zero).
     const string voteCountQuery = fmt::format(
         "SELECT COUNT(*) FROM votes WHERE pollID = {} AND userID = {};",
         input.pollID,

@@ -13,7 +13,7 @@ namespace {
 
 struct AddChatMemberRequestModel {
     int64_t chatID;
-    int64_t actingUserID;
+    int64_t actingUserID; // Caller requesting the membership change; must be an owner.
     int64_t userID;
     string role;
 
@@ -36,7 +36,7 @@ struct AddChatMemberResponseModel {
     int64_t chatID;
     int64_t userID;
     string role;
-    string joinedAt;
+    string joinedAt; // Membership join timestamp for the inserted row.
     string result;
 
     void writeTo(SData& response) const {

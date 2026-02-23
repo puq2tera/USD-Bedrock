@@ -14,7 +14,7 @@ namespace {
 struct EditChatMessageRequestModel {
     int64_t chatID;
     int64_t messageID;
-    int64_t userID;
+    int64_t userID; // Caller attempting edit (author or chat owner).
     string body;
 
     static EditChatMessageRequestModel bind(const SData& request) {
@@ -38,7 +38,7 @@ struct EditChatMessageRequestModel {
 struct EditChatMessageResponseModel {
     int64_t messageID;
     int64_t chatID;
-    int64_t userID;
+    int64_t userID; // Original message author userID.
     string body;
     string createdAt;
     string updatedAt;
@@ -115,6 +115,7 @@ void EditChatMessage::process(SQLite& db) {
     const bool isAuthor = messageAuthorUserID == input.userID;
 
     if (!isAuthor) {
+        // Non-authors may edit only if they are current chat owners.
         const optional<string> role = ChatAccess::optionalMembershipRole(
             db,
             input.chatID,

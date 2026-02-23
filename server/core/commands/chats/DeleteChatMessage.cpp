@@ -14,7 +14,7 @@ namespace {
 struct DeleteChatMessageRequestModel {
     int64_t chatID;
     int64_t messageID;
-    int64_t userID;
+    int64_t userID; // Caller attempting deletion (author or chat owner).
 
     static DeleteChatMessageRequestModel bind(const SData& request) {
         return {
@@ -96,6 +96,7 @@ void DeleteChatMessage::process(SQLite& db) {
     const bool isAuthor = messageAuthorUserID == input.userID;
 
     if (!isAuthor) {
+        // Non-authors may delete only if they are current chat owners.
         const optional<string> role = ChatAccess::optionalMembershipRole(
             db,
             input.chatID,

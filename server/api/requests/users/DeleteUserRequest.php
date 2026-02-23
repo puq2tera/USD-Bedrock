@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\users;
 
-use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\Request;
+use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\responses\framework\RouteResponse;
 use BedrockStarter\responses\users\DeleteUserResponse;
 

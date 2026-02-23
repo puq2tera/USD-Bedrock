@@ -17,7 +17,7 @@ string boolToResponse(bool value) {
 
 struct SubmitPollTextResponseRequestModel {
     int64_t pollID;
-    int64_t userID;
+    int64_t userID; // Caller submitting the text response.
     string textValue;
 
     static SubmitPollTextResponseRequestModel bind(const SData& request) {
@@ -42,7 +42,7 @@ struct SubmitPollTextResponseResponseModel {
     int64_t userID;
     string textValue;
     int64_t createdAt;
-    bool replaced;
+    bool replaced; // True when an existing text response was replaced.
 
     void writeTo(SData& response) const {
         ResponseBinding::setInt64(response, "responseID", responseID);
@@ -135,6 +135,7 @@ void SubmitPollTextResponse::process(SQLite& db) {
     }
 
     if (hasExisting) {
+        // A user can have only one text response per poll. Updating means replacing the old row.
         const string deleteQuery = fmt::format(
             "DELETE FROM poll_text_responses WHERE pollID = {} AND userID = {};",
             input.pollID,

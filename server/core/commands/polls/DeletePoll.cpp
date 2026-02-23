@@ -13,7 +13,7 @@ namespace {
 
 struct DeletePollRequestModel {
     int64_t pollID;
-    int64_t actorUserID;
+    int64_t actorUserID; // Caller attempting deletion; must be poll creator.
 
     static DeletePollRequestModel bind(const SData& request) {
         return {

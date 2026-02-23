@@ -13,17 +13,15 @@
 
 namespace {
 
-constexpr size_t MAX_OPTIONS = 20;
-
 struct EditPollRequestModel {
     int64_t pollID;
-    int64_t actorUserID;
+    int64_t actorUserID; // Caller requesting the mutation; must be poll creator.
     optional<string> question;
     optional<bool> allowChangeVote;
     optional<bool> isAnonymous;
     optional<string> status;
-    optional<optional<int64_t>> expiresAt;
-    optional<list<string>> options;
+    optional<optional<int64_t>> expiresAt; // outer: field present; inner nullopt: clear expiresAt.
+    optional<list<string>> options; // Full replacement list for choice options when provided.
 
     static EditPollRequestModel bind(const SData& request) {
         const int64_t pollID = RequestBinding::requirePositiveInt64(request, "pollID");
@@ -54,6 +52,10 @@ struct EditPollRequestModel {
         optional<optional<int64_t>> expiresAt;
         if (RequestBinding::isPresent(request, "expiresAt")) {
             const string rawExpiresAt = STrim(request["expiresAt"]);
+            // `expiresAt` supports three cases:
+            // - field missing: leave existing value unchanged
+            // - empty/"null": clear expiresAt
+            // - positive integer: set new expiresAt
             if (rawExpiresAt.empty() || SIEquals(rawExpiresAt, "null")) {
                 expiresAt = optional<int64_t> {};
             } else {
@@ -71,7 +73,12 @@ struct EditPollRequestModel {
 
         optional<list<string>> options;
         if (RequestBinding::isPresent(request, "options")) {
-            options = RequestBinding::requireJSONArray(request, "options", 0, MAX_OPTIONS);
+            options = RequestBinding::requireJSONArray(
+                request,
+                "options",
+                0,
+                PollCommandUtils::REQUEST_MAX_OPTIONS
+            );
         }
 
         if (!question && !allowChangeVote && !isAnonymous && !status && !expiresAt && !options) {
@@ -99,7 +106,7 @@ struct EditPollResponseModel {
     int64_t pollID;
     string status;
     int64_t updatedAt;
-    int64_t optionCount;
+    int64_t optionCount; // Current count of options after update/replacement.
     string result;
 
     void writeTo(SData& response) const {
@@ -174,9 +181,14 @@ void EditPoll::process(SQLite& db) {
             );
         }
 
-        if (input.options->size() < 2 || input.options->size() > MAX_OPTIONS) {
+        if (input.options->size() < PollCommandUtils::MIN_OPTIONS ||
+            input.options->size() > PollCommandUtils::MAX_OPTIONS) {
             CommandError::badRequest(
-                "Choice polls must include 2-20 options",
+                fmt::format(
+                    "Choice polls must include {}-{} options",
+                    PollCommandUtils::MIN_OPTIONS,
+                    PollCommandUtils::MAX_OPTIONS
+                ),
                 "EDIT_POLL_INVALID_OPTION_COUNT",
                 {{"command", "EditPoll"}, {"pollID", SToStr(input.pollID)}}
             );
@@ -211,6 +223,8 @@ void EditPoll::process(SQLite& db) {
     }
 
     const int64_t now = PollCommandUtils::nowUnix();
+    const bool transitionedToClosed =
+        input.status.has_value() && poll.status != *input.status && *input.status == "closed";
 
     vector<string> assignments;
     if (input.question) {
@@ -253,6 +267,7 @@ void EditPoll::process(SQLite& db) {
     }
 
     if (normalizedOptions) {
+        // Replacing the option list invalidates existing votes because option IDs/order may change.
         const string deleteVotesQuery = fmt::format(
             "DELETE FROM votes WHERE pollID = {};",
             input.pollID
@@ -341,6 +356,16 @@ void EditPoll::process(SQLite& db) {
         "EDIT_POLL_LOOKUP_AFTER_UPDATE_FAILED",
         "EDIT_POLL_NOT_FOUND_AFTER_UPDATE"
     );
+    if (transitionedToClosed) {
+        // If this update closed the poll, create the summary message immediately for chat clients.
+        (void)PollCommandUtils::ensurePollSummaryMessage(
+            db,
+            poll,
+            "EditPoll",
+            "EDIT_POLL_SUMMARY_READ_FAILED",
+            "EDIT_POLL_SUMMARY_WRITE_FAILED"
+        );
+    }
 
     SQResult optionCountResult;
     const string optionCountQuery = fmt::format(

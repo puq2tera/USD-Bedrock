@@ -18,6 +18,7 @@
 #include "commands/polls/DeletePollVotes.h"
 #include "commands/polls/EditPoll.h"
 #include "commands/polls/GetPoll.h"
+#include "commands/polls/GetPollParticipation.h"
 #include "commands/polls/ListPolls.h"
 #include "commands/polls/SubmitPollTextResponse.h"
 #include "commands/polls/SubmitPollVotes.h"
@@ -100,6 +101,9 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
     }
     if (SIEquals(baseCommand.request.methodLine, "GetPoll")) {
         return make_unique<GetPoll>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "GetPollParticipation")) {
+        return make_unique<GetPollParticipation>(std::move(baseCommand), this);
     }
     if (SIEquals(baseCommand.request.methodLine, "ListPolls")) {
         return make_unique<ListPolls>(std::move(baseCommand), this);

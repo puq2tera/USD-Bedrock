@@ -40,7 +40,10 @@ final class ListChatsRequest extends RouteBoundRequestBase
     {
         return new self(
             Request::requireInt('userID', 1),
+            // Validate page size early so callers cannot request unbounded chat lists.
+            // If omitted, command layer uses the default page size.
             Request::getIntStrict('limit', null, 1, 100),
+            // Cursor pagination: return chats with chatID lower than beforeChatID.
             Request::getIntStrict('beforeChatID', null, 1)
         );
     }

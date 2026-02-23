@@ -13,7 +13,7 @@
 namespace {
 
 struct EditUserRequestModel {
-    int64_t userID;
+    int64_t userID; // Target user record to update.
     optional<string> email;
     optional<string> firstName;
     optional<string> lastName;

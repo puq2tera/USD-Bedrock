@@ -12,9 +12,9 @@
 namespace {
 
 struct ListChatsRequestModel {
-    int64_t userID;
-    size_t limit;
-    optional<int64_t> beforeChatID;
+    int64_t userID; // Caller whose memberships define the result set.
+    size_t limit; // Page size for chat listing.
+    optional<int64_t> beforeChatID; // Cursor: return chats with chatID < this value.
 
     static ListChatsRequestModel bind(const SData& request) {
         const int64_t userID = RequestBinding::requirePositiveInt64(request, "userID");
@@ -70,6 +70,7 @@ void ListChats::buildResponse(SQLite& db) {
         "LIST_CHATS_USER_NOT_FOUND"
     );
 
+    // Join through chat_members so each row includes the caller's role in that chat.
     string query = fmt::format(
         "SELECT c.chatID, c.title, c.createdAt, c.createdByUserID, cm.role "
         "FROM chats c "
