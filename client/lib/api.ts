@@ -1,6 +1,6 @@
 // Base URL of the Bedrock API running in the Multipass VM.
-// Change this if your VM IP changes (run: multipass info bedrock-starter).
-const API_BASE = "http://192.168.2.7";
+// Override via EXPO_PUBLIC_API_BASE in client/.env (see .env.example).
+const API_BASE = process.env.EXPO_PUBLIC_API_BASE || "http://192.168.2.7";
 
 type DemoContext = {
   userID: number;
@@ -122,7 +122,7 @@ export async function createPoll(question: string, options: string[]): Promise<{
       creatorUserID: context.userID,
       question,
       type: "single_choice",
-      allowChangeVote: false,
+      allowChangeVote: true,
       isAnonymous: false,
       options,
     }),
