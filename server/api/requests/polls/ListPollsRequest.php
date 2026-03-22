@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\polls;
 
+use BedrockStarter\Auth;
 use BedrockStarter\Request;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\responses\framework\RouteResponse;
@@ -40,7 +41,7 @@ final class ListPollsRequest extends RouteBoundRequestBase
     {
         return new self(
             Request::requireRouteInt($routeParams, 'chatID'),
-            Request::requireInt('requesterUserID', 1),
+            Auth::requireAuthenticatedUserID(),
             // Default to true so existing clients still receive both open and closed polls.
             Request::hasParam('includeClosed') ? Request::requireBool('includeClosed') : true
         );

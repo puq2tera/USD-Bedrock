@@ -239,6 +239,7 @@ private:
                             const string& lastName = "User") {
         SData req("CreateUser");
         req["email"] = uniqueEmail(emailPrefix);
+        req["password"] = "Password1!";
         req["firstName"] = firstName;
         req["lastName"] = lastName;
 

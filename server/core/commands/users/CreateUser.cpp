@@ -3,6 +3,7 @@
 #include "../../Core.h"
 #include "../CommandError.h"
 #include "../ResponseBinding.h"
+#include "UserAuth.h"
 #include "UserValidation.h"
 
 #include <libstuff/libstuff.h>
@@ -12,6 +13,7 @@ namespace {
 
 struct CreateUserRequestModel {
     string email;
+    string passwordHash;
     string firstName;
     string lastName;
     string displayName;
@@ -20,9 +22,11 @@ struct CreateUserRequestModel {
         const string firstName = UserValidation::requireName(request, "firstName");
         const string lastName = UserValidation::requireName(request, "lastName");
         const optional<string> displayName = UserValidation::optionalDisplayName(request, "displayName");
+        const string password = UserAuth::requirePassword(request, "password");
 
         return {
             UserValidation::requireEmail(request, "email"),
+            UserAuth::hashPassword(password),
             firstName,
             lastName,
             displayName.value_or(UserValidation::defaultDisplayName(firstName, lastName))
@@ -86,8 +90,9 @@ void CreateUser::process(SQLite& db) {
     }
 
     const string insertUserQuery = fmt::format(
-        "INSERT INTO users (email, firstName, lastName, displayName, createdAt) VALUES ({}, {}, {}, {}, {});",
-        SQ(input.email), SQ(input.firstName), SQ(input.lastName), SQ(input.displayName), createdAt
+        "INSERT INTO users (email, passwordHash, firstName, lastName, displayName, createdAt, updatedAt) "
+        "VALUES ({}, {}, {}, {}, {}, {}, NULL);",
+        SQ(input.email), SQ(input.passwordHash), SQ(input.firstName), SQ(input.lastName), SQ(input.displayName), createdAt
     );
     if (!db.write(insertUserQuery)) {
         CommandError::upstreamFailure(

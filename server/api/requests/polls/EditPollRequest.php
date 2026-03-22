@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\polls;
 
+use BedrockStarter\Auth;
 use BedrockStarter\config\AppConfig;
 use BedrockStarter\Request;
 use BedrockStarter\ValidationException;
@@ -46,7 +47,7 @@ final class EditPollRequest extends RouteBoundRequestBase
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         $pollID = Request::requireRouteInt($routeParams, 'pollID');
-        $actorUserID = Request::requireInt('actorUserID', 1);
+        $actorUserID = Auth::requireAuthenticatedUserID();
 
         $question = Request::getOptionalString('question', 1, Request::MAX_SIZE_SMALL);
         $allowChangeVote = Request::hasParam('allowChangeVote') ? Request::requireBool('allowChangeVote') : null;

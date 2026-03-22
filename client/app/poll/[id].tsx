@@ -9,11 +9,15 @@ import {
   RefreshControl,
   Alert,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { Redirect, useLocalSearchParams } from "expo-router";
 import { useFocusEffect } from "expo-router";
-import { getPoll, submitVote, PollDetail, PollOption } from "../../lib/api";
+import { getPoll, hasToken, submitVote, PollDetail, PollOption } from "../../lib/api";
 
 export default function PollDetailScreen() {
+  if (!hasToken()) {
+    return <Redirect href="/login" />;
+  }
+
   const { id } = useLocalSearchParams<{ id: string }>();
   const pollID = Number(id);
 

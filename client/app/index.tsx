@@ -8,10 +8,14 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import { useRouter, useFocusEffect } from "expo-router";
-import { getPolls, PollSummary } from "../lib/api";
+import { Redirect, useRouter, useFocusEffect } from "expo-router";
+import { getPolls, hasToken, PollSummary } from "../lib/api";
 
 export default function PollListScreen() {
+  if (!hasToken()) {
+    return <Redirect href="/login" />;
+  }
+
   const router = useRouter();
   const [polls, setPolls] = useState<PollSummary[]>([]);
   const [loading, setLoading] = useState(true);

@@ -11,9 +11,14 @@ import {
   Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { createPoll } from "../lib/api";
+import { Redirect } from "expo-router";
+import { createPoll, hasToken } from "../lib/api";
 
 export default function CreatePollScreen() {
+  if (!hasToken()) {
+    return <Redirect href="/login" />;
+  }
+
   const router = useRouter();
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState(["", ""]);

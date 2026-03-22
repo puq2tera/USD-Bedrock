@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\users;
 
+use BedrockStarter\Auth;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\Request;
 use BedrockStarter\responses\framework\RouteResponse;
@@ -42,6 +43,9 @@ final class EditUserRequest extends RouteBoundRequestBase
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         $userID = Request::requireRouteInt($routeParams, 'userID');
+        if ($userID !== Auth::requireAuthenticatedUserID()) {
+            throw new ValidationException('Forbidden', 403);
+        }
         $email = Request::getOptionalString('email', 1, 256);
         $firstName = Request::getOptionalString('firstName', 1, Request::MAX_SIZE_SMALL);
         $lastName = Request::getOptionalString('lastName', 1, Request::MAX_SIZE_SMALL);

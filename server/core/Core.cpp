@@ -27,6 +27,7 @@
 #include "commands/users/DeleteUser.h"
 #include "commands/users/EditUser.h"
 #include "commands/users/GetUser.h"
+#include "commands/users/LoginUser.h"
 #include "tables/Tables.h"
 
 #include <BedrockServer.h>
@@ -128,6 +129,9 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
     }
     if (SIEquals(baseCommand.request.methodLine, "GetUser")) {
         return make_unique<GetUser>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "LoginUser")) {
+        return make_unique<LoginUser>(std::move(baseCommand), this);
     }
     if (SIEquals(baseCommand.request.methodLine, "EditUser")) {
         return make_unique<EditUser>(std::move(baseCommand), this);

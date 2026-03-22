@@ -2,22 +2,21 @@
 
 declare(strict_types=1);
 
-namespace BedrockStarter\requests\chats;
+namespace BedrockStarter\requests\users;
 
-use BedrockStarter\Auth;
 use BedrockStarter\Request;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
-use BedrockStarter\responses\chats\DeleteChatResponse;
 use BedrockStarter\responses\framework\RouteResponse;
+use BedrockStarter\responses\users\LoginUserResponse;
 
-final class DeleteChatRequest extends RouteBoundRequestBase
+final class LoginUserRequest extends RouteBoundRequestBase
 {
-    private const PATH_PATTERN = '#^/api/chats/(?P<chatID>\d+)$#';
-    private const ALLOWED_METHODS = ['DELETE'];
+    private const PATH_PATTERN = '#^/api/auth/login$#';
+    private const ALLOWED_METHODS = ['POST'];
 
     public function __construct(
-        private readonly int $chatID,
-        private readonly int $userID
+        private readonly string $email,
+        private readonly string $password
     ) {
     }
 
@@ -33,27 +32,27 @@ final class DeleteChatRequest extends RouteBoundRequestBase
 
     public static function bedrockCommand(): ?string
     {
-        return 'DeleteChat';
+        return 'LoginUser';
     }
 
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         return new self(
-            Request::requireRouteInt($routeParams, 'chatID'),
-            Auth::requireAuthenticatedUserID()
+            Request::requireString('email', 1, 256),
+            Request::requireString('password', 8, 128)
         );
     }
 
     public function toBedrockParams(): array
     {
         return [
-            'chatID' => (string)$this->chatID,
-            'userID' => (string)$this->userID,
+            'email' => $this->email,
+            'password' => $this->password,
         ];
     }
 
     public function transformResponse(array $bedrockResponse): RouteResponse
     {
-        return new DeleteChatResponse($bedrockResponse);
+        return new LoginUserResponse($bedrockResponse);
     }
 }

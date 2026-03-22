@@ -69,6 +69,7 @@ set(SOURCES
     commands/users/DeleteUser.cpp
     commands/users/EditUser.cpp
     commands/users/GetUser.cpp
+    commands/users/LoginUser.cpp
     tables/TableUtils.cpp
     tables/chats/ChatsTable.cpp
     tables/chats/ChatMembersTable.cpp
