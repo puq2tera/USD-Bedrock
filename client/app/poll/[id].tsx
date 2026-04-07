@@ -11,10 +11,13 @@ import {
 } from "react-native";
 import { Redirect, useLocalSearchParams } from "expo-router";
 import { useFocusEffect } from "expo-router";
-import { getPoll, hasToken, submitVote, PollDetail, PollOption } from "../../lib/api";
+import { getPoll, submitVote, PollDetail, PollOption } from "../../lib/api";
+import { useAuth } from "../../lib/auth";
 
 export default function PollDetailScreen() {
-  if (!hasToken()) {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
     return <Redirect href="/login" />;
   }
 

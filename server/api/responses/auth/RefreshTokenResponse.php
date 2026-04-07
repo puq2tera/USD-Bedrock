@@ -2,18 +2,16 @@
 
 declare(strict_types=1);
 
-namespace BedrockStarter\responses\users;
+namespace BedrockStarter\responses\auth;
 
 use BedrockStarter\responses\framework\RouteResponse;
 
-final class LoginUserResponse implements RouteResponse
+final class RefreshTokenResponse implements RouteResponse
 {
     public function __construct(
         private readonly string $accessToken,
-        private readonly string $refreshToken,
-        private readonly array $user
-    )
-    {
+        private readonly string $refreshToken
+    ) {
     }
 
     public function toArray(): array
@@ -21,7 +19,6 @@ final class LoginUserResponse implements RouteResponse
         return [
             'accessToken' => $this->accessToken,
             'refreshToken' => $this->refreshToken,
-            'user' => $this->user,
         ];
     }
 }

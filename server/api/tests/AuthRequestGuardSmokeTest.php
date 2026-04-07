@@ -16,6 +16,10 @@ use BedrockStarter\requests\polls\GetPollRequest;
 
 function resetRequestState(): void
 {
+    putenv('BEDROCK_API_JWT_SECRET=test-secret');
+    putenv('BEDROCK_API_JWT_ISSUER=bedrock-starter');
+    putenv('BEDROCK_API_JWT_AUDIENCE=bedrock-mobile');
+
     $_GET = [];
     $_POST = [];
     $_REQUEST = [];
@@ -72,7 +76,39 @@ function run(): void
     );
 
     resetRequestState();
-    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . Auth::issueToken(7);
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . Auth::issueAccessToken(7, 11, ['exp' => time() - 1, 'iat' => time() - 10]);
+    assertStatusCode(
+        static fn() => GetPollRequest::tryBind('GET', '/api/polls/10'),
+        401,
+        'Protected route with expired token should be 401'
+    );
+
+    resetRequestState();
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . Auth::issueAccessToken(7, 11, ['iss' => 'wrong-issuer']);
+    assertStatusCode(
+        static fn() => GetPollRequest::tryBind('GET', '/api/polls/10'),
+        401,
+        'Protected route with wrong issuer should be 401'
+    );
+
+    resetRequestState();
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . Auth::issueAccessToken(7, 11, ['aud' => 'wrong-audience']);
+    assertStatusCode(
+        static fn() => GetPollRequest::tryBind('GET', '/api/polls/10'),
+        401,
+        'Protected route with wrong audience should be 401'
+    );
+
+    resetRequestState();
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . Auth::issueAccessToken(7, 11, ['typ' => 'refresh']);
+    assertStatusCode(
+        static fn() => GetPollRequest::tryBind('GET', '/api/polls/10'),
+        401,
+        'Protected route with wrong token type should be 401'
+    );
+
+    resetRequestState();
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . Auth::issueAccessToken(7, 11);
     $bound = GetPollRequest::tryBind('GET', '/api/polls/10');
     assertTrue($bound !== null, 'Protected route with valid token should bind');
 

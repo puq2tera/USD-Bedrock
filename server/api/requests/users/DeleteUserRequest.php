@@ -38,7 +38,7 @@ final class DeleteUserRequest extends RouteBoundRequestBase
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         $routeUserID = Request::requireRouteInt($routeParams, 'userID');
-        if ($routeUserID !== Auth::requireAuthenticatedUserID()) {
+        if ($routeUserID !== Auth::requireAuthenticatedContext()->userID) {
             throw new ValidationException('Forbidden', 403);
         }
 

@@ -43,7 +43,7 @@ final class EditUserRequest extends RouteBoundRequestBase
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         $userID = Request::requireRouteInt($routeParams, 'userID');
-        if ($userID !== Auth::requireAuthenticatedUserID()) {
+        if ($userID !== Auth::requireAuthenticatedContext()->userID) {
             throw new ValidationException('Forbidden', 403);
         }
         $email = Request::getOptionalString('email', 1, 256);

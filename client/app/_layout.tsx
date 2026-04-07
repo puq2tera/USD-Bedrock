@@ -1,17 +1,30 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, View } from "react-native";
-import { useEffect, useState } from "react";
-import { hasToken, initializeAuth } from "../lib/api";
+import { useEffect } from "react";
+import { useRouter, useSegments } from "expo-router";
+import { AuthProvider, useAuth } from "../lib/auth";
 
-export default function RootLayout() {
-  const [ready, setReady] = useState(false);
+function RootNavigator() {
+  const router = useRouter();
+  const segments = useSegments();
+  const { status, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    initializeAuth().finally(() => setReady(true));
-  }, []);
+    const inAuthFlow = segments[0] === "login" || segments[0] === "register";
+    if (status === "loading") {
+      return;
+    }
+    if (!isAuthenticated && !inAuthFlow) {
+      router.replace("/login");
+      return;
+    }
+    if (isAuthenticated && inAuthFlow) {
+      router.replace("/");
+    }
+  }, [isAuthenticated, router, segments, status]);
 
-  if (!ready) {
+  if (status === "loading") {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color="#0D7E3F" />
@@ -19,13 +32,10 @@ export default function RootLayout() {
     );
   }
 
-  const authenticated = hasToken();
-
   return (
     <>
       <StatusBar style="dark" />
       <Stack
-        initialRouteName={authenticated ? "index" : "login"}
         screenOptions={{
           headerStyle: { backgroundColor: "#0D7E3F" },
           headerTintColor: "#fff",
@@ -39,5 +49,13 @@ export default function RootLayout() {
         <Stack.Screen name="poll/[id]" options={{ title: "Poll" }} />
       </Stack>
     </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <RootNavigator />
+    </AuthProvider>
   );
 }

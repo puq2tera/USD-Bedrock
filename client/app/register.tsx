@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Redirect, useRouter } from "expo-router";
 
-import { hasToken, register } from "../lib/api";
+import { useAuth } from "../lib/auth";
 
 export default function RegisterScreen() {
-  if (hasToken()) {
+  const { isAuthenticated, register } = useAuth();
+
+  if (isAuthenticated) {
     return <Redirect href="/" />;
   }
 

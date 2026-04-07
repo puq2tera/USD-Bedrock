@@ -1,12 +1,11 @@
-import * as SecureStore from "expo-secure-store";
+import { authFetch, getAuthSnapshot, type AuthUser } from "./auth";
 
 // Base URL of the Bedrock API running in the Multipass VM.
 // Override via EXPO_PUBLIC_API_BASE in client/.env (see .env.example).
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE || "http://192.168.2.7";
-const AUTH_TOKEN_KEY = "bedrock_auth_token";
 
-let authToken: string | null = null;
 let activeChatID: number | null = null;
+let activeChatUserID: string | null = null;
 
 type PollSummary = {
   pollID: number;
@@ -31,85 +30,47 @@ type PollDetail = {
   totalVotes: string;
 };
 
-async function request(path: string, options?: RequestInit) {
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    ...(options?.headers as Record<string, string> | undefined),
   };
-  if (authToken) {
-    headers.Authorization = `Bearer ${authToken}`;
-  }
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers,
+  const response = await authFetch(`${API_BASE}${path}`, {
     ...options,
+    headers,
   });
+  const data = await response.json();
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || `Request failed with status ${res.status}`);
+  if (!response.ok) {
+    throw new Error(data.error || `Request failed with status ${response.status}`);
   }
 
-  return data;
+  return data as T;
 }
 
-export async function initializeAuth(): Promise<void> {
-  const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
-  authToken = token && token.length > 0 ? token : null;
-  activeChatID = null;
-}
-
-export function hasToken(): boolean {
-  return authToken !== null;
-}
-
-async function setToken(token: string): Promise<void> {
-  authToken = token;
-  activeChatID = null;
-  await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
-}
-
-export async function logout(): Promise<void> {
-  authToken = null;
-  activeChatID = null;
-  await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
-}
-
-export async function login(email: string, password: string): Promise<void> {
-  const data = await request("/api/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ email, password }),
-  });
-  await setToken(String(data.token));
-}
-
-export async function register(input: {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  displayName?: string;
-}): Promise<void> {
-  await request("/api/users", {
-    method: "POST",
-    body: JSON.stringify(input),
-  });
-  await login(input.email, input.password);
+function resetActiveChatIfUserChanged(user: AuthUser | null) {
+  const nextUserID = user?.userID ?? null;
+  if (activeChatUserID !== nextUserID) {
+    activeChatID = null;
+    activeChatUserID = nextUserID;
+  }
 }
 
 async function ensureActiveChatID(): Promise<number> {
+  resetActiveChatIfUserChanged(getAuthSnapshot().user);
   if (activeChatID !== null) {
     return activeChatID;
   }
 
-  const chatsData = await request("/api/chats");
+  const chatsData = await request<{ chats?: Array<{ chatID?: string | number }> }>("/api/chats");
   const chats = Array.isArray(chatsData.chats) ? chatsData.chats : [];
   if (chats.length > 0) {
     activeChatID = Number(chats[0].chatID);
     return activeChatID;
   }
 
-  const created = await request("/api/chats", {
+  const created = await request<{ chatID: string | number }>("/api/chats", {
     method: "POST",
     body: JSON.stringify({ title: "My Polls" }),
   });
@@ -117,12 +78,11 @@ async function ensureActiveChatID(): Promise<number> {
   return activeChatID;
 }
 
-/** GET /api/chats/:chatID/polls — list polls in active user chat */
 export async function getPolls(): Promise<PollSummary[]> {
   const chatID = await ensureActiveChatID();
-  const data = await request(`/api/chats/${chatID}/polls`);
+  const data = await request<{ polls?: any[] }>(`/api/chats/${chatID}/polls`);
   const polls = Array.isArray(data.polls) ? data.polls : [];
-  return polls.map((poll: any) => ({
+  return polls.map((poll) => ({
     pollID: Number(poll.pollID),
     question: String(poll.question ?? ""),
     createdAt: Number(poll.createdAt ?? 0),
@@ -131,9 +91,8 @@ export async function getPolls(): Promise<PollSummary[]> {
   }));
 }
 
-/** GET /api/polls/:id — get poll details */
 export async function getPoll(pollID: number): Promise<PollDetail> {
-  const data = await request(`/api/polls/${pollID}`);
+  const data = await request<any>(`/api/polls/${pollID}`);
 
   const options = Array.isArray(data.options) ? data.options : [];
   return {
@@ -146,7 +105,6 @@ export async function getPoll(pollID: number): Promise<PollDetail> {
   };
 }
 
-/** POST /api/chats/:chatID/polls — create a poll in active user chat */
 export async function createPoll(question: string, options: string[]): Promise<{ pollID: string }> {
   const chatID = await ensureActiveChatID();
   return request(`/api/chats/${chatID}/polls`, {
@@ -161,7 +119,6 @@ export async function createPoll(question: string, options: string[]): Promise<{
   });
 }
 
-/** POST /api/polls/:id/votes — submit one selected option */
 export async function submitVote(pollID: number, optionID: number): Promise<{ voteID: string }> {
   return request(`/api/polls/${pollID}/votes`, {
     method: "POST",

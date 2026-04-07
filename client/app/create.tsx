@@ -12,10 +12,13 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Redirect } from "expo-router";
-import { createPoll, hasToken } from "../lib/api";
+import { createPoll } from "../lib/api";
+import { useAuth } from "../lib/auth";
 
 export default function CreatePollScreen() {
-  if (!hasToken()) {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
     return <Redirect href="/login" />;
   }
 

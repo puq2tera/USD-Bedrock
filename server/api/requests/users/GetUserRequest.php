@@ -38,8 +38,8 @@ final class GetUserRequest extends RouteBoundRequestBase
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         $routeUserID = Request::requireRouteInt($routeParams, 'userID');
-        $authUserID = Auth::requireAuthenticatedUserID();
-        if ($routeUserID !== $authUserID) {
+        $authContext = Auth::requireAuthenticatedContext();
+        if ($routeUserID !== $authContext->userID) {
             throw new ValidationException('Forbidden', 403);
         }
 

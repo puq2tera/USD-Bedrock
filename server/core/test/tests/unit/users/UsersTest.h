@@ -6,6 +6,7 @@ struct UsersTest : tpunit::TestFixture {
     UsersTest()
         : tpunit::TestFixture(
             "UsersTests",
+            TEST(UsersTest::testCreateUserStoresPasswordHashInFinalFormat),
             TEST(UsersTest::testCreateUserSuccess),
             TEST(UsersTest::testCreateUserMissingEmail),
             TEST(UsersTest::testCreateUserInvalidEmail),
@@ -43,6 +44,21 @@ struct UsersTest : tpunit::TestFixture {
 
     string firstOptionID(BedrockTester& tester, const string& pollID) {
         return TestHelpers::firstOptionForPoll(tester, pollID).at("optionID");
+    }
+
+    void testCreateUserStoresPasswordHashInFinalFormat() {
+        BedrockTester tester = TestHelpers::createTester();
+
+        SData req("CreateUser");
+        req["email"] = "hash-format@example.com";
+        req["password"] = "Password1!";
+        req["firstName"] = "Hash";
+        req["lastName"] = "Format";
+        SData resp = TestHelpers::executeSingle(tester, req);
+
+        ASSERT_TRUE(SStartsWith(resp.methodLine, "200 OK"));
+        const string passwordHash = tester.readDB("SELECT passwordHash FROM users WHERE userID = " + resp["userID"] + ";");
+        ASSERT_TRUE(SStartsWith(passwordHash, "pbkdf2_sha256$"));
     }
 
     void testCreateUserSuccess() {

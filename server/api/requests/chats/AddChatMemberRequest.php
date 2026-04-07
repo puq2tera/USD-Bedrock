@@ -40,6 +40,7 @@ final class AddChatMemberRequest extends RouteBoundRequestBase
 
     protected static function bindFromRouteMatch(array $routeParams): self
     {
+        $authContext = Auth::requireAuthenticatedContext();
         $role = Request::getOptionalString('role', 1, Request::MAX_SIZE_SMALL);
         if ($role !== null) {
             $role = ChatRole::requireKnown($role);
@@ -47,7 +48,7 @@ final class AddChatMemberRequest extends RouteBoundRequestBase
 
         return new self(
             Request::requireRouteInt($routeParams, 'chatID'),
-            Auth::requireAuthenticatedUserID(),
+            $authContext->userID,
             Request::requireInt('userID', 1),
             $role
         );

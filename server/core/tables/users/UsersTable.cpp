@@ -20,7 +20,7 @@ void verify(SQLite& db) {
             CHECK (length(trim(email)) BETWEEN 6 AND 254),
             CHECK (email = lower(email)),
             CHECK (instr(email, '@') > 1),
-            CHECK (length(trim(passwordHash)) >= 32),
+            CHECK (length(trim(passwordHash)) >= 64),
             CHECK (length(trim(firstName)) BETWEEN 1 AND 255),
             CHECK (length(trim(lastName)) BETWEEN 1 AND 255),
             CHECK (length(trim(displayName)) BETWEEN 1 AND 511),

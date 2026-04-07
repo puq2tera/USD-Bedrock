@@ -9,10 +9,13 @@ import {
   RefreshControl,
 } from "react-native";
 import { Redirect, useRouter, useFocusEffect } from "expo-router";
-import { getPolls, hasToken, PollSummary } from "../lib/api";
+import { getPolls, PollSummary } from "../lib/api";
+import { useAuth } from "../lib/auth";
 
 export default function PollListScreen() {
-  if (!hasToken()) {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
     return <Redirect href="/login" />;
   }
 

@@ -47,7 +47,7 @@ final class EditPollRequest extends RouteBoundRequestBase
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         $pollID = Request::requireRouteInt($routeParams, 'pollID');
-        $actorUserID = Auth::requireAuthenticatedUserID();
+        $actorUserID = Auth::requireAuthenticatedContext()->userID;
 
         $question = Request::getOptionalString('question', 1, Request::MAX_SIZE_SMALL);
         $allowChangeVote = Request::hasParam('allowChangeVote') ? Request::requireBool('allowChangeVote') : null;

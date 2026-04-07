@@ -47,7 +47,7 @@ final class CreatePollRequest extends RouteBoundRequestBase
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         $chatID = Request::requireRouteInt($routeParams, 'chatID');
-        $creatorUserID = Auth::requireAuthenticatedUserID();
+        $creatorUserID = Auth::requireAuthenticatedContext()->userID;
         $question = Request::requireString('question', 1, Request::MAX_SIZE_SMALL);
         $type = Request::requireString('type', 1, 64);
 

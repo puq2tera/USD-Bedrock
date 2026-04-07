@@ -48,7 +48,7 @@ class Bedrock
         $client = self::getInstance();
 
         try {
-            Log::info("Calling Bedrock command {$method}", ['data' => $data]);
+            Log::info("Calling Bedrock command {$method}", ['data' => self::sanitizeLogData($data)]);
             $response = $client->call($method, $data);
 
             if (isset($response["code"]) && $response["code"] == 200) {
@@ -114,5 +114,20 @@ class Bedrock
         }
 
         return '';
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    private static function sanitizeLogData(array $data): array
+    {
+        foreach (['password', 'refreshToken'] as $key) {
+            if (array_key_exists($key, $data)) {
+                $data[$key] = '[REDACTED]';
+            }
+        }
+
+        return $data;
     }
 }
