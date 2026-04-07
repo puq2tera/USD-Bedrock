@@ -5,6 +5,31 @@
 - The architecture and folder layout may evolve quickly; treat current structure as guidance, not a fixed contract.
 - Prefer small, incremental changes that preserve momentum while keeping behavior clear and testable.
 
+## Command discovery and validation
+- Prefer exact commands from the repo over assumptions. Check `README.md`, project scripts, workflow files, and manifests before inventing a command.
+- Do not guess build, test, lint, or run commands when the repo already defines them.
+- Before finishing a change, run the most relevant local validation available for the files you touched using the repo's standard commands.
+- Prefer targeted validation over broad validation when the repo supports it. Use the narrowest check that reliably covers the changed area before escalating to larger suites.
+- If the right validation command is still unclear after checking the repo, ask instead of guessing.
+
+## Instruction priority and conflict resolution
+- Apply instructions in this order:
+- direct user instructions in the current thread
+- this `AGENTS.md`
+- conventions in the nearest relevant files
+- broader repository conventions
+- If instructions conflict in a way that could affect behavior, data integrity, security, or architecture, stop and ask for clarification.
+- If the conflict is low-impact and reversible, proceed with a clearly stated assumption and keep the change minimal.
+
+## Change summary output format
+- After making code or configuration changes, provide a concise summary that includes:
+- `Files changed`
+- `What changed`
+- `Commands run` and results
+- `Assumptions made`
+- `Risks / follow-ups`
+- Keep summaries reviewer-focused and high signal. Avoid verbose narration.
+
 ## Common repo layout (if present)
 - `Bedrock/`: upstream Bedrock source (usually a submodule/dependency).
 - `server/core/` (or similar): custom Bedrock plugin logic and command handlers.
@@ -24,6 +49,25 @@
 - Treat script names and locations as discoverable and changeable; verify what currently exists before running.
 - If command intent is unclear or ambiguous, ask instead of guessing.
 
+## Scope and safety boundaries
+### Always do
+- Make minimal, targeted changes.
+- Follow nearby conventions before introducing new abstractions.
+- State assumptions clearly when uncertainty is low-impact and reversible.
+- Preserve backward compatibility unless the task explicitly requires breaking changes.
+- Avoid unrelated formatting, renaming, cleanup, or refactors outside the requested scope.
+
+### Ask first
+- Ambiguous requirements that affect behavior, data contracts, schema compatibility, or rollout behavior.
+- Public API request/response/error shape changes when the expected contract is unclear.
+- Security-sensitive behavior, permissions, auth flows, secret handling, or logging changes.
+- Cross-boundary ownership questions where it is unclear whether the API, core plugin, or client should own the behavior.
+
+### Never do without explicit permission
+- Broad refactors, speculative cleanup, or feature expansion beyond the requested scope.
+- Destructive actions such as hard resets, forceful data removal, or reverting unrelated user changes.
+- Editing generated artifacts directly when the source-of-truth file or generation path should be changed instead.
+
 ## Clarifications and questions
 - Do not guess on ambiguous requirements that could alter behavior or contracts.
 - Ask before coding when uncertainty affects:
@@ -41,6 +85,11 @@
 - Avoid editing third-party/external dependency code unless explicitly requested.
 - Avoid committing generated/build artifacts unless intentionally part of the task.
 
+### Cross-layer change completeness
+- When adding, renaming, or changing a field, contract, auth rule, or data shape, trace the impact through every affected layer instead of stopping at the first compiling boundary.
+- Typical layers to verify here include request parsing, API responses, Bedrock commands, table/schema changes, tests, and client request/response handling.
+- If only part of the stack is intended to change, state that assumption explicitly in the final summary.
+
 ## Code style and conventions
 - Match naming, formatting, and structure used in surrounding files.
 - Reuse existing validation and error-handling helpers where available.
@@ -49,16 +98,49 @@
 - Favor straightforward implementations that are easy to revise as requirements solidify.
 
 ## Commenting policy
-- Add comments only when they materially improve understanding.
-- Focus comments on intent, assumptions, invariants, and tradeoffs in non-obvious logic.
-- Prefer plain language over shorthand/jargon. If you use a domain term, make the meaning obvious from the sentence.
-- A good comment should answer at least one of these: why this is done, what could break if changed, or what behavior this preserves.
-- Avoid comments that restate obvious code behavior.
-- Avoid ultra-brief comments that are technically correct but not useful (for example, “idempotent behavior” with no context).
-- Prefer 1-2 clear sentences over cryptic one-liners when logic is subtle.
-- Keep comments local to the non-obvious line/block they explain.
-- Before finishing, reread added comments from a new contributor perspective and rewrite any that are unclear without extra context.
-- Prefer fewer, high-signal comments over many shallow ones.
+
+Comments are expected when they improve maintainability or prevent misreads. Do not default to commentless code when intent is non-obvious.
+
+* Add comments when introducing non-trivial logic, constraints, or behavior that is easy to misinterpret.
+* Prefer comments that explain **why** (intent, tradeoff, invariant, safety condition), not line-by-line **what**.
+* Add a short comment when code correctness depends on ordering, side effects, tenant/security boundaries, migration safety, or contract assumptions.
+* If you introduce dense parsing/validation, unusual branching, or non-obvious performance choices, leave a focused clarifying comment.
+* If a block required careful reasoning during implementation, capture that reasoning briefly for the next engineer.
+* Keep comments concise and local to the relevant block/function.
+* Do not add comments for obvious control flow, language basics, or self-describing code.
+* Do not add decorative banners, boilerplate JSDoc, or comments that restate names.
+* Prefer a few high-signal comments over many shallow comments, but err toward adding a clarifying comment when uncertain.
+
+### Commenting triggers (default)
+
+Add at least one targeted comment in new/modified code when any of these apply:
+
+* Non-obvious business rule or domain constraint.
+* Workaround for legacy behavior, external dependency, or known bug.
+* Important invariant/precondition not encoded in types.
+* Data migration/backfill assumption or idempotency guard.
+* Permission/tenant/object-key handling where misuse could leak data.
+
+### Commenting examples
+
+// GOOD: explains non-obvious behavior / ownership of side effects
+// mutation onError handles user notification, so this branch only resets local UI state
+
+// GOOD: explains safety invariant
+// Domain IDs must be tenant-filtered before query composition to avoid cross-tenant leakage.
+
+// BAD: obvious restatement
+// Return the result
+return result;
+
+// BAD: decorative section banners add noise
+// ============== Save Logic ==============
+
+// Prefer whitespace + function extraction instead
+
+// BAD: redundant JSDoc that restates the function name
+/** Fetches items by ID */
+function fetchItemsById(id: number) {}
 
 ## Data and schema conventions
 - Follow existing project patterns for schema lifecycle (whether plugin-managed or migration-based).
