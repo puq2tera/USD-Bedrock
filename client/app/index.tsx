@@ -11,6 +11,7 @@ import {
 import { Redirect, useRouter, useFocusEffect } from "expo-router";
 import { getPolls, PollSummary } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { appColors, commonStyles } from "../lib/styles";
 
 export default function PollListScreen() {
   const { isAuthenticated } = useAuth();
@@ -52,38 +53,38 @@ export default function PollListScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#0D7E3F" />
+      <View style={commonStyles.centeredScreen}>
+        <ActivityIndicator size="large" color={appColors.accent} />
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchPolls}>
-          <Text style={styles.retryText}>Retry</Text>
+      <View style={commonStyles.centeredScreen}>
+        <Text style={commonStyles.errorText}>{error}</Text>
+        <TouchableOpacity style={commonStyles.retryButton} onPress={fetchPolls}>
+          <Text style={commonStyles.retryButtonText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={commonStyles.screen}>
       <FlatList
         data={polls}
         keyExtractor={(item) => String(item.pollID)}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-        contentContainerStyle={polls.length === 0 ? styles.center : undefined}
+        contentContainerStyle={polls.length === 0 ? styles.emptyState : undefined}
         ListEmptyComponent={
           <Text style={styles.emptyText}>No polls yet. Create one!</Text>
         }
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.pollCard}
+            style={[commonStyles.card, styles.pollCard]}
             onPress={() => router.push(`/poll/${item.pollID}`)}
           >
             <Text style={styles.question}>{item.question}</Text>
@@ -100,24 +101,21 @@ export default function PollListScreen() {
       />
 
       <TouchableOpacity
-        style={styles.fab}
+        style={commonStyles.floatingActionButton}
         onPress={() => router.push("/create")}
       >
-        <Text style={styles.fabText}>+</Text>
+        <Text style={commonStyles.floatingActionButtonText}>+</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5" },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  emptyState: { flexGrow: 1, justifyContent: "center", alignItems: "center" },
   pollCard: {
-    backgroundColor: "#fff",
     marginHorizontal: 16,
     marginTop: 12,
     padding: 16,
-    borderRadius: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -132,29 +130,4 @@ const styles = StyleSheet.create({
   },
   metaText: { fontSize: 13, color: "#888" },
   emptyText: { fontSize: 16, color: "#999" },
-  errorText: { fontSize: 16, color: "#d32f2f", marginBottom: 12 },
-  retryButton: {
-    backgroundColor: "#0D7E3F",
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryText: { color: "#fff", fontWeight: "600" },
-  fab: {
-    position: "absolute",
-    bottom: 32,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#0D7E3F",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  fabText: { color: "#fff", fontSize: 28, lineHeight: 30 },
 });

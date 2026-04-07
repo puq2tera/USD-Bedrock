@@ -14,6 +14,7 @@ import { useFocusEffect } from "expo-router";
 import { getPoll, submitVote, PollDetail, PollOption } from "../../lib/api";
 import TypescriptUtils from "../../lib/TypescriptUtils";
 import { useAuth } from "../../lib/auth";
+import { appColors, commonStyles } from "../../lib/styles";
 
 export default function PollDetailScreen() {
   const { isAuthenticated } = useAuth();
@@ -64,18 +65,18 @@ export default function PollDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#0D7E3F" />
+      <View style={commonStyles.centeredScreen}>
+        <ActivityIndicator size="large" color={appColors.accent} />
       </View>
     );
   }
 
   if (error || !poll) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>{error || "Poll not found"}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchPoll}>
-          <Text style={styles.retryText}>Retry</Text>
+      <View style={commonStyles.centeredScreen}>
+        <Text style={commonStyles.errorText}>{error || "Poll not found"}</Text>
+        <TouchableOpacity style={commonStyles.retryButton} onPress={fetchPoll}>
+          <Text style={commonStyles.retryButtonText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
@@ -85,8 +86,8 @@ export default function PollDetailScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scroll}
+      style={commonStyles.screen}
+      contentContainerStyle={commonStyles.screenContent}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -108,7 +109,7 @@ export default function PollDetailScreen() {
         return (
           <TouchableOpacity
             key={option.optionID}
-            style={styles.optionCard}
+            style={[commonStyles.card, styles.optionCard]}
             onPress={() => handleVote(option)}
             disabled={voting}
             activeOpacity={0.7}
@@ -133,7 +134,7 @@ export default function PollDetailScreen() {
 
       {voting && (
         <View style={styles.votingOverlay}>
-          <ActivityIndicator size="small" color="#0D7E3F" />
+          <ActivityIndicator size="small" color={appColors.accent} />
           <Text style={styles.votingText}>Submitting vote...</Text>
         </View>
       )}
@@ -142,9 +143,6 @@ export default function PollDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5" },
-  scroll: { padding: 16, paddingBottom: 40 },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
   question: {
     fontSize: 22,
     fontWeight: "bold",
@@ -153,8 +151,6 @@ const styles = StyleSheet.create({
   },
   totalVotes: { fontSize: 14, color: "#888", marginBottom: 20 },
   optionCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
     marginBottom: 10,
     overflow: "hidden",
     borderWidth: 1,
@@ -166,7 +162,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     bottom: 0,
-    backgroundColor: "rgba(13, 126, 63, 0.12)",
+    backgroundColor: appColors.accentSoft,
     borderRadius: 12,
   },
   optionContent: {
@@ -177,7 +173,7 @@ const styles = StyleSheet.create({
   },
   optionText: { fontSize: 16, fontWeight: "500", color: "#1a1a1a", flex: 1 },
   voteInfo: { flexDirection: "row", alignItems: "center", marginLeft: 12 },
-  voteCount: { fontSize: 15, fontWeight: "bold", color: "#0D7E3F" },
+  voteCount: { fontSize: 15, fontWeight: "bold", color: appColors.accent },
   votePct: { fontSize: 13, color: "#888", marginLeft: 6 },
   votingOverlay: {
     flexDirection: "row",
@@ -186,12 +182,4 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   votingText: { color: "#888", marginLeft: 8, fontSize: 14 },
-  errorText: { fontSize: 16, color: "#d32f2f", marginBottom: 12 },
-  retryButton: {
-    backgroundColor: "#0D7E3F",
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryText: { color: "#fff", fontWeight: "600" },
 });

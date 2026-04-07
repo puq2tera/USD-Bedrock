@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 import { Redirect } from "expo-router";
 import { createPoll } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { appColors, appSpacing, commonStyles } from "../lib/styles";
 import TypescriptUtils from "../lib/TypescriptUtils";
 
 export default function CreatePollScreen() {
@@ -83,20 +84,20 @@ export default function CreatePollScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={commonStyles.screen}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.label}>Question</Text>
+      <ScrollView contentContainerStyle={commonStyles.screenContent}>
+        <Text style={commonStyles.sectionLabel}>Question</Text>
         <TextInput
-          style={styles.input}
+          style={styles.questionInput}
           placeholder="What do you want to ask?"
           value={question}
           onChangeText={setQuestion}
           multiline
         />
 
-        <Text style={styles.label}>Options</Text>
+        <Text style={commonStyles.sectionLabel}>Options</Text>
         {options.map((opt, index) => (
           <View key={index} style={styles.optionRow}>
             <TextInput
@@ -115,15 +116,15 @@ export default function CreatePollScreen() {
         ))}
 
         <TouchableOpacity style={styles.addButton} onPress={addOption}>
-          <Text style={styles.addButtonText}>+ Add Option</Text>
+          <Text style={[commonStyles.textLink, styles.addButtonText]}>+ Add Option</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.submitButton, submitting && styles.submitDisabled]}
+          style={[commonStyles.primaryButtonLarge, submitting && commonStyles.primaryButtonDisabled]}
           onPress={handleSubmit}
           disabled={submitting}
         >
-          <Text style={styles.submitText}>
+          <Text style={commonStyles.primaryButtonLargeText}>
             {submitting ? "Creating..." : "Create Poll"}
           </Text>
         </TouchableOpacity>
@@ -133,22 +134,11 @@ export default function CreatePollScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5" },
-  scroll: { padding: 16, paddingBottom: 40 },
-  label: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#555",
-    marginBottom: 6,
-    marginTop: 16,
-  },
-  input: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: "#ddd",
+  questionInput: {
+    ...commonStyles.input,
+    paddingVertical: appSpacing.inputInset,
+    minHeight: 96,
+    textAlignVertical: "top",
   },
   optionRow: {
     flexDirection: "row",
@@ -156,37 +146,23 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   optionInput: {
+    ...commonStyles.input,
     flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: "#ddd",
   },
   removeButton: {
     marginLeft: 8,
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#eee",
+    backgroundColor: appColors.neutralButton,
     justifyContent: "center",
     alignItems: "center",
   },
-  removeText: { color: "#999", fontWeight: "bold", fontSize: 14 },
+  removeText: { color: appColors.neutralButtonText, fontWeight: "bold", fontSize: 14 },
   addButton: {
     paddingVertical: 12,
     alignItems: "center",
     marginTop: 4,
   },
-  addButtonText: { color: "#0D7E3F", fontWeight: "600", fontSize: 15 },
-  submitButton: {
-    backgroundColor: "#0D7E3F",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 24,
-  },
-  submitDisabled: { opacity: 0.6 },
-  submitText: { color: "#fff", fontSize: 17, fontWeight: "bold" },
+  addButtonText: { fontSize: 15 },
 });

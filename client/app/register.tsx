@@ -3,6 +3,7 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "reac
 import { Redirect, useRouter } from "expo-router";
 
 import { useAuth } from "../lib/auth";
+import { commonStyles } from "../lib/styles";
 import TypescriptUtils from "../lib/TypescriptUtils";
 
 export default function RegisterScreen() {
@@ -56,12 +57,12 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Create account</Text>
-      <TextInput style={styles.input} placeholder="First name" value={firstName} onChangeText={setFirstName} />
-      <TextInput style={styles.input} placeholder="Last name" value={lastName} onChangeText={setLastName} />
+    <View style={commonStyles.authScreen}>
+      <Text style={commonStyles.authTitle}>Create account</Text>
+      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="First name" value={firstName} onChangeText={setFirstName} />
+      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="Last name" value={lastName} onChangeText={setLastName} />
       <TextInput
-        style={styles.input}
+        style={[commonStyles.input, styles.inputSpacing]}
         autoCapitalize="none"
         keyboardType="email-address"
         placeholder="Email"
@@ -69,37 +70,19 @@ export default function RegisterScreen() {
         onChangeText={setEmail}
       />
       <TextInput
-        style={styles.input}
+        style={[commonStyles.input, styles.inputSpacing]}
         placeholder="Password (8+ chars)"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
       />
-      <TouchableOpacity style={styles.button} disabled={submitting} onPress={submit}>
-        <Text style={styles.buttonText}>{submitting ? "Creating..." : "Create account"}</Text>
+      <TouchableOpacity style={commonStyles.primaryButton} disabled={submitting} onPress={submit}>
+        <Text style={commonStyles.primaryButtonText}>{submitting ? "Creating..." : "Create account"}</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 20, backgroundColor: "#f5f5f5" },
-  title: { fontSize: 28, fontWeight: "700", marginBottom: 20, color: "#1a1a1a" },
-  input: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 12,
-  },
-  button: {
-    backgroundColor: "#0D7E3F",
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: 4,
-  },
-  buttonText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  inputSpacing: { marginBottom: 12 },
 });

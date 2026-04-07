@@ -4,6 +4,7 @@ import { ActivityIndicator, View } from "react-native";
 import { useEffect } from "react";
 import { useRouter, useSegments } from "expo-router";
 import { AuthProvider, useAuth } from "../lib/auth";
+import { appColors, appStackScreenOptions, commonStyles } from "../lib/styles";
 
 function RootNavigator() {
   const router = useRouter();
@@ -26,8 +27,8 @@ function RootNavigator() {
 
   if (status === "loading") {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#0D7E3F" />
+      <View style={commonStyles.centeredScreen}>
+        <ActivityIndicator size="large" color={appColors.accent} />
       </View>
     );
   }
@@ -35,13 +36,7 @@ function RootNavigator() {
   return (
     <>
       <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: "#0D7E3F" },
-          headerTintColor: "#fff",
-          headerTitleStyle: { fontWeight: "bold" },
-        }}
-      >
+      <Stack screenOptions={appStackScreenOptions}>
         <Stack.Screen name="login" options={{ title: "Login", headerShown: false }} />
         <Stack.Screen name="register" options={{ title: "Register" }} />
         <Stack.Screen name="index" options={{ title: "Polls" }} />
