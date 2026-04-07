@@ -3,6 +3,7 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "reac
 import { Link, Redirect, useRouter } from "expo-router";
 
 import { useAuth } from "../lib/auth";
+import TypescriptUtils from "../lib/TypescriptUtils";
 
 export default function LoginScreen() {
   const { isAuthenticated, login } = useAuth();
@@ -17,14 +18,15 @@ export default function LoginScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async () => {
-    if (!email.trim() || !password) {
+    const normalizedEmail = TypescriptUtils.parseString(email)?.trim() ?? "";
+    if (TypescriptUtils.isNullOrWhiteSpace(normalizedEmail) || TypescriptUtils.isNullOrEmpty(password)) {
       Alert.alert("Missing fields", "Enter your email and password.");
       return;
     }
 
     try {
       setSubmitting(true);
-      await login(email.trim(), password);
+      await login(normalizedEmail, password);
       router.replace("/");
     } catch (e: any) {
       Alert.alert("Login failed", e?.message || "Unable to login.");

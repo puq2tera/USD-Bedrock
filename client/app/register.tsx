@@ -3,6 +3,7 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "reac
 import { Redirect, useRouter } from "expo-router";
 
 import { useAuth } from "../lib/auth";
+import TypescriptUtils from "../lib/TypescriptUtils";
 
 export default function RegisterScreen() {
   const { isAuthenticated, register } = useAuth();
@@ -19,7 +20,16 @@ export default function RegisterScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async () => {
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
+    const normalizedFirstName = TypescriptUtils.parseString(firstName)?.trim() ?? "";
+    const normalizedLastName = TypescriptUtils.parseString(lastName)?.trim() ?? "";
+    const normalizedEmail = TypescriptUtils.parseString(email)?.trim() ?? "";
+
+    if (
+      TypescriptUtils.isNullOrWhiteSpace(normalizedFirstName) ||
+      TypescriptUtils.isNullOrWhiteSpace(normalizedLastName) ||
+      TypescriptUtils.isNullOrWhiteSpace(normalizedEmail) ||
+      TypescriptUtils.isNullOrEmpty(password)
+    ) {
       Alert.alert("Missing fields", "Fill out all fields.");
       return;
     }
@@ -32,9 +42,9 @@ export default function RegisterScreen() {
     try {
       setSubmitting(true);
       await register({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email: email.trim(),
+        firstName: normalizedFirstName,
+        lastName: normalizedLastName,
+        email: normalizedEmail,
         password,
       });
       router.replace("/");

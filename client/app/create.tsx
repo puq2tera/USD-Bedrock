@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 import { Redirect } from "expo-router";
 import { createPoll } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import TypescriptUtils from "../lib/TypescriptUtils";
 
 export default function CreatePollScreen() {
   const { isAuthenticated } = useAuth();
@@ -44,7 +45,7 @@ export default function CreatePollScreen() {
   };
 
   const updateOption = (index: number, text: string) => {
-    const updated = [...options];
+    const updated = TypescriptUtils.clone(options);
     updated[index] = text;
     setOptions(updated);
   };
@@ -52,8 +53,9 @@ export default function CreatePollScreen() {
   const handleSubmit = async () => {
     const trimmedQuestion = question.trim();
     const trimmedOptions = options.map((o) => o.trim()).filter((o) => o.length > 0);
+    const uniqueOptions = TypescriptUtils.dedupe<string>(trimmedOptions);
 
-    if (!trimmedQuestion) {
+    if (TypescriptUtils.isNullOrWhiteSpace(trimmedQuestion)) {
       Alert.alert("Missing question", "Please enter a question for your poll.");
       return;
     }
@@ -63,15 +65,14 @@ export default function CreatePollScreen() {
       return;
     }
 
-    const uniqueOptions = new Set(trimmedOptions);
-    if (uniqueOptions.size !== trimmedOptions.length) {
+    if (uniqueOptions.length !== trimmedOptions.length) {
       Alert.alert("Duplicate options", "Each option must be unique.");
       return;
     }
 
     setSubmitting(true);
     try {
-      const result = await createPoll(trimmedQuestion, trimmedOptions);
+      const result = await createPoll(trimmedQuestion, uniqueOptions);
       router.replace(`/poll/${result.pollID}`);
     } catch (e: any) {
       Alert.alert("Error", e.message || "Failed to create poll");

@@ -12,6 +12,7 @@ import {
 import { Redirect, useLocalSearchParams } from "expo-router";
 import { useFocusEffect } from "expo-router";
 import { getPoll, submitVote, PollDetail, PollOption } from "../../lib/api";
+import TypescriptUtils from "../../lib/TypescriptUtils";
 import { useAuth } from "../../lib/auth";
 
 export default function PollDetailScreen() {
@@ -22,7 +23,7 @@ export default function PollDetailScreen() {
   }
 
   const { id } = useLocalSearchParams<{ id: string }>();
-  const pollID = Number(id);
+  const pollID = TypescriptUtils.parseInteger(id) ?? 0;
 
   const [poll, setPoll] = useState<PollDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,7 +81,7 @@ export default function PollDetailScreen() {
     );
   }
 
-  const totalVotes = Number(poll.totalVotes);
+  const totalVotes = TypescriptUtils.parseInteger(poll.totalVotes) ?? 0;
 
   return (
     <ScrollView

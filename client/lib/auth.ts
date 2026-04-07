@@ -1,6 +1,7 @@
 import { Buffer } from "buffer";
 import * as SecureStore from "expo-secure-store";
 import { createContext, createElement, ReactNode, useContext, useEffect, useMemo, useState } from "react";
+import TypescriptUtils from "./TypescriptUtils";
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE || "http://192.168.2.7";
 const AUTH_STORAGE_KEY = "bedrock_auth_state";
@@ -132,12 +133,13 @@ function decodeJwtExpiry(token: string): number {
     ? globalThis.atob
     : (value: string) => Buffer.from(value, "base64").toString("binary");
   const payload = JSON.parse(decoder(padded)) as { exp?: number };
+  const expiry = TypescriptUtils.parseInteger(payload.exp);
 
-  if (typeof payload.exp !== "number" || payload.exp <= 0) {
+  if (expiry == null || expiry <= 0) {
     throw new Error("Invalid access token");
   }
 
-  return payload.exp;
+  return expiry;
 }
 
 function authHeaders(accessToken?: string | null): HeadersInit {
@@ -198,6 +200,8 @@ async function refreshTokensInternal(): Promise<boolean> {
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
       accessTokenExpiresAt: decodeJwtExpiry(response.accessToken),
+      // Refresh currently rotates tokens only, so preserve the last known user payload until a
+      // new login or logout replaces it.
       user: authSnapshot.user,
     });
     return true;
@@ -209,6 +213,8 @@ async function refreshTokensInternal(): Promise<boolean> {
 
 async function refreshTokens(): Promise<boolean> {
   if (refreshPromise) {
+    // Share one in-flight refresh across callers so concurrent 401 repairs do not race token
+    // rotation and accidentally clear otherwise valid auth state.
     return refreshPromise;
   }
 
@@ -249,18 +255,25 @@ export async function initializeAuth(): Promise<void> {
     try {
       const parsed = JSON.parse(storedValue) as Partial<StoredAuthState>;
       if (
-        typeof parsed.accessToken !== "string" ||
-        typeof parsed.refreshToken !== "string" ||
-        typeof parsed.accessTokenExpiresAt !== "number" ||
-        !parsed.user
+        TypescriptUtils.isNullOrWhiteSpace(parsed.accessToken) ||
+        TypescriptUtils.isNullOrWhiteSpace(parsed.refreshToken) ||
+        TypescriptUtils.parseInteger(parsed.accessTokenExpiresAt) == null ||
+        !TypescriptUtils.isObject(parsed.user)
       ) {
         throw new Error("Invalid auth state");
       }
 
-      setSnapshot(snapshotFromStoredState(parsed as StoredAuthState));
+      const normalizedState: StoredAuthState = {
+        accessToken: TypescriptUtils.parseString(parsed.accessToken) as string,
+        refreshToken: TypescriptUtils.parseString(parsed.refreshToken) as string,
+        accessTokenExpiresAt: TypescriptUtils.parseInteger(parsed.accessTokenExpiresAt) as number,
+        user: TypescriptUtils.clone(parsed.user as AuthUser),
+      };
+
+      setSnapshot(snapshotFromStoredState(normalizedState));
       await persistSnapshot(authSnapshot);
 
-      if ((parsed.accessTokenExpiresAt ?? 0) - EXPIRY_SKEW_SECONDS <= Math.floor(Date.now() / 1000)) {
+      if (normalizedState.accessTokenExpiresAt - EXPIRY_SKEW_SECONDS <= Math.floor(Date.now() / 1000)) {
         await refreshTokens();
       }
     } catch {
@@ -285,21 +298,48 @@ export function subscribeAuth(listener: () => void): () => void {
 }
 
 export async function login(email: string, password: string): Promise<void> {
+  if (TypescriptUtils.isNullOrWhiteSpace(email) || TypescriptUtils.isNullOrEmpty(password)) {
+    throw new Error("Email and password are required");
+  }
+
   const response = await fetchJson<LoginResponse>("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({
+      email: TypescriptUtils.parseString(email)?.trim(),
+      password,
+    }),
   });
   await applyLoginResponse(response);
 }
 
 export async function register(input: RegisterInput): Promise<void> {
+  const normalizedEmail = TypescriptUtils.parseString(input.email)?.trim() ?? "";
+  const normalizedFirstName = TypescriptUtils.parseString(input.firstName)?.trim() ?? "";
+  const normalizedLastName = TypescriptUtils.parseString(input.lastName)?.trim() ?? "";
+  const normalizedDisplayName = TypescriptUtils.parseString(input.displayName)?.trim() ?? undefined;
+
+  if (
+    TypescriptUtils.isNullOrWhiteSpace(normalizedEmail) ||
+    TypescriptUtils.isNullOrWhiteSpace(normalizedFirstName) ||
+    TypescriptUtils.isNullOrWhiteSpace(normalizedLastName) ||
+    TypescriptUtils.isNullOrEmpty(input.password)
+  ) {
+    throw new Error("Registration fields are required");
+  }
+
   await fetchJson("/api/users", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      ...input,
+      email: normalizedEmail,
+      firstName: normalizedFirstName,
+      lastName: normalizedLastName,
+      displayName: normalizedDisplayName,
+    }),
   });
-  await login(input.email, input.password);
+  await login(normalizedEmail, input.password);
 }
 
 export async function logout(): Promise<void> {
