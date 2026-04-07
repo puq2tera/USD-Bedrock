@@ -38,6 +38,8 @@ final class DeleteUserRequest extends RouteBoundRequestBase
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         $routeUserID = Request::requireRouteInt($routeParams, 'userID');
+        // Account deletion is also self-only for the same reason as read/edit: the bearer token is
+        // the source of caller identity, and the route ID must match it exactly.
         if ($routeUserID !== Auth::requireAuthenticatedContext()->userID) {
             throw new ValidationException('Forbidden', 403);
         }

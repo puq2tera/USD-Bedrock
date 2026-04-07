@@ -39,6 +39,8 @@ final class GetUserRequest extends RouteBoundRequestBase
     {
         $routeUserID = Request::requireRouteInt($routeParams, 'userID');
         $authContext = Auth::requireAuthenticatedContext();
+        // Profile routes are intentionally self-only. Allowing a caller-controlled route ID here
+        // would turn a valid bearer token into cross-user data access.
         if ($routeUserID !== $authContext->userID) {
             throw new ValidationException('Forbidden', 403);
         }

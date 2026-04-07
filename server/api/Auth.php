@@ -112,6 +112,9 @@ final class Auth
         $type = (string)($payload['typ'] ?? '');
         $expiresAt = isset($payload['exp']) ? (int)$payload['exp'] : 0;
 
+        // Access tokens are only accepted when all auth-boundary claims match the current API
+        // contract; this prevents refresh tokens or tokens minted for another audience from being
+        // replayed against protected routes.
         if ($userID <= 0 ||
             $sessionID <= 0 ||
             $issuer !== AppConfig::jwtIssuer() ||

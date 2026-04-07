@@ -47,6 +47,8 @@ final class CreatePollRequest extends RouteBoundRequestBase
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         $chatID = Request::requireRouteInt($routeParams, 'chatID');
+        // Poll creation always attributes authorship to the authenticated caller; accepting a
+        // creatorUserID from the body would let clients impersonate another member.
         $creatorUserID = Auth::requireAuthenticatedContext()->userID;
         $question = Request::requireString('question', 1, Request::MAX_SIZE_SMALL);
         $type = Request::requireString('type', 1, 64);

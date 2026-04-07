@@ -155,6 +155,8 @@ inline optional<int64_t> parseIterations(const string& rawValue) {
 inline string hashPassword(const string& password) {
     const string salt = secureRandomBytes(SALT_BYTES);
     const string digest = pbkdf2Sha256(password, salt, PBKDF2_ITERATIONS);
+    // Keep the verifier self-describing so future algorithm/iteration changes do not require
+    // extra schema columns or guessing how older hashes were derived.
     return "pbkdf2_sha256$" + SToStr(PBKDF2_ITERATIONS) + "$" + toHex(salt) + "$" + toHex(digest);
 }
 
