@@ -138,6 +138,10 @@ void EditUser::process(SQLite& db) {
         }
         setClause += updateClauses[i];
     }
+    if (!setClause.empty()) {
+        setClause += ", ";
+    }
+    setClause += "updatedAt = " + SToStr(STimeNow());
 
     const string updateQuery = fmt::format(
         "UPDATE users SET {} WHERE userID = {};",

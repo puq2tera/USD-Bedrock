@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\chats;
 
+use BedrockStarter\Auth;
 use BedrockStarter\Request;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\responses\chats\AddChatMemberResponse;
@@ -39,6 +40,7 @@ final class AddChatMemberRequest extends RouteBoundRequestBase
 
     protected static function bindFromRouteMatch(array $routeParams): self
     {
+        $authContext = Auth::requireAuthenticatedContext();
         $role = Request::getOptionalString('role', 1, Request::MAX_SIZE_SMALL);
         if ($role !== null) {
             $role = ChatRole::requireKnown($role);
@@ -46,7 +48,7 @@ final class AddChatMemberRequest extends RouteBoundRequestBase
 
         return new self(
             Request::requireRouteInt($routeParams, 'chatID'),
-            Request::requireInt('actingUserID', 1),
+            $authContext->userID,
             Request::requireInt('userID', 1),
             $role
         );

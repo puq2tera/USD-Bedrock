@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\chats;
 
+use BedrockStarter\Auth;
 use BedrockStarter\Request;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\responses\chats\ListChatMembersResponse;
@@ -39,7 +40,7 @@ final class ListChatMembersRequest extends RouteBoundRequestBase
     {
         return new self(
             Request::requireRouteInt($routeParams, 'chatID'),
-            Request::requireInt('userID', 1)
+            Auth::requireAuthenticatedUserID()
         );
     }
 

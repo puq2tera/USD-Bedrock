@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\chats;
 
+use BedrockStarter\Auth;
 use BedrockStarter\Request;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\responses\framework\RouteResponse;
@@ -41,7 +42,7 @@ final class GetChatMessagesRequest extends RouteBoundRequestBase
     {
         return new self(
             Request::requireRouteInt($routeParams, 'chatID'),
-            Request::requireInt('userID', 1),
+            Auth::requireAuthenticatedUserID(),
             // Validate limit early so clients cannot request unbounded message pages.
             // When limit is omitted, command layer applies the default page size.
             Request::getIntStrict('limit', null, 1, 100),

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\polls;
 
+use BedrockStarter\Auth;
 use BedrockStarter\config\AppConfig;
 use BedrockStarter\Request;
 use BedrockStarter\ValidationException;
@@ -46,7 +47,9 @@ final class CreatePollRequest extends RouteBoundRequestBase
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         $chatID = Request::requireRouteInt($routeParams, 'chatID');
-        $creatorUserID = Request::requireInt('creatorUserID', 1);
+        // Poll creation always attributes authorship to the authenticated caller; accepting a
+        // creatorUserID from the body would let clients impersonate another member.
+        $creatorUserID = Auth::requireAuthenticatedContext()->userID;
         $question = Request::requireString('question', 1, Request::MAX_SIZE_SMALL);
         $type = Request::requireString('type', 1, 64);
 

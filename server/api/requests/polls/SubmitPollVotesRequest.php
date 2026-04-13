@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\polls;
 
+use BedrockStarter\Auth;
 use BedrockStarter\config\AppConfig;
 use BedrockStarter\Request;
 use BedrockStarter\ValidationException;
@@ -49,7 +50,7 @@ final class SubmitPollVotesRequest extends RouteBoundRequestBase
 
         return new self(
             Request::requireRouteInt($routeParams, 'pollID'),
-            Request::requireInt('userID', 1),
+            Auth::requireAuthenticatedUserID(),
             $optionIDsJson
         );
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\chats;
 
+use BedrockStarter\Auth;
 use BedrockStarter\Request;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\responses\chats\ListChatsResponse;
@@ -39,7 +40,7 @@ final class ListChatsRequest extends RouteBoundRequestBase
     protected static function bindFromRouteMatch(array $routeParams): self
     {
         return new self(
-            Request::requireInt('userID', 1),
+            Auth::requireAuthenticatedUserID(),
             // Validate page size early so callers cannot request unbounded chat lists.
             // If omitted, command layer uses the default page size.
             Request::getIntStrict('limit', null, 1, 100),

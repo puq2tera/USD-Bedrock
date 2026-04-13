@@ -1,13 +1,12 @@
+import { authFetch, getAuthSnapshot, type AuthUser } from "./auth";
+import TypescriptUtils from "./TypescriptUtils";
+
 // Base URL of the Bedrock API running in the Multipass VM.
 // Override via EXPO_PUBLIC_API_BASE in client/.env (see .env.example).
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE || "http://192.168.2.7";
 
-type DemoContext = {
-  userID: number;
-  chatID: number;
-};
-
-let demoContext: DemoContext | null = null;
+let activeChatID: number | null = null;
+let activeChatUserID: string | null = null;
 
 type PollSummary = {
   pollID: number;
@@ -32,94 +31,115 @@ type PollDetail = {
   totalVotes: string;
 };
 
-async function request(path: string, options?: RequestInit) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options?.headers as Record<string, string> | undefined),
+  };
+
+  const response = await authFetch(`${API_BASE}${path}`, {
     ...options,
+    headers,
   });
+  const data = await response.json();
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || `Request failed with status ${res.status}`);
+  if (!response.ok) {
+    throw new Error(data.error || `Request failed with status ${response.status}`);
   }
 
-  return data;
+  return data as T;
 }
 
-async function ensureDemoContext(): Promise<DemoContext> {
-  if (demoContext) {
-    return demoContext;
+function resetActiveChatIfUserChanged(user: AuthUser | null) {
+  const nextUserID = user?.userID ?? null;
+  if (activeChatUserID !== nextUserID) {
+    // The cached chat belongs to one authenticated user. Drop it as soon as auth switches users so
+    // later requests cannot accidentally reuse another account's chat context.
+    activeChatID = null;
+    activeChatUserID = nextUserID;
+  }
+}
+
+async function ensureActiveChatID(): Promise<number> {
+  resetActiveChatIfUserChanged(getAuthSnapshot().user);
+  if (activeChatID !== null) {
+    return activeChatID;
   }
 
-  const nonce = Date.now();
-  const user = await request("/api/users", {
-    method: "POST",
-    body: JSON.stringify({
-      email: `mobile-demo-${nonce}@example.com`,
-      firstName: "Mobile",
-      lastName: "Demo",
-      displayName: "Mobile Demo",
-    }),
-  });
+  const chatsData = await request<{ chats?: Array<{ chatID?: string | number }> }>("/api/chats");
+  const chats = TypescriptUtils.parseArray(chatsData.chats, (item) =>
+    TypescriptUtils.isObject(item) ? (item as { chatID?: string | number }) : null
+  ) ?? [];
+  if (chats.length > 0) {
+    const chatID = TypescriptUtils.parseInteger(chats[0].chatID);
+    if (chatID != null) {
+      activeChatID = chatID;
+      return activeChatID;
+    }
+  }
 
-  const userID = Number(user.userID);
-  const chat = await request("/api/chats", {
+  const created = await request<{ chatID: string | number }>("/api/chats", {
     method: "POST",
-    body: JSON.stringify({
-      creatorUserID: userID,
-      title: "Polls Demo Chat",
-    }),
+    body: JSON.stringify({ title: "My Polls" }),
   });
+  const createdChatID = TypescriptUtils.parseInteger(created.chatID);
+  if (createdChatID == null) {
+    throw new Error("API returned an invalid chat ID");
+  }
 
-  demoContext = {
-    userID,
-    chatID: Number(chat.chatID),
-  };
-  return demoContext;
+  activeChatID = createdChatID;
+  return activeChatID;
 }
 
-/** GET /api/chats/:chatID/polls — list polls in demo chat */
 export async function getPolls(): Promise<PollSummary[]> {
-  const context = await ensureDemoContext();
-  const data = await request(
-    `/api/chats/${context.chatID}/polls?requesterUserID=${context.userID}`
-  );
-  const polls = Array.isArray(data.polls) ? data.polls : [];
-  return polls.map((poll: any) => ({
-    pollID: Number(poll.pollID),
-    question: String(poll.question ?? ""),
-    createdAt: Number(poll.createdAt ?? 0),
-    optionCount: Number(poll.optionCount ?? 0),
-    totalVotes: Number(poll.totalVotes ?? 0),
-  }));
+  const chatID = await ensureActiveChatID();
+  const data = await request<{ polls?: unknown }>(`/api/chats/${chatID}/polls`);
+  const polls = TypescriptUtils.parseArray(data.polls, (poll) => {
+    if (!TypescriptUtils.isObject(poll)) {
+      return null;
+    }
+
+    return {
+      pollID: TypescriptUtils.parseInteger(poll.pollID) ?? 0,
+      question: TypescriptUtils.parseString(poll.question) ?? "",
+      createdAt: TypescriptUtils.parseInteger(poll.createdAt) ?? 0,
+      optionCount: TypescriptUtils.parseInteger(poll.optionCount) ?? 0,
+      totalVotes: TypescriptUtils.parseInteger(poll.totalVotes) ?? 0,
+    } satisfies PollSummary;
+  }) ?? [];
+
+  return polls.filter((poll) => poll.pollID > 0);
 }
 
-/** GET /api/polls/:id?requesterUserID=:userID — get poll details */
 export async function getPoll(pollID: number): Promise<PollDetail> {
-  const context = await ensureDemoContext();
-  const data = await request(
-    `/api/polls/${pollID}?requesterUserID=${context.userID}`
-  );
+  const data = await request<Record<string, unknown>>(`/api/polls/${pollID}`);
+  const options = TypescriptUtils.parseArray(data.options, (option) => {
+    if (!TypescriptUtils.isObject(option)) {
+      return null;
+    }
 
-  const options = Array.isArray(data.options) ? data.options : [];
+    return {
+      optionID: TypescriptUtils.parseInteger(option.optionID) ?? 0,
+      text: TypescriptUtils.parseString(option.label ?? option.text) ?? "",
+      votes: TypescriptUtils.parseInteger(option.voteCount ?? option.votes) ?? 0,
+    } satisfies PollOption;
+  }) ?? [];
+
   return {
-    ...data,
-    options: options.map((option: any) => ({
-      optionID: Number(option.optionID),
-      text: String(option.label ?? option.text ?? ""),
-      votes: Number(option.voteCount ?? option.votes ?? 0),
-    })),
+    pollID: TypescriptUtils.parseString(data.pollID) ?? "",
+    question: TypescriptUtils.parseString(data.question) ?? "",
+    createdAt: TypescriptUtils.parseString(data.createdAt) ?? "",
+    optionCount: TypescriptUtils.parseString(data.optionCount) ?? "0",
+    totalVotes: TypescriptUtils.parseString(data.totalVotes) ?? "0",
+    options: options.filter((option) => option.optionID > 0),
   };
 }
 
-/** POST /api/chats/:chatID/polls — create a poll in demo chat */
 export async function createPoll(question: string, options: string[]): Promise<{ pollID: string }> {
-  const context = await ensureDemoContext();
-  return request(`/api/chats/${context.chatID}/polls`, {
+  const chatID = await ensureActiveChatID();
+  return request(`/api/chats/${chatID}/polls`, {
     method: "POST",
     body: JSON.stringify({
-      creatorUserID: context.userID,
       question,
       type: "single_choice",
       allowChangeVote: true,
@@ -129,13 +149,10 @@ export async function createPoll(question: string, options: string[]): Promise<{
   });
 }
 
-/** POST /api/polls/:id/votes — submit one selected option */
 export async function submitVote(pollID: number, optionID: number): Promise<{ voteID: string }> {
-  const context = await ensureDemoContext();
   return request(`/api/polls/${pollID}/votes`, {
     method: "POST",
     body: JSON.stringify({
-      userID: context.userID,
       optionIDs: [optionID],
     }),
   });

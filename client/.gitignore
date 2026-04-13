@@ -40,3 +40,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# generated JS mirrors of TS/TSX sources
+app/**/*.js
+lib/**/*.js
+index.js

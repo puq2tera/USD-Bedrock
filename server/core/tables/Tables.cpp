@@ -1,5 +1,6 @@
 #include "Tables.h"
 
+#include "auth/UserSessionsTable.h"
 #include "chats/ChatMembersTable.h"
 #include "chats/ChatsTable.h"
 #include "chats/MessagesTable.h"
@@ -15,6 +16,7 @@ namespace Tables {
 
 void verifyAll(SQLite& db) {
     UsersTable::verify(db);
+    UserSessionsTable::verify(db);
     ChatsTable::verify(db);
     ChatMembersTable::verify(db);
     MessagesTable::verify(db);

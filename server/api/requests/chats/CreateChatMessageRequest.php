@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\chats;
 
+use BedrockStarter\Auth;
 use BedrockStarter\Request;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\responses\framework\RouteResponse;
@@ -40,7 +41,7 @@ final class CreateChatMessageRequest extends RouteBoundRequestBase
     {
         return new self(
             Request::requireRouteInt($routeParams, 'chatID'),
-            Request::requireInt('userID', 1),
+            Auth::requireAuthenticatedUserID(),
             Request::requireString('body', 1, Request::MAX_SIZE_QUERY)
         );
     }

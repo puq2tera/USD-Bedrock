@@ -6,9 +6,11 @@ struct UsersTest : tpunit::TestFixture {
     UsersTest()
         : tpunit::TestFixture(
             "UsersTests",
+            TEST(UsersTest::testCreateUserStoresPasswordHashInFinalFormat),
             TEST(UsersTest::testCreateUserSuccess),
             TEST(UsersTest::testCreateUserMissingEmail),
             TEST(UsersTest::testCreateUserInvalidEmail),
+            TEST(UsersTest::testCreateUserMissingPassword),
             TEST(UsersTest::testCreateUserMissingFirstName),
             TEST(UsersTest::testCreateUserMissingLastName),
             TEST(UsersTest::testCreateUserWhitespaceName),
@@ -35,11 +37,28 @@ struct UsersTest : tpunit::TestFixture {
             TEST(UsersTest::testDeleteUserAllowsEmailReuse),
             TEST(UsersTest::testDeleteUserCascadesCreatedPolls),
             TEST(UsersTest::testDeleteUserCascadesVotes),
-            TEST(UsersTest::testDeleteUserCascadesMessages)
+            TEST(UsersTest::testDeleteUserCascadesMessages),
+            TEST(UsersTest::testLoginUserSuccess),
+            TEST(UsersTest::testLoginUserInvalidPassword)
         ) { }
 
     string firstOptionID(BedrockTester& tester, const string& pollID) {
         return TestHelpers::firstOptionForPoll(tester, pollID).at("optionID");
+    }
+
+    void testCreateUserStoresPasswordHashInFinalFormat() {
+        BedrockTester tester = TestHelpers::createTester();
+
+        SData req("CreateUser");
+        req["email"] = "hash-format@example.com";
+        req["password"] = "Password1!";
+        req["firstName"] = "Hash";
+        req["lastName"] = "Format";
+        SData resp = TestHelpers::executeSingle(tester, req);
+
+        ASSERT_TRUE(SStartsWith(resp.methodLine, "200 OK"));
+        const string passwordHash = tester.readDB("SELECT passwordHash FROM users WHERE userID = " + resp["userID"] + ";");
+        ASSERT_TRUE(SStartsWith(passwordHash, "pbkdf2_sha256$"));
     }
 
     void testCreateUserSuccess() {
@@ -47,6 +66,7 @@ struct UsersTest : tpunit::TestFixture {
 
         SData req("CreateUser");
         req["email"] = "MAILTO:<TeSt.User+Tag@Example.com>";
+        req["password"] = "Password1!";
         req["firstName"] = "First";
         req["lastName"] = "Last";
         req["displayName"] = "  Preferred Name  ";
@@ -65,6 +85,7 @@ struct UsersTest : tpunit::TestFixture {
         BedrockTester tester = TestHelpers::createTester();
 
         SData req("CreateUser");
+        req["password"] = "Password1!";
         req["firstName"] = "First";
         req["lastName"] = "Last";
         SData resp = TestHelpers::executeSingle(tester, req);
@@ -77,6 +98,19 @@ struct UsersTest : tpunit::TestFixture {
 
         SData req("CreateUser");
         req["email"] = "not-an-email";
+        req["password"] = "Password1!";
+        req["firstName"] = "First";
+        req["lastName"] = "Last";
+        SData resp = TestHelpers::executeSingle(tester, req);
+
+        ASSERT_TRUE(SStartsWith(resp.methodLine, "400"));
+    }
+
+    void testCreateUserMissingPassword() {
+        BedrockTester tester = TestHelpers::createTester();
+
+        SData req("CreateUser");
+        req["email"] = "missingpassword@example.com";
         req["firstName"] = "First";
         req["lastName"] = "Last";
         SData resp = TestHelpers::executeSingle(tester, req);
@@ -89,6 +123,7 @@ struct UsersTest : tpunit::TestFixture {
 
         SData req("CreateUser");
         req["email"] = "missingfirstname@example.com";
+        req["password"] = "Password1!";
         req["lastName"] = "Last";
         SData resp = TestHelpers::executeSingle(tester, req);
 
@@ -100,6 +135,7 @@ struct UsersTest : tpunit::TestFixture {
 
         SData req("CreateUser");
         req["email"] = "missinglastname@example.com";
+        req["password"] = "Password1!";
         req["firstName"] = "First";
         SData resp = TestHelpers::executeSingle(tester, req);
 
@@ -111,6 +147,7 @@ struct UsersTest : tpunit::TestFixture {
 
         SData req("CreateUser");
         req["email"] = "blankname@example.com";
+        req["password"] = "Password1!";
         req["firstName"] = "   ";
         req["lastName"] = "Last";
         SData resp = TestHelpers::executeSingle(tester, req);
@@ -123,6 +160,7 @@ struct UsersTest : tpunit::TestFixture {
 
         SData req("CreateUser");
         req["email"] = "trim@example.com";
+        req["password"] = "Password1!";
         req["firstName"] = "  First  ";
         req["lastName"] = "  Last  ";
         SData resp = TestHelpers::executeSingle(tester, req);
@@ -138,6 +176,7 @@ struct UsersTest : tpunit::TestFixture {
 
         SData firstReq("CreateUser");
         firstReq["email"] = "person@example.com";
+        firstReq["password"] = "Password1!";
         firstReq["firstName"] = "One";
         firstReq["lastName"] = "User";
         SData firstResp = TestHelpers::executeSingle(tester, firstReq);
@@ -145,6 +184,7 @@ struct UsersTest : tpunit::TestFixture {
 
         SData req("CreateUser");
         req["email"] = "PERSON@EXAMPLE.COM";
+        req["password"] = "Password1!";
         req["firstName"] = "Two";
         req["lastName"] = "User";
         SData resp = TestHelpers::executeSingle(tester, req);
@@ -260,6 +300,7 @@ struct UsersTest : tpunit::TestFixture {
 
         SData createReq("CreateUser");
         createReq["email"] = "same@example.com";
+        createReq["password"] = "Password1!";
         createReq["firstName"] = "Same";
         createReq["lastName"] = "User";
         SData createResp = TestHelpers::executeSingle(tester, createReq);
@@ -280,6 +321,7 @@ struct UsersTest : tpunit::TestFixture {
 
         SData firstReq("CreateUser");
         firstReq["email"] = "primary@example.com";
+        firstReq["password"] = "Password1!";
         firstReq["firstName"] = "Primary";
         firstReq["lastName"] = "User";
         SData firstResp = TestHelpers::executeSingle(tester, firstReq);
@@ -287,6 +329,7 @@ struct UsersTest : tpunit::TestFixture {
 
         SData secondReq("CreateUser");
         secondReq["email"] = "secondary@example.com";
+        secondReq["password"] = "Password1!";
         secondReq["firstName"] = "Secondary";
         secondReq["lastName"] = "User";
         SData secondResp = TestHelpers::executeSingle(tester, secondReq);
@@ -396,6 +439,7 @@ struct UsersTest : tpunit::TestFixture {
 
         SData createReq("CreateUser");
         createReq["email"] = "reuse@example.com";
+        createReq["password"] = "Password1!";
         createReq["firstName"] = "Reuse";
         createReq["lastName"] = "One";
         SData createResp = TestHelpers::executeSingle(tester, createReq);
@@ -408,6 +452,7 @@ struct UsersTest : tpunit::TestFixture {
 
         SData recreateReq("CreateUser");
         recreateReq["email"] = "reuse@example.com";
+        recreateReq["password"] = "Password1!";
         recreateReq["firstName"] = "Reuse";
         recreateReq["lastName"] = "Two";
         SData recreateResp = TestHelpers::executeSingle(tester, recreateReq);
@@ -486,5 +531,42 @@ struct UsersTest : tpunit::TestFixture {
         }
 
         ASSERT_FALSE(found);
+    }
+
+    void testLoginUserSuccess() {
+        BedrockTester tester = TestHelpers::createTester();
+
+        SData createReq("CreateUser");
+        createReq["email"] = "login-success@example.com";
+        createReq["password"] = "Password1!";
+        createReq["firstName"] = "Login";
+        createReq["lastName"] = "User";
+        SData createResp = TestHelpers::executeSingle(tester, createReq);
+        ASSERT_TRUE(SStartsWith(createResp.methodLine, "200 OK"));
+
+        SData loginReq("LoginUser");
+        loginReq["email"] = "login-success@example.com";
+        loginReq["password"] = "Password1!";
+        SData loginResp = TestHelpers::executeSingle(tester, loginReq);
+        ASSERT_TRUE(SStartsWith(loginResp.methodLine, "200 OK"));
+        ASSERT_EQUAL(loginResp["userID"], createResp["userID"]);
+    }
+
+    void testLoginUserInvalidPassword() {
+        BedrockTester tester = TestHelpers::createTester();
+
+        SData createReq("CreateUser");
+        createReq["email"] = "login-fail@example.com";
+        createReq["password"] = "Password1!";
+        createReq["firstName"] = "Login";
+        createReq["lastName"] = "User";
+        SData createResp = TestHelpers::executeSingle(tester, createReq);
+        ASSERT_TRUE(SStartsWith(createResp.methodLine, "200 OK"));
+
+        SData loginReq("LoginUser");
+        loginReq["email"] = "login-fail@example.com";
+        loginReq["password"] = "WrongPassword1!";
+        SData loginResp = TestHelpers::executeSingle(tester, loginReq);
+        ASSERT_TRUE(SStartsWith(loginResp.methodLine, "401"));
     }
 };

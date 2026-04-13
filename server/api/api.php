@@ -9,6 +9,8 @@ require __DIR__ . '/vendor/autoload.php';
 
 use BedrockStarter\Log;
 use BedrockStarter\Request;
+use BedrockStarter\requests\auth\LogoutRequest;
+use BedrockStarter\requests\auth\RefreshSessionRequest;
 use BedrockStarter\requests\chats\AddChatMemberRequest;
 use BedrockStarter\requests\chats\CreateChatRequest;
 use BedrockStarter\requests\chats\DeleteChatRequest;
@@ -38,12 +40,13 @@ use BedrockStarter\requests\users\CreateUserRequest;
 use BedrockStarter\requests\users\DeleteUserRequest;
 use BedrockStarter\requests\users\EditUserRequest;
 use BedrockStarter\requests\users\GetUserRequest;
+use BedrockStarter\requests\users\LoginUserRequest;
 use BedrockStarter\ValidationException;
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -79,6 +82,9 @@ $requestTypes = [
     DeletePollVotesRequest::class,
     SubmitPollTextResponseRequest::class,
     CreateUserRequest::class,
+    LoginUserRequest::class,
+    RefreshSessionRequest::class,
+    LogoutRequest::class,
     GetUserRequest::class,
     EditUserRequest::class,
     DeleteUserRequest::class,

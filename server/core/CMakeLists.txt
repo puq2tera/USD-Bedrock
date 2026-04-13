@@ -41,6 +41,10 @@ include_directories(${BEDROCK_DIR}/mbedtls/include)
 # Add source files
 set(SOURCES
     Core.cpp
+    commands/auth/CreateUserSession.cpp
+    commands/auth/GetUserSessionByRefreshTokenHash.cpp
+    commands/auth/RevokeUserSession.cpp
+    commands/auth/RotateUserSession.cpp
     commands/system/HelloWorld.cpp
     commands/chats/AddChatMember.cpp
     commands/chats/CreateChat.cpp
@@ -69,7 +73,9 @@ set(SOURCES
     commands/users/DeleteUser.cpp
     commands/users/EditUser.cpp
     commands/users/GetUser.cpp
+    commands/users/LoginUser.cpp
     tables/TableUtils.cpp
+    tables/auth/UserSessionsTable.cpp
     tables/chats/ChatsTable.cpp
     tables/chats/ChatMembersTable.cpp
     tables/chats/MessagesTable.cpp

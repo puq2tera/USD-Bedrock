@@ -1,5 +1,9 @@
 #include "Core.h"
 
+#include "commands/auth/CreateUserSession.h"
+#include "commands/auth/GetUserSessionByRefreshTokenHash.h"
+#include "commands/auth/RevokeUserSession.h"
+#include "commands/auth/RotateUserSession.h"
 #include "commands/chats/AddChatMember.h"
 #include "commands/chats/CreateChat.h"
 #include "commands/chats/DeleteChat.h"
@@ -27,6 +31,7 @@
 #include "commands/users/DeleteUser.h"
 #include "commands/users/EditUser.h"
 #include "commands/users/GetUser.h"
+#include "commands/users/LoginUser.h"
 #include "tables/Tables.h"
 
 #include <BedrockServer.h>
@@ -56,6 +61,18 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
     // Check if this is a command we handle
     if (SIEquals(baseCommand.request.methodLine, "HelloWorld")) {
         return make_unique<HelloWorld>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "CreateUserSession")) {
+        return make_unique<CreateUserSession>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "GetUserSessionByRefreshTokenHash")) {
+        return make_unique<GetUserSessionByRefreshTokenHash>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "RotateUserSession")) {
+        return make_unique<RotateUserSession>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "RevokeUserSession")) {
+        return make_unique<RevokeUserSession>(std::move(baseCommand), this);
     }
     if (SIEquals(baseCommand.request.methodLine, "CreateChat")) {
         return make_unique<CreateChat>(std::move(baseCommand), this);
@@ -128,6 +145,9 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
     }
     if (SIEquals(baseCommand.request.methodLine, "GetUser")) {
         return make_unique<GetUser>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "LoginUser")) {
+        return make_unique<LoginUser>(std::move(baseCommand), this);
     }
     if (SIEquals(baseCommand.request.methodLine, "EditUser")) {
         return make_unique<EditUser>(std::move(baseCommand), this);

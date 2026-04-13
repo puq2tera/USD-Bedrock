@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\users;
 
+use BedrockStarter\Auth;
 use BedrockStarter\Request;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\responses\framework\RouteResponse;
 use BedrockStarter\responses\users\DeleteUserResponse;
+use BedrockStarter\ValidationException;
 
 final class DeleteUserRequest extends RouteBoundRequestBase
 {
@@ -35,7 +37,14 @@ final class DeleteUserRequest extends RouteBoundRequestBase
 
     protected static function bindFromRouteMatch(array $routeParams): self
     {
-        return new self(Request::requireRouteInt($routeParams, 'userID'));
+        $routeUserID = Request::requireRouteInt($routeParams, 'userID');
+        // Account deletion is also self-only for the same reason as read/edit: the bearer token is
+        // the source of caller identity, and the route ID must match it exactly.
+        if ($routeUserID !== Auth::requireAuthenticatedContext()->userID) {
+            throw new ValidationException('Forbidden', 403);
+        }
+
+        return new self($routeUserID);
     }
 
     public function toBedrockParams(): array

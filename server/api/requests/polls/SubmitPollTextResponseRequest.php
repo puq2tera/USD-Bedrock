@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BedrockStarter\requests\polls;
 
+use BedrockStarter\Auth;
 use BedrockStarter\Request;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\responses\framework\RouteResponse;
@@ -40,7 +41,7 @@ final class SubmitPollTextResponseRequest extends RouteBoundRequestBase
     {
         return new self(
             Request::requireRouteInt($routeParams, 'pollID'),
-            Request::requireInt('userID', 1),
+            Auth::requireAuthenticatedUserID(),
             Request::requireString('textValue', 1, Request::MAX_SIZE_QUERY)
         );
     }
