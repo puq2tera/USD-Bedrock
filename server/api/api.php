@@ -9,6 +9,7 @@ require __DIR__ . '/vendor/autoload.php';
 
 use BedrockStarter\Log;
 use BedrockStarter\Request;
+use BedrockStarter\config\Env;
 use BedrockStarter\requests\auth\LogoutRequest;
 use BedrockStarter\requests\auth\RefreshSessionRequest;
 use BedrockStarter\requests\chats\AddChatMemberRequest;
@@ -47,6 +48,9 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+// Load API runtime configuration (JWT secret, token TTLs, etc.) from .env.
+Env::loadFromFile(__DIR__ . '/.env');
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {

@@ -34,6 +34,7 @@ The project runs on a single VM with two services and a modern C++ toolchain.
 - **Code root**: `/opt/bedrock/server/api`
 - **Port**: `80` (HTTP)
 - **Sample endpoints**: `/api/status`, `/api/hello?name=World`, `/api/messages`, `/api/users`, `/api/polls`
+- **Runtime config**: `/opt/bedrock/server/api/.env` (created automatically by setup if missing)
 
 ### ⚙️ **Build System**
 - **Toolchain**: Clang (C++20) + libc++, CMake + Ninja, mold, ccache
@@ -132,6 +133,44 @@ multipass exec bedrock-starter -- sudo bash -lc 'cmake -S /opt/bedrock/server/co
 # PHP changes are picked up automatically (no rebuild needed)
 # Just restart nginx if you changed nginx.conf
 multipass exec bedrock-starter -- sudo systemctl restart nginx
+```
+
+## Mobile Client (Expo iOS)
+
+The Expo app lives in `client/` and talks to the VM API.
+
+### First-time setup
+
+```bash
+cd client
+npm install
+npx expo install expo-secure-store
+npx expo prebuild -p ios
+cp xcode.env.local.example ios/.xcode.env.local
+```
+
+### Configure API base URL
+
+Create `client/.env` and set the VM IP explicitly:
+
+```bash
+VM_IP=$(multipass info bedrock-starter | grep IPv4 | awk '{print $2}')
+echo "EXPO_PUBLIC_API_BASE=http://${VM_IP}" > client/.env
+```
+
+`EXPO_PUBLIC_API_BASE` does not auto-populate; update `client/.env` if the VM IP changes.
+
+### Run on iOS simulator
+
+Terminal 1:
+```bash
+./scripts/start-dev-client-metro.sh
+```
+
+Terminal 2:
+```bash
+cd client
+npm run ios
 ```
 
 ## Service Management
@@ -348,8 +387,69 @@ Cause:
 Fix:
 ```bash
 multipass exec bedrock-starter -- sudo bash -lc 'mkdir -p /opt/bedrock/server/api/vendor && chown -R bedrock:bedrock /opt/bedrock'
-multipass exec bedrock-starter -- sudo -Hu bedrock composer install --no-interaction --prefer-dist --working-dir /opt/bedrock/server/api
+multipass exec bedrock-starter -- sudo -Hu bedrock env COMPOSER_HOME=/tmp/composer-bedrock composer install --no-interaction --prefer-dist --working-dir /opt/bedrock/server/api
 ```
+
+### 5) Re-running `scripts/setup.sh` fails with `Text file busy` or Composer cache ownership errors
+
+Symptom:
+- `cp: cannot create regular file '/opt/bedrock/Bedrock/bedrock': Text file busy`
+- Composer fails with git cache ownership errors under `/tmp/composer/...`
+
+Cause:
+- A previous service instance is still using the Bedrock binary.
+- Composer cache directories under `/tmp` were created by a different user in a prior run.
+
+Fix:
+- Pull latest repo changes and rerun setup:
+
+```bash
+git pull
+multipass exec bedrock-starter -- sudo bash /bedrock-starter/scripts/setup.sh
+```
+
+The current `scripts/setup.sh` now:
+- stops `bedrock/nginx/php-fpm` before replacing `/opt/bedrock` files
+- uses a dedicated bedrock-owned Composer home (`/tmp/composer-bedrock`) during install
+- preserves existing `/opt/bedrock/server/api/.env` across reruns and auto-generates one when missing
+
+### 6) Login returns 500 with `Missing required configuration: BEDROCK_API_JWT_SECRET`
+
+Symptom:
+- Login/register calls return `500 Internal Server Error`
+- API logs include `Missing required configuration: BEDROCK_API_JWT_SECRET`
+
+Cause:
+- API runtime env file is missing in `/opt/bedrock/server/api/.env`
+
+Fix:
+```bash
+git pull
+multipass exec bedrock-starter -- sudo bash /bedrock-starter/scripts/setup.sh
+multipass exec bedrock-starter -- sudo systemctl restart php8.4-fpm nginx
+```
+
+Verify:
+```bash
+multipass exec bedrock-starter -- sudo test -s /opt/bedrock/server/api/.env && echo "api env present"
+```
+
+### 7) Expo runtime error: `ExpoSecureStore.default.deleteValueWithKeyAsync is not a function`
+
+Symptom:
+- Login/register screens crash with SecureStore method mismatch at runtime.
+
+Cause:
+- JS package and native runtime are out of sync (Expo Go/dev client mismatch).
+
+Fix:
+```bash
+cd client
+npx expo install expo-secure-store
+npx expo start -c
+```
+
+If using a custom dev client, rebuild it (`npm run ios` / `npx expo run:ios`) after dependency updates.
 
 ### Quick health checks
 
