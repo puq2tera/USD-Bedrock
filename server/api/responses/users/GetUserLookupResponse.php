@@ -6,7 +6,7 @@ namespace BedrockStarter\responses\users;
 
 use BedrockStarter\responses\framework\RouteResponse;
 
-final class GetUserResponse implements RouteResponse
+final class GetUserLookupResponse implements RouteResponse
 {
     public function __construct(private readonly array $payload)
     {
@@ -16,11 +16,9 @@ final class GetUserResponse implements RouteResponse
     {
         return [
             'userID' => (string)($this->payload['userID'] ?? ''),
-            'email' => (string)($this->payload['email'] ?? ''),
             'firstName' => (string)($this->payload['firstName'] ?? ''),
             'lastName' => (string)($this->payload['lastName'] ?? ''),
             'displayName' => (string)($this->payload['displayName'] ?? ''),
-            'createdAt' => (string)($this->payload['createdAt'] ?? ''),
         ];
     }
 }

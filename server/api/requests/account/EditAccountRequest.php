@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace BedrockStarter\requests\users;
+namespace BedrockStarter\requests\account;
 
 use BedrockStarter\Auth;
-use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\Request;
-use BedrockStarter\responses\framework\RouteResponse;
-use BedrockStarter\responses\users\EditUserResponse;
 use BedrockStarter\ValidationException;
+use BedrockStarter\requests\framework\RouteBoundRequestBase;
+use BedrockStarter\responses\account\EditAccountResponse;
+use BedrockStarter\responses\framework\RouteResponse;
 
-final class EditUserRequest extends RouteBoundRequestBase
+final class EditAccountRequest extends RouteBoundRequestBase
 {
-    private const PATH_PATTERN = '#^/api/users/(?P<userID>\d+)$#';
+    private const PATH_PATTERN = '#^/api/account$#';
     private const ALLOWED_METHODS = ['PUT'];
 
     public function __construct(
@@ -42,12 +42,6 @@ final class EditUserRequest extends RouteBoundRequestBase
 
     protected static function bindFromRouteMatch(array $routeParams): self
     {
-        $userID = Request::requireRouteInt($routeParams, 'userID');
-        // Keep update ownership tied to the bearer token instead of trusting a caller-supplied
-        // route/body user ID, otherwise authenticated users could edit another profile.
-        if ($userID !== Auth::requireAuthenticatedContext()->userID) {
-            throw new ValidationException('Forbidden', 403);
-        }
         $email = Request::getOptionalString('email', 1, 256);
         $firstName = Request::getOptionalString('firstName', 1, Request::MAX_SIZE_SMALL);
         $lastName = Request::getOptionalString('lastName', 1, Request::MAX_SIZE_SMALL);
@@ -57,7 +51,13 @@ final class EditUserRequest extends RouteBoundRequestBase
             throw new ValidationException('Missing required parameter: email, firstName, lastName, or displayName', 400);
         }
 
-        return new self($userID, $email, $firstName, $lastName, $displayName);
+        return new self(
+            Auth::requireAuthenticatedUserID(),
+            $email,
+            $firstName,
+            $lastName,
+            $displayName
+        );
     }
 
     public function toBedrockParams(): array
@@ -82,6 +82,6 @@ final class EditUserRequest extends RouteBoundRequestBase
 
     public function transformResponse(array $bedrockResponse): RouteResponse
     {
-        return new EditUserResponse($bedrockResponse);
+        return new EditAccountResponse($bedrockResponse);
     }
 }

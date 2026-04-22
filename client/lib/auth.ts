@@ -161,6 +161,32 @@ async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
   return data as T;
 }
 
+async function fetchAccountProfile(accessToken: string): Promise<AuthUser | null> {
+  try {
+    const response = await fetchJson<Partial<AuthUser>>("/api/account", {
+      method: "GET",
+      headers: {
+        ...authHeaders(accessToken),
+      },
+    });
+
+    const userID = TypescriptUtils.parseString(response.userID);
+    if (TypescriptUtils.isNullOrWhiteSpace(userID)) {
+      return null;
+    }
+
+    return {
+      userID: userID as string,
+      email: TypescriptUtils.parseString(response.email) ?? "",
+      firstName: TypescriptUtils.parseString(response.firstName) ?? "",
+      lastName: TypescriptUtils.parseString(response.lastName) ?? "",
+      displayName: TypescriptUtils.parseString(response.displayName) ?? "",
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function applyLoginResponse(response: LoginResponse) {
   await updateSnapshot({
     status: "authenticated",
@@ -195,14 +221,15 @@ async function refreshTokensInternal(): Promise<boolean> {
       body: JSON.stringify({ refreshToken }),
     });
 
+    const refreshedProfile = await fetchAccountProfile(response.accessToken);
+
     await updateSnapshot({
       status: "authenticated",
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
       accessTokenExpiresAt: decodeJwtExpiry(response.accessToken),
-      // Refresh currently rotates tokens only, so preserve the last known user payload until a
-      // new login or logout replaces it.
-      user: authSnapshot.user,
+      // Keep user identity synced with the canonical account endpoint during token refresh.
+      user: refreshedProfile ?? authSnapshot.user,
     });
     return true;
   } catch {
@@ -385,6 +412,28 @@ export async function authFetch(input: string, init: RequestInit = {}): Promise<
   retryHeaders.set("Authorization", `Bearer ${nextToken}`);
   response = await fetch(input, { ...init, headers: retryHeaders });
   return response;
+}
+
+export async function refreshAccountProfile(): Promise<AuthUser | null> {
+  await initializeAuth();
+  if (authSnapshot.status !== "authenticated" || !authSnapshot.accessToken || !authSnapshot.refreshToken || !authSnapshot.accessTokenExpiresAt) {
+    return null;
+  }
+
+  const refreshedProfile = await fetchAccountProfile(authSnapshot.accessToken);
+  if (!refreshedProfile) {
+    return authSnapshot.user;
+  }
+
+  await updateSnapshot({
+    status: "authenticated",
+    accessToken: authSnapshot.accessToken,
+    refreshToken: authSnapshot.refreshToken,
+    accessTokenExpiresAt: authSnapshot.accessTokenExpiresAt,
+    user: refreshedProfile,
+  });
+
+  return refreshedProfile;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

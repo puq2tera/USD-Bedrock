@@ -2,17 +2,16 @@
 
 declare(strict_types=1);
 
-namespace BedrockStarter\requests\users;
+namespace BedrockStarter\requests\account;
 
 use BedrockStarter\Auth;
-use BedrockStarter\Request;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
+use BedrockStarter\responses\account\GetAccountResponse;
 use BedrockStarter\responses\framework\RouteResponse;
-use BedrockStarter\responses\users\GetUserLookupResponse;
 
-final class GetUserRequest extends RouteBoundRequestBase
+final class GetAccountRequest extends RouteBoundRequestBase
 {
-    private const PATH_PATTERN = '#^/api/users/(?P<userID>\d+)$#';
+    private const PATH_PATTERN = '#^/api/account$#';
     private const ALLOWED_METHODS = ['GET'];
 
     public function __construct(private readonly int $userID)
@@ -36,8 +35,7 @@ final class GetUserRequest extends RouteBoundRequestBase
 
     protected static function bindFromRouteMatch(array $routeParams): self
     {
-        Auth::requireAuthenticatedContext();
-        return new self(Request::requireRouteInt($routeParams, 'userID'));
+        return new self(Auth::requireAuthenticatedUserID());
     }
 
     public function toBedrockParams(): array
@@ -47,6 +45,6 @@ final class GetUserRequest extends RouteBoundRequestBase
 
     public function transformResponse(array $bedrockResponse): RouteResponse
     {
-        return new GetUserLookupResponse($bedrockResponse);
+        return new GetAccountResponse($bedrockResponse);
     }
 }

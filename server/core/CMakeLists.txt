@@ -73,6 +73,7 @@ set(SOURCES
     commands/users/DeleteUser.cpp
     commands/users/EditUser.cpp
     commands/users/GetUser.cpp
+    commands/users/LookupUsers.cpp
     commands/users/LoginUser.cpp
     tables/TableUtils.cpp
     tables/auth/UserSessionsTable.cpp

@@ -451,6 +451,39 @@ npx expo start -c
 
 If using a custom dev client, rebuild it (`npm run ios` / `npx expo run:ios`) after dependency updates.
 
+### 8) Setup fails copying `server/api/vendor` with `Permission denied`
+
+Symptom:
+- `cp: cannot read symbolic link '/bedrock-starter/server/api/vendor/.../.git/...': Permission denied`
+
+Cause:
+- Host-mounted `server/api/vendor` can contain restrictive git metadata/symlinks.
+
+Fix:
+```bash
+git pull
+multipass exec bedrock-starter -- sudo bash /bedrock-starter/scripts/setup.sh
+```
+
+Current setup excludes `server/api/vendor` from source copy and reinstalls dependencies inside the VM.
+
+### 9) Setup fails at Core plugin build with CMake cache path mismatch
+
+Symptom:
+- `CMake Error: ... CMakeCache.txt directory ... is different than the directory ... where CMakeCache.txt was created`
+- `The source "/opt/bedrock/server/core/CMakeLists.txt" does not match the source ".../server/core/CMakeLists.txt" used to generate cache`
+
+Cause:
+- A stale `server/core/.build` cache was created from a different source root.
+
+Fix:
+```bash
+git pull
+multipass exec bedrock-starter -- sudo bash /bedrock-starter/scripts/setup.sh
+```
+
+Current setup excludes `server/core/.build` from copy and rebuilds `/opt/bedrock/server/core/.build` from scratch.
+
 ### Quick health checks
 
 ```bash

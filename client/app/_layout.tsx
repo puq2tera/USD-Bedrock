@@ -1,10 +1,25 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { useEffect } from "react";
 import { useRouter, useSegments } from "expo-router";
 import { AuthProvider, useAuth } from "../lib/auth";
 import { appColors, appStackScreenOptions, commonStyles } from "../lib/styles";
+
+function HeaderActions() {
+  const router = useRouter();
+
+  return (
+    <View style={commonStyles.headerActionsRow}>
+      <TouchableOpacity onPress={() => router.push("/account")}>
+        <Text style={commonStyles.headerActionText}>Account</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => router.push("/settings")}>
+        <Text style={commonStyles.headerActionText}>Settings</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
 
 function RootNavigator() {
   const router = useRouter();
@@ -16,10 +31,12 @@ function RootNavigator() {
     if (status === "loading") {
       return;
     }
+
     if (!isAuthenticated && !inAuthFlow) {
       router.replace("/login");
       return;
     }
+
     if (isAuthenticated && inAuthFlow) {
       router.replace("/");
     }
@@ -36,12 +53,21 @@ function RootNavigator() {
   return (
     <>
       <StatusBar style="dark" />
-      <Stack screenOptions={appStackScreenOptions}>
+      <Stack
+        screenOptions={{
+          ...appStackScreenOptions,
+          headerRight: () => (isAuthenticated ? <HeaderActions /> : null),
+        }}
+      >
         <Stack.Screen name="login" options={{ title: "Login", headerShown: false }} />
         <Stack.Screen name="register" options={{ title: "Register" }} />
-        <Stack.Screen name="index" options={{ title: "Polls" }} />
-        <Stack.Screen name="create" options={{ title: "Create Poll" }} />
-        <Stack.Screen name="poll/[id]" options={{ title: "Poll" }} />
+        <Stack.Screen name="index" options={{ title: "Chats" }} />
+        <Stack.Screen name="chat/create" options={{ title: "Create Chat" }} />
+        <Stack.Screen name="chat/[id]" options={{ title: "Chat" }} />
+        <Stack.Screen name="chat/[id]/poll/create" options={{ title: "Create Poll" }} />
+        <Stack.Screen name="chat/[id]/poll/[pollId]" options={{ title: "Poll" }} />
+        <Stack.Screen name="account" options={{ title: "Account" }} />
+        <Stack.Screen name="settings" options={{ title: "Settings" }} />
       </Stack>
     </>
   );

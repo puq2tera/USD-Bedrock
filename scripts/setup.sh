@@ -145,7 +145,10 @@ fi
 mkdir -p "$INSTALL_DIR"
 rm -rf "$INSTALL_DIR/Bedrock" "$INSTALL_DIR/server"
 cp -r "$BEDROCK_DIR" "$INSTALL_DIR/"
-cp -r "$PROJECT_DIR/server" "$INSTALL_DIR/"
+mkdir -p "$INSTALL_DIR/server"
+# Copy server sources but skip host-mounted vendor tree; dependencies are
+# reinstalled inside the VM via Composer below.
+tar -C "$PROJECT_DIR/server" --exclude='api/vendor' --exclude='core/.build' -cf - . | tar -C "$INSTALL_DIR/server" -xf -
 
 if [[ -n "$API_ENV_BACKUP" ]]; then
     install -m 0640 "$API_ENV_BACKUP" "$INSTALL_DIR/server/api/.env"
@@ -166,6 +169,9 @@ install -m 0755 "$BEDROCK_BIN_SRC" "$INSTALL_DIR/Bedrock/bedrock"
 # Build Core plugin
 info "[10/10] Building Core plugin..."
 export BEDROCK_DIR="$INSTALL_DIR/Bedrock"
+# CMake cache captures absolute source paths. Always rebuild this directory
+# in-place under /opt to avoid source-path mismatch errors on reruns.
+rm -rf "$INSTALL_DIR/server/core/.build"
 mkdir -p "$INSTALL_DIR/server/core/.build"
 cd "$INSTALL_DIR/server/core/.build"
 cmake -G Ninja ..

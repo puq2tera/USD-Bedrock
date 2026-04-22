@@ -12,6 +12,9 @@ use BedrockStarter\Request;
 use BedrockStarter\config\Env;
 use BedrockStarter\requests\auth\LogoutRequest;
 use BedrockStarter\requests\auth\RefreshSessionRequest;
+use BedrockStarter\requests\account\DeleteAccountRequest;
+use BedrockStarter\requests\account\EditAccountRequest;
+use BedrockStarter\requests\account\GetAccountRequest;
 use BedrockStarter\requests\chats\AddChatMemberRequest;
 use BedrockStarter\requests\chats\CreateChatRequest;
 use BedrockStarter\requests\chats\DeleteChatRequest;
@@ -38,9 +41,8 @@ use BedrockStarter\requests\polls\SubmitPollVotesRequest;
 use BedrockStarter\requests\system\HelloWorldRequest;
 use BedrockStarter\requests\system\StatusRequest;
 use BedrockStarter\requests\users\CreateUserRequest;
-use BedrockStarter\requests\users\DeleteUserRequest;
-use BedrockStarter\requests\users\EditUserRequest;
 use BedrockStarter\requests\users\GetUserRequest;
+use BedrockStarter\requests\users\LookupUsersRequest;
 use BedrockStarter\requests\users\LoginUserRequest;
 use BedrockStarter\ValidationException;
 
@@ -89,9 +91,11 @@ $requestTypes = [
     LoginUserRequest::class,
     RefreshSessionRequest::class,
     LogoutRequest::class,
+    GetAccountRequest::class,
+    EditAccountRequest::class,
+    DeleteAccountRequest::class,
     GetUserRequest::class,
-    EditUserRequest::class,
-    DeleteUserRequest::class,
+    LookupUsersRequest::class,
 ];
 
 try {
