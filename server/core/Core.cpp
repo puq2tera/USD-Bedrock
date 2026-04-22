@@ -31,6 +31,7 @@
 #include "commands/users/DeleteUser.h"
 #include "commands/users/EditUser.h"
 #include "commands/users/GetUser.h"
+#include "commands/users/LookupUserByEmail.h"
 #include "commands/users/LookupUsers.h"
 #include "commands/users/LoginUser.h"
 #include "tables/Tables.h"
@@ -149,6 +150,9 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
     }
     if (SIEquals(baseCommand.request.methodLine, "LookupUsers")) {
         return make_unique<LookupUsers>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "LookupUserByEmail")) {
+        return make_unique<LookupUserByEmail>(std::move(baseCommand), this);
     }
     if (SIEquals(baseCommand.request.methodLine, "LoginUser")) {
         return make_unique<LoginUser>(std::move(baseCommand), this);

@@ -35,7 +35,7 @@ export default function CreateChatScreen() {
   return (
     <KeyboardAvoidingView style={commonStyles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={commonStyles.screenContent}>
-        <Text style={commonStyles.sectionLabel}>Chat title</Text>
+        <Text style={commonStyles.sectionLabel}>Chat Title</Text>
         <TextInput
           style={commonStyles.input}
           value={title}

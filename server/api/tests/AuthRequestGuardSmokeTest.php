@@ -11,6 +11,7 @@ use BedrockStarter\requests\account\GetAccountRequest;
 use BedrockStarter\requests\polls\GetPollRequest;
 use BedrockStarter\requests\users\GetUserRequest;
 use BedrockStarter\requests\users\LookupUsersRequest;
+use BedrockStarter\requests\users\LookupUserByEmailRequest;
 
 /**
  * Auth route guard smoke checks.
@@ -122,6 +123,14 @@ function run(): void
         static fn() => GetUserRequest::tryBind('GET', '/api/users/10'),
         401,
         'User lookup route without token should be 401'
+    );
+
+    resetRequestState();
+    $_GET = ['email' => 'person@example.com'];
+    assertStatusCode(
+        static fn() => LookupUserByEmailRequest::tryBind('GET', '/api/users/by-email'),
+        401,
+        'User lookup by email route without token should be 401'
     );
 
     resetRequestState();

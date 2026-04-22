@@ -8,10 +8,9 @@ type ParticipationSectionProps = {
   selectedOptionIDs: string[];
   textResponse: string;
   busy: boolean;
-  onToggleOption: (option: PollOption) => void;
+  onToggleOption: (option: PollOption) => Promise<void>;
   onTextResponseChange: (value: string) => void;
   onSubmit: () => Promise<void>;
-  onRemoveParticipation: () => Promise<void>;
 };
 
 export function ParticipationSection(props: ParticipationSectionProps) {
@@ -23,7 +22,6 @@ export function ParticipationSection(props: ParticipationSectionProps) {
     onToggleOption,
     onTextResponseChange,
     onSubmit,
-    onRemoveParticipation,
   } = props;
 
   return (
@@ -44,29 +42,22 @@ export function ParticipationSection(props: ParticipationSectionProps) {
         </>
       ) : (
         <>
+          <Text style={commonStyles.metaText}>Tap an option to vote. Tap again to remove your vote.</Text>
           {poll.options.map((option) => {
             const selected = selectedOptionIDs.includes(option.optionID);
             return (
               <TouchableOpacity
                 key={option.optionID}
                 style={[commonStyles.outlinedRow, styles.optionRow, selected && styles.optionRowSelected]}
-                onPress={() => onToggleOption(option)}
+                onPress={() => void onToggleOption(option)}
               >
                 <Text style={styles.optionText}>{option.label}</Text>
                 <Text style={commonStyles.metaText}>{option.voteCount} votes</Text>
               </TouchableOpacity>
             );
           })}
-
-          <TouchableOpacity style={commonStyles.primaryButton} disabled={busy} onPress={() => void onSubmit()}>
-            <Text style={commonStyles.primaryButtonText}>{busy ? "Submitting..." : "Submit selection"}</Text>
-          </TouchableOpacity>
         </>
       )}
-
-      <TouchableOpacity style={commonStyles.ghostButton} onPress={() => void onRemoveParticipation()}>
-        <Text style={commonStyles.ghostButtonText}>Remove my participation</Text>
-      </TouchableOpacity>
     </View>
   );
 }

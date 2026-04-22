@@ -13,6 +13,7 @@ use BedrockStarter\requests\account\GetAccountRequest;
 use BedrockStarter\requests\framework\RouteBinder;
 use BedrockStarter\requests\users\GetUserRequest;
 use BedrockStarter\requests\users\LookupUsersRequest;
+use BedrockStarter\requests\users\LookupUserByEmailRequest;
 
 /**
  * Endpoint behavior checks for phase-1 account/user lookup contract.
@@ -71,6 +72,7 @@ function run(): void
         DeleteAccountRequest::class,
         GetUserRequest::class,
         LookupUsersRequest::class,
+        LookupUserByEmailRequest::class,
     ];
 
     // Success: account and lookup endpoints bind and parse expected params.
@@ -91,6 +93,12 @@ function run(): void
     $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . Auth::issueAccessToken(42, 90);
     $lookupUsers = LookupUsersRequest::tryBind('POST', '/api/users/lookup');
     assertTrue($lookupUsers !== null, 'POST /api/users/lookup should bind with auth token');
+
+    resetRequestState();
+    $_GET = ['email' => 'person@example.com'];
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . Auth::issueAccessToken(42, 90);
+    $lookupByEmail = LookupUserByEmailRequest::tryBind('GET', '/api/users/by-email');
+    assertTrue($lookupByEmail !== null, 'GET /api/users/by-email should bind with auth token');
 
     // Forbidden-style auth failures (request guard currently returns 401 for these).
     resetRequestState();

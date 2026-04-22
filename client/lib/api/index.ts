@@ -9,6 +9,7 @@ export {
 export {
   getUserById,
   lookupUsers,
+  lookupUserByEmail,
   hydrateUserIdentities,
   getCachedUserIdentity,
   getIdentityLabel,

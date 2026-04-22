@@ -41,7 +41,7 @@ type UsePollDetailStateResult = {
   setEditExpiresAt: (value: string) => void;
   setEditOptions: (value: string[]) => void;
   loadPoll: () => Promise<void>;
-  toggleOptionSelection: (option: PollOption) => void;
+  toggleOptionSelection: (option: PollOption) => Promise<void>;
   submitVoteSelection: () => Promise<void>;
   removeParticipation: () => Promise<void>;
   submitPollEdit: (overrides?: Partial<EditPollInput>) => Promise<void>;
@@ -106,71 +106,35 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
     }
   }, [currentUserID, resolvedPollID]);
 
-  const toggleOptionSelection = useCallback((option: PollOption) => {
+  const toggleOptionSelection = useCallback(async (option: PollOption) => {
     if (!poll || poll.status !== "open") {
       return;
     }
 
+    let nextSelectedOptionIDs: string[] = [];
     if (poll.type === "single_choice") {
-      setSelectedOptionIDs([option.optionID]);
-      return;
-    }
-
-    if (poll.type === "ranked_choice") {
+      nextSelectedOptionIDs = selectedOptionIDs.includes(option.optionID) ? [] : [option.optionID];
+    } else if (poll.type === "ranked_choice") {
       // Ranked-choice preserves tap order so submission order maps to rank order.
-      const next = selectedOptionIDs.filter((optionID) => optionID !== option.optionID);
-      next.push(option.optionID);
-      setSelectedOptionIDs(next);
-      return;
-    }
-
-    if (selectedOptionIDs.includes(option.optionID)) {
-      setSelectedOptionIDs(selectedOptionIDs.filter((optionID) => optionID !== option.optionID));
-      return;
-    }
-
-    setSelectedOptionIDs([...selectedOptionIDs, option.optionID]);
-  }, [poll, selectedOptionIDs]);
-
-  const submitVoteSelection = useCallback(async () => {
-    if (!poll) {
-      return;
-    }
-
-    if (poll.status !== "open") {
-      Alert.alert("Poll is closed", "Refresh to view the latest poll state.");
-      await loadPoll();
-      return;
-    }
-
-    if (poll.type === "free_text") {
-      const normalized = textResponse.trim();
-      if (!normalized) {
-        Alert.alert("Missing response", "Please enter your response.");
-        return;
+      if (selectedOptionIDs.includes(option.optionID)) {
+        nextSelectedOptionIDs = selectedOptionIDs.filter((optionID) => optionID !== option.optionID);
+      } else {
+        nextSelectedOptionIDs = [...selectedOptionIDs, option.optionID];
       }
-
-      setBusy(true);
-      try {
-        await submitPollTextResponse(poll.pollID, normalized);
-        await loadPoll();
-      } catch (e: any) {
-        Alert.alert("Response failed", e?.message || "Refreshing poll state.");
-        await loadPoll();
-      } finally {
-        setBusy(false);
-      }
-      return;
-    }
-
-    if (selectedOptionIDs.length < 1) {
-      Alert.alert("No option selected", "Select at least one option.");
-      return;
+    } else {
+      nextSelectedOptionIDs = selectedOptionIDs.includes(option.optionID)
+        ? selectedOptionIDs.filter((optionID) => optionID !== option.optionID)
+        : [...selectedOptionIDs, option.optionID];
     }
 
     setBusy(true);
     try {
-      await submitPollVotes(poll.pollID, { optionIDs: selectedOptionIDs });
+      if (nextSelectedOptionIDs.length < 1) {
+        await deletePollVotes(poll.pollID);
+      } else {
+        await submitPollVotes(poll.pollID, { optionIDs: nextSelectedOptionIDs });
+      }
+      setSelectedOptionIDs(nextSelectedOptionIDs);
       await loadPoll();
     } catch (e: any) {
       Alert.alert("Vote failed", e?.message || "Refreshing poll state.");
@@ -178,7 +142,29 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
     } finally {
       setBusy(false);
     }
-  }, [loadPoll, poll, selectedOptionIDs, textResponse]);
+  }, [loadPoll, poll, selectedOptionIDs]);
+
+  const submitVoteSelection = useCallback(async () => {
+    if (!poll || poll.type !== "free_text") {
+      return;
+    }
+
+    const normalized = textResponse.trim();
+    if (!normalized) {
+      Alert.alert("Missing response", "Please enter your response.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await submitPollTextResponse(poll.pollID, normalized);
+      await loadPoll();
+    } catch (e: any) {
+      Alert.alert("Response failed", e?.message || "Refreshing poll state.");
+      await loadPoll();
+    } finally {
+      setBusy(false);
+    }
+  }, [loadPoll, poll, textResponse]);
 
   const removeParticipation = useCallback(async () => {
     if (!poll) {

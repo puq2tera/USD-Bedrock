@@ -1,15 +1,30 @@
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Redirect, useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
-import { getAccount } from "../lib/api";
-import { useAuth } from "../lib/auth";
-import { commonStyles } from "../lib/styles";
+import { deleteAccount, getAccount, updateAccount } from "../lib/api";
+import { refreshAccountProfile, useAuth } from "../lib/auth";
+import { appColors, commonStyles } from "../lib/styles";
+
+const DELETE_CONFIRMATION_PHRASE = "DELETE";
 
 export default function AccountScreen() {
   const { isAuthenticated, user, logout } = useAuth();
   const router = useRouter();
+
+  const [firstName, setFirstName] = useState(user?.firstName ?? "");
+  const [lastName, setLastName] = useState(user?.lastName ?? "");
+  const [displayName, setDisplayName] = useState(user?.displayName ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [createdAt, setCreatedAt] = useState("");
+  const [deletePhrase, setDeletePhrase] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setFirstName(user?.firstName ?? "");
+    setLastName(user?.lastName ?? "");
+    setDisplayName(user?.displayName ?? "");
+    setEmail(user?.email ?? "");
+  }, [user?.displayName, user?.email, user?.firstName, user?.lastName]);
 
   useFocusEffect(
     useCallback(() => {
@@ -23,27 +38,106 @@ export default function AccountScreen() {
           setEmail(account.email);
           setCreatedAt(account.createdAt);
         } catch {
-          // Leave last known profile values if refresh fails.
+          // Keep last known account metadata if refresh fails.
         }
       })();
     }, [isAuthenticated])
+  );
+
+  const canPersist = useMemo(
+    () => [firstName, lastName, displayName, email].some((value) => value.trim().length > 0),
+    [displayName, email, firstName, lastName]
   );
 
   if (!isAuthenticated) {
     return <Redirect href="/login" />;
   }
 
+  const persistProfile = async () => {
+    if (!canPersist || saving) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await updateAccount({
+        firstName: firstName.trim() || undefined,
+        lastName: lastName.trim() || undefined,
+        displayName: displayName.trim() || undefined,
+        email: email.trim() || undefined,
+      });
+      await refreshAccountProfile();
+    } catch (e: any) {
+      Alert.alert("Profile update failed", e?.message || "Please retry.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const performDelete = async () => {
+    if (deletePhrase.trim() !== DELETE_CONFIRMATION_PHRASE) {
+      Alert.alert("Confirmation mismatch", `Type ${DELETE_CONFIRMATION_PHRASE} to delete your account.`);
+      return;
+    }
+
+    Alert.alert("Delete account", "This permanently deletes your account and session data.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete account",
+        style: "destructive",
+        onPress: async () => {
+          setSaving(true);
+          try {
+            await deleteAccount();
+            await logout();
+            router.replace("/login");
+          } catch (e: any) {
+            Alert.alert("Delete failed", e?.message || "Please retry.");
+          } finally {
+            setSaving(false);
+          }
+        },
+      },
+    ]);
+  };
+
   return (
     <ScrollView style={commonStyles.screen} contentContainerStyle={commonStyles.screenContent}>
-      <View style={[commonStyles.sectionCard, styles.accountCard]}>
-        <Text style={commonStyles.pageTitle}>{user?.displayName || "Account"}</Text>
-        <Text style={[commonStyles.metaText, styles.metaPrimary]}>Email: {email || user?.email || ""}</Text>
-        <Text style={[commonStyles.metaText, styles.metaSecondary]}>User ID: {user?.userID || ""}</Text>
-        <Text style={[commonStyles.metaText, styles.metaSecondary]}>Created at: {createdAt || "Unknown"}</Text>
+      <View style={commonStyles.sectionCard}>
+        <Text style={commonStyles.pageTitle}>{displayName || user?.displayName || "Account"}</Text>
+        <Text style={[commonStyles.metaText, styles.metaWithTop]}>Email: {email || user?.email || ""}</Text>
+        <Text style={[commonStyles.metaText, styles.metaWithTop]}>Member since: {createdAt || "Unknown"}</Text>
+      </View>
+
+      <View style={commonStyles.sectionCard}>
+        <View style={styles.sectionHeader}>
+          <Text style={commonStyles.sectionTitle}>Profile & Settings</Text>
+          <Text style={commonStyles.metaText}>{saving ? "Saving..." : ""}</Text>
+        </View>
+
+        <Text style={commonStyles.sectionLabel}>First name</Text>
+        <TextInput style={commonStyles.input} value={firstName} onChangeText={setFirstName} onBlur={() => void persistProfile()} />
+
+        <Text style={commonStyles.sectionLabel}>Last name</Text>
+        <TextInput style={commonStyles.input} value={lastName} onChangeText={setLastName} onBlur={() => void persistProfile()} />
+
+        <Text style={commonStyles.sectionLabel}>Display name</Text>
+        <TextInput style={commonStyles.input} value={displayName} onChangeText={setDisplayName} onBlur={() => void persistProfile()} />
+
+        <Text style={commonStyles.sectionLabel}>Email</Text>
+        <TextInput
+          style={commonStyles.input}
+          value={email}
+          onChangeText={setEmail}
+          onBlur={() => void persistProfile()}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
       </View>
 
       <TouchableOpacity
-        style={[commonStyles.primaryButtonLarge, styles.signOutButton]}
+        style={[commonStyles.primaryButtonLarge, styles.signOutButton, saving && commonStyles.primaryButtonDisabled]}
+        disabled={saving}
         onPress={async () => {
           await logout();
           router.replace("/login");
@@ -52,28 +146,52 @@ export default function AccountScreen() {
         <Text style={commonStyles.primaryButtonLargeText}>Sign out</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={[commonStyles.retryButton, styles.settingsButton]} onPress={() => router.push("/settings")}>
-        <Text style={commonStyles.retryButtonText}>Open settings</Text>
-      </TouchableOpacity>
+      <View style={[commonStyles.sectionCard, styles.dangerCard]}>
+        <Text style={styles.dangerTitle}>Delete account</Text>
+        <Text style={[commonStyles.metaText, styles.metaWithTop]}>
+          Type {DELETE_CONFIRMATION_PHRASE} to permanently remove this account.
+        </Text>
+        <TextInput
+          style={[commonStyles.input, styles.deleteInput]}
+          value={deletePhrase}
+          onChangeText={setDeletePhrase}
+          autoCapitalize="characters"
+        />
+        <TouchableOpacity style={[commonStyles.primaryButton, styles.deleteButton]} onPress={performDelete}>
+          <Text style={commonStyles.primaryButtonText}>Delete account</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  accountCard: {
-    padding: 16,
-  },
-  metaPrimary: {
+  metaWithTop: {
     marginTop: 6,
   },
-  metaSecondary: {
-    marginTop: 4,
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   signOutButton: {
-    marginTop: 18,
+    marginTop: 6,
   },
-  settingsButton: {
+  dangerCard: {
     marginTop: 14,
-    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: appColors.danger,
+  },
+  dangerTitle: {
+    color: appColors.danger,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  deleteInput: {
+    marginTop: 10,
+  },
+  deleteButton: {
+    marginTop: 10,
+    backgroundColor: appColors.danger,
   },
 });

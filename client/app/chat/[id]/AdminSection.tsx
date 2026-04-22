@@ -38,7 +38,7 @@ export function AdminSection(props: AdminSectionProps) {
     <View style={commonStyles.sectionCard}>
       <Text style={commonStyles.sectionTitle}>Admin</Text>
 
-      <Text style={commonStyles.sectionLabel}>Chat title</Text>
+      <Text style={commonStyles.sectionLabel}>Chat Title</Text>
       <TextInput style={commonStyles.input} value={newChatTitle} onChangeText={onChangeNewChatTitle} />
       <TouchableOpacity style={commonStyles.miniPrimaryButton} onPress={() => void onUpdateTitle()} disabled={busy}>
         <Text style={commonStyles.miniPrimaryButtonText}>Update title</Text>

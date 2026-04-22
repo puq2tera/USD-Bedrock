@@ -18,7 +18,18 @@ import TypescriptUtils from "../../../../lib/TypescriptUtils";
 import { useAuth } from "../../../../lib/auth";
 import { appColors, commonStyles } from "../../../../lib/styles";
 
-const POLL_TYPES: PollType[] = ["single_choice", "multiple_choice", "ranked_choice", "free_text"];
+type PollTypeOption = {
+  type: PollType;
+  label: string;
+  description: string;
+};
+
+const POLL_TYPES: PollTypeOption[] = [
+  { type: "single_choice", label: "Single choice", description: "Everyone picks one option." },
+  { type: "multiple_choice", label: "Multiple choice", description: "People can choose more than one option." },
+  { type: "ranked_choice", label: "Ranked choice", description: "People rank options from best to worst." },
+  { type: "free_text", label: "Text response only", description: "People submit an open-ended answer." },
+];
 
 export default function CreateChatPollScreen() {
   const { isAuthenticated } = useAuth();
@@ -33,13 +44,11 @@ export default function CreateChatPollScreen() {
   const [expiresAtInput, setExpiresAtInput] = useState("");
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [submitting, setSubmitting] = useState(false);
-  const dragStateRef = useRef<{
-    startIndex: number;
-    currentIndex: number;
-    startPageY: number;
-  } | null>(null);
+
+  const dragStateRef = useRef<{ startIndex: number; currentIndex: number; startPageY: number } | null>(null);
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
+  const selectedType = useMemo(() => POLL_TYPES.find((pollType) => pollType.type === type) ?? POLL_TYPES[0], [type]);
   const requiresOptions = useMemo(() => type !== "free_text", [type]);
   const isRankedChoice = type === "ranked_choice";
 
@@ -53,7 +62,6 @@ export default function CreateChatPollScreen() {
         return prev;
       }
 
-      // Option order is meaningful for ranked-choice payloads, so preserve explicit ordering.
       const next = [...prev];
       const [value] = next.splice(from, 1);
       next.splice(to, 0, value);
@@ -79,7 +87,7 @@ export default function CreateChatPollScreen() {
       return;
     }
 
-    const rowHeightApproximation = 44;
+    const rowHeightApproximation = 50;
     const deltaY = pageY - dragStateRef.current.startPageY;
     const deltaRows = Math.round(deltaY / rowHeightApproximation);
     const targetIndex = Math.max(0, Math.min(options.length - 1, dragStateRef.current.startIndex + deltaRows));
@@ -160,17 +168,18 @@ export default function CreateChatPollScreen() {
         <TextInput style={commonStyles.input} multiline value={question} onChangeText={setQuestion} placeholder="What should we decide?" />
 
         <Text style={commonStyles.sectionLabel}>Type</Text>
-        <View style={styles.typeRow}>
+        <View style={styles.segmentedContainer}>
           {POLL_TYPES.map((pollType) => (
             <TouchableOpacity
-              key={pollType}
-              style={[styles.typeChip, pollType === type && styles.typeChipSelected]}
-              onPress={() => setType(pollType)}
+              key={pollType.type}
+              style={[styles.segment, type === pollType.type && styles.segmentActive]}
+              onPress={() => setType(pollType.type)}
             >
-              <Text style={[styles.typeChipText, pollType === type && styles.typeChipTextSelected]}>{pollType}</Text>
+              <Text style={[styles.segmentLabel, type === pollType.type && styles.segmentLabelActive]}>{pollType.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
+        <Text style={styles.typeDescription}>{selectedType.description}</Text>
 
         <View style={commonStyles.formSwitchRow}>
           <Text style={commonStyles.formSwitchLabel}>Allow vote changes</Text>
@@ -194,9 +203,22 @@ export default function CreateChatPollScreen() {
         {requiresOptions && (
           <>
             <Text style={commonStyles.sectionLabel}>Options</Text>
-            {isRankedChoice && <Text style={styles.rankHint}>Drag with ≡ to reorder rank priority. Arrow buttons remain as fallback.</Text>}
+            {isRankedChoice && <Text style={styles.hint}>Drag an option row directly to reorder ranking priority, or use arrows.</Text>}
             {options.map((option, index) => (
-              <View key={`option-${index}`} style={[styles.optionRow, draggingIndex === index && styles.optionRowDragging]}>
+              <View
+                key={`option-${index}`}
+                style={[styles.optionRow, draggingIndex === index && styles.optionRowDragging]}
+                {...(isRankedChoice
+                  ? PanResponder.create({
+                      onStartShouldSetPanResponder: () => true,
+                      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 4,
+                      onPanResponderGrant: (event) => startDrag(index, event.nativeEvent.pageY),
+                      onPanResponderMove: (event) => updateDrag(event.nativeEvent.pageY),
+                      onPanResponderRelease: endDrag,
+                      onPanResponderTerminate: endDrag,
+                    }).panHandlers
+                  : {})}
+              >
                 <TextInput
                   style={[commonStyles.input, styles.optionInput]}
                   value={option}
@@ -207,21 +229,6 @@ export default function CreateChatPollScreen() {
                   }}
                   placeholder={`Option ${index + 1}`}
                 />
-                {isRankedChoice && (
-                  <View
-                    style={styles.dragHandle}
-                    {...PanResponder.create({
-                      onStartShouldSetPanResponder: () => true,
-                      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 4,
-                      onPanResponderGrant: (event) => startDrag(index, event.nativeEvent.pageY),
-                      onPanResponderMove: (event) => updateDrag(event.nativeEvent.pageY),
-                      onPanResponderRelease: endDrag,
-                      onPanResponderTerminate: endDrag,
-                    }).panHandlers}
-                  >
-                    <Text style={styles.dragHandleText}>≡</Text>
-                  </View>
-                )}
                 <TouchableOpacity style={styles.inlineButton} onPress={() => moveOption(index, index - 1)}>
                   <Text style={styles.inlineButtonText}>↑</Text>
                 </TouchableOpacity>
@@ -238,7 +245,7 @@ export default function CreateChatPollScreen() {
                     setOptions(options.filter((_, optionIndex) => optionIndex !== index));
                   }}
                 >
-                  <Text style={styles.inlineButtonText}>X</Text>
+                  <Text style={styles.inlineButtonText}>−</Text>
                 </TouchableOpacity>
               </View>
             ))}
@@ -262,30 +269,34 @@ export default function CreateChatPollScreen() {
 }
 
 const styles = StyleSheet.create({
-  typeRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  typeChip: {
+  segmentedContainer: {
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: appColors.border,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    backgroundColor: "#fff",
+    overflow: "hidden",
   },
-  typeChipSelected: {
-    borderColor: appColors.accent,
-    backgroundColor: appColors.accent,
+  segment: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: appColors.borderSoft,
+    backgroundColor: appColors.surfaceRaised,
   },
-  typeChipText: {
-    fontSize: 12,
+  segmentActive: {
+    backgroundColor: appColors.accentSoft,
+  },
+  segmentLabel: {
+    color: appColors.textSubtle,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  segmentLabelActive: {
     color: appColors.text,
-    fontWeight: "600",
   },
-  typeChipTextSelected: {
-    color: "#fff",
+  typeDescription: {
+    marginTop: 8,
+    color: appColors.textMuted,
+    fontSize: 13,
   },
   submitButton: {
     marginTop: 24,
@@ -302,25 +313,10 @@ const styles = StyleSheet.create({
   optionInput: {
     flex: 1,
   },
-  rankHint: {
+  hint: {
     color: appColors.textMuted,
     fontSize: 12,
     marginBottom: 8,
-  },
-  dragHandle: {
-    width: 30,
-    height: 30,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: appColors.border,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-  },
-  dragHandleText: {
-    color: appColors.text,
-    fontWeight: "700",
-    fontSize: 14,
   },
   inlineButton: {
     width: 30,
@@ -330,7 +326,7 @@ const styles = StyleSheet.create({
     borderColor: appColors.border,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
+    backgroundColor: appColors.surfaceRaised,
   },
   inlineButtonText: {
     color: appColors.text,

@@ -43,6 +43,7 @@ use BedrockStarter\requests\system\StatusRequest;
 use BedrockStarter\requests\users\CreateUserRequest;
 use BedrockStarter\requests\users\GetUserRequest;
 use BedrockStarter\requests\users\LookupUsersRequest;
+use BedrockStarter\requests\users\LookupUserByEmailRequest;
 use BedrockStarter\requests\users\LoginUserRequest;
 use BedrockStarter\ValidationException;
 
@@ -96,6 +97,7 @@ $requestTypes = [
     DeleteAccountRequest::class,
     GetUserRequest::class,
     LookupUsersRequest::class,
+    LookupUserByEmailRequest::class,
 ];
 
 try {

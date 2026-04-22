@@ -17,6 +17,7 @@ use BedrockStarter\requests\polls\GetPollParticipationRequest;
 use BedrockStarter\requests\users\GetUserRequest;
 use BedrockStarter\requests\users\LoginUserRequest;
 use BedrockStarter\requests\users\LookupUsersRequest;
+use BedrockStarter\requests\users\LookupUserByEmailRequest;
 
 /**
  * Lightweight smoke checks for API route binding.
@@ -132,6 +133,12 @@ function run(): void
         400,
         'POST /api/users/lookup with invalid IDs should fail validation'
     );
+
+    resetRequestState();
+    $_GET = ['email' => 'person@example.com'];
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . Auth::issueAccessToken(42, 90);
+    $lookupByEmail = LookupUserByEmailRequest::tryBind('GET', '/api/users/by-email');
+    assertTrue($lookupByEmail !== null, 'GET /api/users/by-email should bind LookupUserByEmailRequest');
 
     resetRequestState();
     $_POST = ['email' => 'person@example.com', 'password' => 'Password1!'];

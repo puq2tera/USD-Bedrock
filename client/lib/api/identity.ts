@@ -78,6 +78,22 @@ export async function lookupUsers(userIDs: string[]): Promise<UserIdentity[]> {
     .filter((identity): identity is UserIdentity => identity != null);
 }
 
+export async function lookupUserByEmail(email: string): Promise<UserIdentity | null> {
+  const normalizedEmail = TypescriptUtils.parseString(email)?.trim().toLowerCase() ?? "";
+  if (TypescriptUtils.isNullOrWhiteSpace(normalizedEmail)) {
+    return null;
+  }
+
+  const data = await request<Record<string, unknown>>(`/api/users/by-email?email=${encodeURIComponent(normalizedEmail)}`);
+  const identity = parseUserIdentity(data);
+  if (!identity) {
+    return null;
+  }
+
+  cacheIdentity(identity);
+  return identity;
+}
+
 export async function hydrateUserIdentities(userIDs: string[]): Promise<void> {
   await lookupUsers(userIDs);
 }
