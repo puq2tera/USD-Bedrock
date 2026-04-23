@@ -11,6 +11,7 @@ type ParticipationSectionProps = {
   onToggleOption: (option: PollOption) => Promise<void>;
   onTextResponseChange: (value: string) => void;
   onSubmit: () => Promise<void>;
+  onRemoveParticipation: () => Promise<void>;
 };
 
 export function ParticipationSection(props: ParticipationSectionProps) {
@@ -22,6 +23,7 @@ export function ParticipationSection(props: ParticipationSectionProps) {
     onToggleOption,
     onTextResponseChange,
     onSubmit,
+    onRemoveParticipation,
   } = props;
 
   return (
@@ -29,6 +31,7 @@ export function ParticipationSection(props: ParticipationSectionProps) {
       <Text style={commonStyles.sectionTitle}>Participation</Text>
       {poll.type === "free_text" ? (
         <>
+          <Text style={commonStyles.metaText}>Write your response and submit when you are ready.</Text>
           <TextInput
             style={[commonStyles.input, styles.multilineInput]}
             value={textResponse}
@@ -42,7 +45,7 @@ export function ParticipationSection(props: ParticipationSectionProps) {
         </>
       ) : (
         <>
-          <Text style={commonStyles.metaText}>Tap an option to vote. Tap again to remove your vote.</Text>
+          <Text style={commonStyles.metaText}>Tap an option to add or remove your vote. Changes save immediately.</Text>
           {poll.options.map((option) => {
             const selected = selectedOptionIDs.includes(option.optionID);
             return (
@@ -58,6 +61,10 @@ export function ParticipationSection(props: ParticipationSectionProps) {
           })}
         </>
       )}
+
+      <TouchableOpacity style={styles.removeButton} disabled={busy} onPress={() => void onRemoveParticipation()}>
+        <Text style={styles.removeButtonText}>Remove my participation</Text>
+      </TouchableOpacity>
     </View>
   );
 }

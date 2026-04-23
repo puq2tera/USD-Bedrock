@@ -129,14 +129,25 @@ export default function ChatSettingsScreen() {
     <ScrollView style={commonStyles.screen} contentContainerStyle={commonStyles.screenContent}>
       <View style={commonStyles.sectionCard}>
         <Text style={commonStyles.sectionTitle}>Chat Title</Text>
+        <Text style={[commonStyles.metaText, styles.metaTop]}>
+          Give this conversation a clear name for members.
+        </Text>
 
         <TextInput
           style={commonStyles.input}
           value={chatTitle}
           editable={isOwner}
           onChangeText={setChatTitle}
-          onBlur={() => void saveTitle()}
         />
+        {isOwner && (
+          <TouchableOpacity
+            style={[commonStyles.primaryButton, styles.saveTitleButton, busy && commonStyles.primaryButtonDisabled]}
+            disabled={busy}
+            onPress={() => void saveTitle()}
+          >
+            <Text style={commonStyles.primaryButtonText}>Save title</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {isOwner && (
@@ -242,5 +253,8 @@ const styles = StyleSheet.create({
   },
   memberRow: {
     marginTop: 8,
+  },
+  saveTitleButton: {
+    marginTop: 12,
   },
 });

@@ -82,6 +82,22 @@ export function ChatDetailScreen() {
           void state.loadAll();
         }} />}
       >
+        <View style={styles.summaryBlock}>
+          <Text style={styles.summaryTitle}>{state.chat.title}</Text>
+          <Text style={styles.summaryMeta}>
+            {state.chat.memberCount} members • {state.chat.ownerCount} owners
+          </Text>
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Messages</Text>
+          <Text style={styles.sectionMeta}>{state.messages.length}</Text>
+        </View>
+
+        {state.messages.length < 1 && (
+          <Text style={styles.emptyHint}>No messages yet. Start the conversation below.</Text>
+        )}
+
         {state.messages.map((message) => {
           const isOwnMessage = message.userID === user?.userID;
           return (
@@ -93,6 +109,15 @@ export function ChatDetailScreen() {
             </View>
           );
         })}
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Polls</Text>
+          <Text style={styles.sectionMeta}>{state.polls.length}</Text>
+        </View>
+
+        {state.polls.length < 1 && (
+          <Text style={styles.emptyHint}>No polls yet. Tap Poll to create one.</Text>
+        )}
 
         {state.polls.map((poll) => (
           <TouchableOpacity key={poll.pollID} style={styles.pollCard} onPress={() => router.push(`/chat/${chatID}/poll/${poll.pollID}`)}>
@@ -139,6 +164,46 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 14,
     gap: 8,
+  },
+  summaryBlock: {
+    backgroundColor: appColors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: appColors.borderSoft,
+    padding: 12,
+    marginBottom: 4,
+  },
+  summaryTitle: {
+    color: appColors.text,
+    fontWeight: "700",
+    fontSize: 18,
+  },
+  summaryMeta: {
+    color: appColors.textMuted,
+    marginTop: 4,
+    fontSize: 12,
+  },
+  sectionHeader: {
+    marginTop: 8,
+    marginBottom: 2,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  sectionTitle: {
+    color: appColors.text,
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  sectionMeta: {
+    color: appColors.textMuted,
+    fontWeight: "600",
+    fontSize: 12,
+  },
+  emptyHint: {
+    color: appColors.textMuted,
+    fontSize: 13,
+    marginBottom: 4,
   },
   messageRow: {
     maxWidth: "86%",

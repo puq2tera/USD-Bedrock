@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
 import { getIdentityLabel, PollParticipation } from "../../../../../lib/api";
 import { commonStyles } from "../../../../../lib/styles";
+import { pollDetailStyles as styles } from "./pollDetailStyles";
 
 type ParticipationSummarySectionProps = {
   participation: PollParticipation | null;
@@ -12,9 +13,20 @@ export function ParticipationSummarySection({ participation }: ParticipationSumm
       <Text style={commonStyles.sectionTitle}>Participation Summary</Text>
       {participation && (
         <>
-          <Text style={commonStyles.metaText}>Eligible: {participation.eligibleCount}</Text>
-          <Text style={commonStyles.metaText}>Voted: {participation.votedCount}</Text>
-          <Text style={commonStyles.metaText}>Not voted: {participation.notVotedCount}</Text>
+          <View style={styles.countRow}>
+            <View style={styles.countChip}>
+              <Text style={styles.countValue}>{participation.eligibleCount}</Text>
+              <Text style={styles.countLabel}>Eligible</Text>
+            </View>
+            <View style={styles.countChip}>
+              <Text style={styles.countValue}>{participation.votedCount}</Text>
+              <Text style={styles.countLabel}>Voted</Text>
+            </View>
+            <View style={styles.countChip}>
+              <Text style={styles.countValue}>{participation.notVotedCount}</Text>
+              <Text style={styles.countLabel}>Not voted</Text>
+            </View>
+          </View>
           {!participation.isAnonymous ? (
             <>
               <Text style={commonStyles.listTitle}>Voted users</Text>

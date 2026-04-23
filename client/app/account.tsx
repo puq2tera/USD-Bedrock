@@ -105,34 +105,43 @@ export default function AccountScreen() {
     <ScrollView style={commonStyles.screen} contentContainerStyle={commonStyles.screenContent}>
       <View style={commonStyles.sectionCard}>
         <Text style={commonStyles.pageTitle}>{displayName || user?.displayName || "Account"}</Text>
-        <Text style={[commonStyles.metaText, styles.metaWithTop]}>Email: {email || user?.email || ""}</Text>
-        <Text style={[commonStyles.metaText, styles.metaWithTop]}>Member since: {createdAt || "Unknown"}</Text>
+        <Text style={[commonStyles.metaText, styles.metaWithTop]}>{email || user?.email || ""}</Text>
+        <Text style={[commonStyles.metaText, styles.metaWithTop]}>
+          Member since {createdAt || "Unknown"}
+        </Text>
       </View>
 
       <View style={commonStyles.sectionCard}>
         <View style={styles.sectionHeader}>
           <Text style={commonStyles.sectionTitle}>Profile & Settings</Text>
-          <Text style={commonStyles.metaText}>{saving ? "Saving..." : ""}</Text>
+          {saving && <Text style={commonStyles.metaText}>Saving...</Text>}
         </View>
 
         <Text style={commonStyles.sectionLabel}>First name</Text>
-        <TextInput style={commonStyles.input} value={firstName} onChangeText={setFirstName} onBlur={() => void persistProfile()} />
+        <TextInput style={commonStyles.input} value={firstName} onChangeText={setFirstName} />
 
         <Text style={commonStyles.sectionLabel}>Last name</Text>
-        <TextInput style={commonStyles.input} value={lastName} onChangeText={setLastName} onBlur={() => void persistProfile()} />
+        <TextInput style={commonStyles.input} value={lastName} onChangeText={setLastName} />
 
         <Text style={commonStyles.sectionLabel}>Display name</Text>
-        <TextInput style={commonStyles.input} value={displayName} onChangeText={setDisplayName} onBlur={() => void persistProfile()} />
+        <TextInput style={commonStyles.input} value={displayName} onChangeText={setDisplayName} />
 
         <Text style={commonStyles.sectionLabel}>Email</Text>
         <TextInput
           style={commonStyles.input}
           value={email}
           onChangeText={setEmail}
-          onBlur={() => void persistProfile()}
           autoCapitalize="none"
           keyboardType="email-address"
         />
+
+        <TouchableOpacity
+          style={[commonStyles.primaryButton, styles.saveButton, saving && commonStyles.primaryButtonDisabled]}
+          disabled={saving || !canPersist}
+          onPress={() => void persistProfile()}
+        >
+          <Text style={commonStyles.primaryButtonText}>Save profile changes</Text>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity
@@ -176,6 +185,9 @@ const styles = StyleSheet.create({
   },
   signOutButton: {
     marginTop: 6,
+  },
+  saveButton: {
+    marginTop: 16,
   },
   dangerCard: {
     marginTop: 14,

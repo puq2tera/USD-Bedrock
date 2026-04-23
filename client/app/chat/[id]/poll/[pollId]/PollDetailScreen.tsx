@@ -93,6 +93,7 @@ export function PollDetailScreen() {
         onToggleOption={state.toggleOptionSelection}
         onTextResponseChange={state.setTextResponse}
         onSubmit={state.submitVoteSelection}
+        onRemoveParticipation={state.removeParticipation}
       />
 
       <ParticipationSummarySection participation={state.participation} />

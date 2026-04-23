@@ -36,4 +36,38 @@ export const pollDetailStyles = StyleSheet.create({
   optionInputSpacing: {
     marginBottom: 8,
   },
+  countRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 8,
+  },
+  countChip: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: appColors.borderSoft,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    backgroundColor: appColors.surfaceRaised,
+  },
+  countValue: {
+    color: appColors.text,
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  countLabel: {
+    color: appColors.textMuted,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  removeButton: {
+    marginTop: 12,
+    alignSelf: "flex-start",
+    paddingVertical: 6,
+  },
+  removeButtonText: {
+    color: appColors.danger,
+    fontSize: 13,
+    fontWeight: "600",
+  },
 });

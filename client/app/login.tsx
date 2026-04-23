@@ -3,7 +3,7 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "reac
 import { Link, Redirect, useRouter } from "expo-router";
 
 import { useAuth } from "../lib/auth";
-import { commonStyles } from "../lib/styles";
+import { appColors, commonStyles } from "../lib/styles";
 import TypescriptUtils from "../lib/TypescriptUtils";
 
 export default function LoginScreen() {
@@ -39,17 +39,21 @@ export default function LoginScreen() {
   return (
     <View style={commonStyles.authScreen}>
       <Text style={commonStyles.authTitle}>Welcome back</Text>
+      <Text style={styles.subtitle}>Continue to your chats and polls.</Text>
+
+      <Text style={styles.fieldLabel}>Email</Text>
       <TextInput
         style={[commonStyles.input, styles.inputSpacing]}
         autoCapitalize="none"
         keyboardType="email-address"
-        placeholder="Email"
+        placeholder="name@company.com"
         value={email}
         onChangeText={setEmail}
       />
+      <Text style={styles.fieldLabel}>Password</Text>
       <TextInput
         style={[commonStyles.input, styles.inputSpacing]}
-        placeholder="Password"
+        placeholder="Enter your password"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
@@ -65,6 +69,17 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  subtitle: {
+    color: appColors.textMuted,
+    fontSize: 12,
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    color: "#c7d6ee",
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 6,
+  },
   inputSpacing: { marginBottom: 12 },
   link: { marginTop: 16, textAlign: "center" },
 });

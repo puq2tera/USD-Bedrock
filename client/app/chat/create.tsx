@@ -3,7 +3,7 @@ import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, Tou
 import { Redirect, useRouter } from "expo-router";
 import { createChat } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
-import { commonStyles } from "../../lib/styles";
+import { appColors, commonStyles } from "../../lib/styles";
 
 export default function CreateChatScreen() {
   const { isAuthenticated } = useAuth();
@@ -35,7 +35,10 @@ export default function CreateChatScreen() {
   return (
     <KeyboardAvoidingView style={commonStyles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={commonStyles.screenContent}>
-        <Text style={commonStyles.sectionLabel}>Chat Title</Text>
+        <Text style={styles.pageTitle}>Create chat</Text>
+        <Text style={styles.pageSubtitle}>Start a focused thread for your team, project, or topic.</Text>
+
+        <Text style={commonStyles.sectionLabel}>Chat title</Text>
         <TextInput
           style={commonStyles.input}
           value={title}
@@ -56,6 +59,17 @@ export default function CreateChatScreen() {
 }
 
 const styles = StyleSheet.create({
+  pageTitle: {
+    color: appColors.text,
+    fontSize: 24,
+    fontWeight: "700",
+  },
+  pageSubtitle: {
+    color: appColors.textMuted,
+    marginTop: 6,
+    fontSize: 13,
+    lineHeight: 18,
+  },
   submitButton: {
     marginTop: 24,
   },

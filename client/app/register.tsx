@@ -3,7 +3,7 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "reac
 import { Redirect, useRouter } from "expo-router";
 
 import { useAuth } from "../lib/auth";
-import { commonStyles } from "../lib/styles";
+import { appColors, commonStyles } from "../lib/styles";
 import TypescriptUtils from "../lib/TypescriptUtils";
 
 export default function RegisterScreen() {
@@ -59,19 +59,25 @@ export default function RegisterScreen() {
   return (
     <View style={commonStyles.authScreen}>
       <Text style={commonStyles.authTitle}>Create account</Text>
-      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="First name" value={firstName} onChangeText={setFirstName} />
-      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="Last name" value={lastName} onChangeText={setLastName} />
+      <Text style={styles.subtitle}>Set up your profile to start creating chats.</Text>
+
+      <Text style={styles.fieldLabel}>First name</Text>
+      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="Ava" value={firstName} onChangeText={setFirstName} />
+      <Text style={styles.fieldLabel}>Last name</Text>
+      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="Nguyen" value={lastName} onChangeText={setLastName} />
+      <Text style={styles.fieldLabel}>Email</Text>
       <TextInput
         style={[commonStyles.input, styles.inputSpacing]}
         autoCapitalize="none"
         keyboardType="email-address"
-        placeholder="Email"
+        placeholder="name@company.com"
         value={email}
         onChangeText={setEmail}
       />
+      <Text style={styles.fieldLabel}>Password</Text>
       <TextInput
         style={[commonStyles.input, styles.inputSpacing]}
-        placeholder="Password (8+ chars)"
+        placeholder="At least 8 characters"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
@@ -84,5 +90,16 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
+  subtitle: {
+    color: appColors.textMuted,
+    fontSize: 12,
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    color: "#c7d6ee",
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 6,
+  },
   inputSpacing: { marginBottom: 12 },
 });

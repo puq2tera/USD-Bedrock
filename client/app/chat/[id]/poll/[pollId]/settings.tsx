@@ -43,29 +43,16 @@ export default function PollSettingsScreen() {
           style={commonStyles.input}
           value={state.editQuestion}
           onChangeText={state.setEditQuestion}
-          onBlur={() => void state.submitPollEdit()}
         />
 
         <View style={commonStyles.formSwitchRow}>
           <Text style={commonStyles.formSwitchLabel}>Allow vote changes</Text>
-          <Switch
-            value={state.editAllowChangeVote}
-            onValueChange={(value) => {
-              state.setEditAllowChangeVote(value);
-              void state.submitPollEdit({ allowChangeVote: value });
-            }}
-          />
+          <Switch value={state.editAllowChangeVote} onValueChange={state.setEditAllowChangeVote} />
         </View>
 
         <View style={commonStyles.formSwitchRow}>
           <Text style={commonStyles.formSwitchLabel}>Anonymous</Text>
-          <Switch
-            value={state.editIsAnonymous}
-            onValueChange={(value) => {
-              state.setEditIsAnonymous(value);
-              void state.submitPollEdit({ isAnonymous: value });
-            }}
-          />
+          <Switch value={state.editIsAnonymous} onValueChange={state.setEditIsAnonymous} />
         </View>
 
         <Text style={commonStyles.sectionLabel}>Expires at</Text>
@@ -73,7 +60,6 @@ export default function PollSettingsScreen() {
           style={commonStyles.input}
           value={state.editExpiresAt}
           onChangeText={state.setEditExpiresAt}
-          onBlur={() => void state.submitPollEdit()}
           placeholder="2026-05-01T18:00"
         />
 
@@ -97,16 +83,20 @@ export default function PollSettingsScreen() {
             </TouchableOpacity>
           </>
         )}
+
+        <TouchableOpacity style={[commonStyles.primaryButton, styles.saveButton]} onPress={() => void state.submitPollEdit()}>
+          <Text style={commonStyles.primaryButtonText}>Save poll settings</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.bottomActions}>
         {state.poll.status === "open" ? (
-          <TouchableOpacity style={commonStyles.miniDangerButton} onPress={() => state.transitionStatus("closed")}>
-            <Text style={commonStyles.miniDangerButtonText}>Close poll</Text>
+          <TouchableOpacity style={commonStyles.ghostButton} onPress={() => state.transitionStatus("closed")}>
+            <Text style={commonStyles.ghostButtonText}>Close poll</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={commonStyles.miniPrimaryButton} onPress={() => state.transitionStatus("open")}>
-            <Text style={commonStyles.miniPrimaryButtonText}>Reopen poll</Text>
+          <TouchableOpacity style={commonStyles.ghostButton} onPress={() => state.transitionStatus("open")}>
+            <Text style={commonStyles.ghostButtonText}>Reopen poll</Text>
           </TouchableOpacity>
         )}
 
@@ -131,13 +121,14 @@ export default function PollSettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  optionInput: {
+      optionInput: {
     marginBottom: 8,
+  },
+  saveButton: {
+    marginTop: 16,
   },
   bottomActions: {
     marginTop: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    gap: 10,
   },
 });
