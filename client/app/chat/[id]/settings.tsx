@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Redirect, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { KeyboardAwareScrollView } from "../../../components/KeyboardAwareScrollView";
 import TypescriptUtils from "../../../lib/TypescriptUtils";
 import {
   addChatMember,
@@ -9,7 +10,6 @@ import {
   ChatMember,
   deleteChat,
   editChat,
-  editChatMemberRole,
   getChat,
   getIdentityLabel,
   listChatMembers,
@@ -20,7 +20,7 @@ import { useAuth } from "../../../lib/auth";
 import { appColors, commonStyles } from "../../../lib/styles";
 
 export default function ChatSettingsScreen() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const chatID = TypescriptUtils.parseString(id) ?? "";
@@ -126,12 +126,9 @@ export default function ChatSettingsScreen() {
   };
 
   return (
-    <ScrollView style={commonStyles.screen} contentContainerStyle={commonStyles.screenContent}>
+    <KeyboardAwareScrollView style={commonStyles.screen} contentContainerStyle={commonStyles.screenContent}>
       <View style={commonStyles.sectionCard}>
         <Text style={commonStyles.sectionTitle}>Chat Title</Text>
-        <Text style={[commonStyles.metaText, styles.metaTop]}>
-          Give this conversation a clear name for members.
-        </Text>
 
         <TextInput
           style={commonStyles.input}
@@ -145,7 +142,7 @@ export default function ChatSettingsScreen() {
             disabled={busy}
             onPress={() => void saveTitle()}
           >
-            <Text style={commonStyles.primaryButtonText}>Save title</Text>
+            <Text style={commonStyles.primaryButtonText}>Save Title</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -161,6 +158,7 @@ export default function ChatSettingsScreen() {
               value={memberEmailDraft}
               onChangeText={setMemberEmailDraft}
               placeholder="name@company.com"
+              placeholderTextColor={appColors.textSubtle}
               autoCapitalize="none"
               keyboardType="email-address"
             />
@@ -171,18 +169,12 @@ export default function ChatSettingsScreen() {
 
           {members.map((member) => (
             <View key={member.userID} style={[commonStyles.outlinedRow, styles.memberRow]}>
-              <View>
+              <View style={styles.memberIdentityRow}>
                 <Text style={commonStyles.emphasizedRowLabel}>{getIdentityLabel(member.userID)}</Text>
-                <Text style={commonStyles.metaText}>Role: {member.role}</Text>
+                <Text style={styles.memberRoleText}>({member.role})</Text>
               </View>
               <View style={commonStyles.inlineActionsRow}>
-                <TouchableOpacity
-                  style={commonStyles.ghostButton}
-                  onPress={() => void editChatMemberRole(chat.chatID, member.userID, member.role === "owner" ? "member" : "owner").then(load)}
-                >
-                  <Text style={commonStyles.ghostButtonText}>{member.role === "owner" ? "Demote" : "Promote"}</Text>
-                </TouchableOpacity>
-                {member.userID !== chat.createdByUserID && (
+                {member.userID !== user?.userID && (
                   <TouchableOpacity
                     style={commonStyles.miniDangerButton}
                     onPress={() =>
@@ -210,7 +202,7 @@ export default function ChatSettingsScreen() {
           style={[commonStyles.dangerBlockButton, busy && commonStyles.primaryButtonDisabled]}
           disabled={busy}
           onPress={() =>
-            Alert.alert("Delete chat", "Delete this chat and all messages/polls?", [
+            Alert.alert("Delete Chat", "Delete this chat and all messages/polls?", [
               { text: "Cancel", style: "cancel" },
               {
                 text: "Delete",
@@ -230,10 +222,10 @@ export default function ChatSettingsScreen() {
             ])
           }
         >
-          <Text style={commonStyles.dangerBlockButtonText}>Delete chat</Text>
+          <Text style={commonStyles.dangerBlockButtonText}>Delete Chat</Text>
         </TouchableOpacity>
       )}
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 
@@ -253,6 +245,20 @@ const styles = StyleSheet.create({
   },
   memberRow: {
     marginTop: 8,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  memberIdentityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    flexShrink: 1,
+    paddingRight: 10,
+  },
+  memberRoleText: {
+    color: appColors.textMuted,
+    fontStyle: "italic",
   },
   saveTitleButton: {
     marginTop: 12,

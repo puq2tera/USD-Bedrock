@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Redirect, useFocusEffect, useRouter } from "expo-router";
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { deleteAccount, getAccount, updateAccount } from "../lib/api";
 import { refreshAccountProfile, useAuth } from "../lib/auth";
+import { formatDateTimeForDisplay } from "../lib/dateTime";
 import { appColors, commonStyles } from "../lib/styles";
 
 const DELETE_CONFIRMATION_PHRASE = "DELETE";
@@ -48,6 +50,7 @@ export default function AccountScreen() {
     () => [firstName, lastName, displayName, email].some((value) => value.trim().length > 0),
     [displayName, email, firstName, lastName]
   );
+  const memberSinceLabel = useMemo(() => formatDateTimeForDisplay(createdAt), [createdAt]);
 
   if (!isAuthenticated) {
     return <Redirect href="/login" />;
@@ -80,10 +83,10 @@ export default function AccountScreen() {
       return;
     }
 
-    Alert.alert("Delete account", "This permanently deletes your account and session data.", [
+    Alert.alert("Delete Account", "This permanently deletes your account and session data.", [
       { text: "Cancel", style: "cancel" },
       {
-        text: "Delete account",
+        text: "Delete Account",
         style: "destructive",
         onPress: async () => {
           setSaving(true);
@@ -102,12 +105,12 @@ export default function AccountScreen() {
   };
 
   return (
-    <ScrollView style={commonStyles.screen} contentContainerStyle={commonStyles.screenContent}>
+    <KeyboardAwareScrollView style={commonStyles.screen} contentContainerStyle={commonStyles.screenContent}>
       <View style={commonStyles.sectionCard}>
         <Text style={commonStyles.pageTitle}>{displayName || user?.displayName || "Account"}</Text>
         <Text style={[commonStyles.metaText, styles.metaWithTop]}>{email || user?.email || ""}</Text>
         <Text style={[commonStyles.metaText, styles.metaWithTop]}>
-          Member since {createdAt || "Unknown"}
+          Member since {memberSinceLabel}
         </Text>
       </View>
 
@@ -140,7 +143,7 @@ export default function AccountScreen() {
           disabled={saving || !canPersist}
           onPress={() => void persistProfile()}
         >
-          <Text style={commonStyles.primaryButtonText}>Save profile changes</Text>
+          <Text style={commonStyles.primaryButtonText}>Save Profile Changes</Text>
         </TouchableOpacity>
       </View>
 
@@ -152,11 +155,11 @@ export default function AccountScreen() {
           router.replace("/login");
         }}
       >
-        <Text style={commonStyles.primaryButtonLargeText}>Sign out</Text>
+        <Text style={commonStyles.primaryButtonLargeText}>Sign Out</Text>
       </TouchableOpacity>
 
       <View style={[commonStyles.sectionCard, styles.dangerCard]}>
-        <Text style={styles.dangerTitle}>Delete account</Text>
+        <Text style={styles.dangerTitle}>Delete Account</Text>
         <Text style={[commonStyles.metaText, styles.metaWithTop]}>
           Type {DELETE_CONFIRMATION_PHRASE} to permanently remove this account.
         </Text>
@@ -167,10 +170,10 @@ export default function AccountScreen() {
           autoCapitalize="characters"
         />
         <TouchableOpacity style={[commonStyles.primaryButton, styles.deleteButton]} onPress={performDelete}>
-          <Text style={commonStyles.primaryButtonText}>Delete account</Text>
+          <Text style={commonStyles.primaryButtonText}>Delete Account</Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 

@@ -1,6 +1,6 @@
 import { Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { PollDetail } from "../../../../../lib/api";
-import { commonStyles } from "../../../../../lib/styles";
+import { appColors, commonStyles } from "../../../../../lib/styles";
 import { pollDetailStyles as styles } from "./pollDetailStyles";
 
 type CreatorControlsSectionProps = {
@@ -66,7 +66,13 @@ export function CreatorControlsSection(props: CreatorControlsSectionProps) {
           </View>
 
           <Text style={commonStyles.sectionLabel}>Expires at</Text>
-          <TextInput style={commonStyles.input} value={editExpiresAt} onChangeText={setEditExpiresAt} placeholder="2026-05-01T18:00" />
+          <TextInput
+            style={commonStyles.input}
+            value={editExpiresAt}
+            onChangeText={setEditExpiresAt}
+            placeholder="2026-05-01T18:00"
+            placeholderTextColor={appColors.textSubtle}
+          />
 
           {poll.type !== "free_text" && (
             <>
@@ -87,7 +93,7 @@ export function CreatorControlsSection(props: CreatorControlsSectionProps) {
           )}
 
           <TouchableOpacity style={commonStyles.primaryButton} onPress={poll.type === "free_text" ? () => void onSubmitEdit() : onConfirmReplaceOptions}>
-            <Text style={commonStyles.primaryButtonText}>Save poll updates</Text>
+            <Text style={commonStyles.primaryButtonText}>Save Poll Updates</Text>
           </TouchableOpacity>
         </>
       )}
@@ -95,16 +101,16 @@ export function CreatorControlsSection(props: CreatorControlsSectionProps) {
       <View style={[commonStyles.inlineActionsRow, styles.inlineActions]}>
         {poll.status === "open" ? (
           <TouchableOpacity style={commonStyles.miniDangerButton} onPress={() => onTransitionStatus("closed")}>
-            <Text style={commonStyles.miniDangerButtonText}>Close poll</Text>
+            <Text style={commonStyles.miniDangerButtonText}>Close Poll</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={commonStyles.miniPrimaryButton} onPress={() => onTransitionStatus("open")}>
-            <Text style={commonStyles.miniPrimaryButtonText}>Reopen poll</Text>
+            <Text style={commonStyles.miniPrimaryButtonText}>Reopen Poll</Text>
           </TouchableOpacity>
         )}
 
         <TouchableOpacity style={commonStyles.miniDangerButton} onPress={onDeletePoll}>
-          <Text style={commonStyles.miniDangerButtonText}>Delete poll</Text>
+          <Text style={commonStyles.miniDangerButtonText}>Delete Poll</Text>
         </TouchableOpacity>
       </View>
     </View>

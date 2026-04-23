@@ -35,7 +35,7 @@ export default function CreateChatScreen() {
   return (
     <KeyboardAvoidingView style={commonStyles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={commonStyles.screenContent}>
-        <Text style={styles.pageTitle}>Create chat</Text>
+        <Text style={styles.pageTitle}>Create Chat</Text>
         <Text style={styles.pageSubtitle}>Start a focused thread for your team, project, or topic.</Text>
 
         <Text style={commonStyles.sectionLabel}>Chat title</Text>
@@ -44,6 +44,7 @@ export default function CreateChatScreen() {
           value={title}
           onChangeText={setTitle}
           placeholder="Team discussion"
+          placeholderTextColor={appColors.textSubtle}
           maxLength={255}
         />
         <TouchableOpacity
@@ -51,7 +52,7 @@ export default function CreateChatScreen() {
           disabled={submitting}
           onPress={handleCreate}
         >
-          <Text style={commonStyles.primaryButtonLargeText}>{submitting ? "Creating..." : "Create chat"}</Text>
+          <Text style={commonStyles.primaryButtonLargeText}>{submitting ? "Creating..." : "Create Chat"}</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

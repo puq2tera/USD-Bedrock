@@ -97,7 +97,7 @@ export default function ChatListScreen() {
           <Text style={styles.heroSubtitle}>Pick up where your team left off.</Text>
         </View>
         <TouchableOpacity style={commonStyles.primaryButton} onPress={() => router.push("/chat/create")}>
-          <Text style={commonStyles.primaryButtonText}>New chat</Text>
+          <Text style={commonStyles.primaryButtonText}>New Chat</Text>
         </TouchableOpacity>
       </View>
 
@@ -116,7 +116,7 @@ export default function ChatListScreen() {
             <Text style={styles.emptyTitle}>No chats yet</Text>
             <Text style={styles.emptyText}>Create your first chat to start conversations and polls.</Text>
             <TouchableOpacity style={[commonStyles.primaryButton, styles.emptyAction]} onPress={() => router.push("/chat/create")}>
-              <Text style={commonStyles.primaryButtonText}>Create chat</Text>
+              <Text style={commonStyles.primaryButtonText}>Create Chat</Text>
             </TouchableOpacity>
           </View>
         }

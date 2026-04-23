@@ -1,6 +1,6 @@
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { ChatDetail, ChatMember, getIdentityLabel } from "../../../lib/api";
-import { commonStyles } from "../../../lib/styles";
+import { appColors, commonStyles } from "../../../lib/styles";
 import { chatDetailStyles as styles } from "./chatDetailStyles";
 
 type AdminSectionProps = {
@@ -9,11 +9,11 @@ type AdminSectionProps = {
   busy: boolean;
   newChatTitle: string;
   memberUserIDDraft: string;
+  currentUserID: string;
   onChangeNewChatTitle: (value: string) => void;
   onChangeMemberUserIDDraft: (value: string) => void;
   onUpdateTitle: () => Promise<void>;
   onAddMember: () => Promise<void>;
-  onToggleMemberRole: (member: ChatMember) => Promise<void>;
   onRemoveMember: (member: ChatMember) => void;
   onDeleteChat: () => void;
 };
@@ -25,11 +25,11 @@ export function AdminSection(props: AdminSectionProps) {
     busy,
     newChatTitle,
     memberUserIDDraft,
+    currentUserID,
     onChangeNewChatTitle,
     onChangeMemberUserIDDraft,
     onUpdateTitle,
     onAddMember,
-    onToggleMemberRole,
     onRemoveMember,
     onDeleteChat,
   } = props;
@@ -41,12 +41,18 @@ export function AdminSection(props: AdminSectionProps) {
       <Text style={commonStyles.sectionLabel}>Chat Title</Text>
       <TextInput style={commonStyles.input} value={newChatTitle} onChangeText={onChangeNewChatTitle} />
       <TouchableOpacity style={commonStyles.miniPrimaryButton} onPress={() => void onUpdateTitle()} disabled={busy}>
-        <Text style={commonStyles.miniPrimaryButtonText}>Update title</Text>
+        <Text style={commonStyles.miniPrimaryButtonText}>Update Title</Text>
       </TouchableOpacity>
 
       <Text style={commonStyles.sectionLabel}>Members</Text>
       <View style={styles.inlineComposer}>
-        <TextInput style={[commonStyles.input, styles.inlineInput]} value={memberUserIDDraft} onChangeText={onChangeMemberUserIDDraft} placeholder="User ID" />
+        <TextInput
+          style={[commonStyles.input, styles.inlineInput]}
+          value={memberUserIDDraft}
+          onChangeText={onChangeMemberUserIDDraft}
+          placeholder="User ID"
+          placeholderTextColor={appColors.textSubtle}
+        />
         <TouchableOpacity style={commonStyles.miniPrimaryButton} onPress={() => void onAddMember()}>
           <Text style={commonStyles.miniPrimaryButtonText}>Add</Text>
         </TouchableOpacity>
@@ -54,15 +60,12 @@ export function AdminSection(props: AdminSectionProps) {
 
       {members.map((member) => (
         <View key={member.userID} style={[commonStyles.outlinedRow, styles.memberRow]}>
-          <View>
+          <View style={styles.memberIdentityRow}>
             <Text style={[commonStyles.emphasizedRowLabel, styles.memberName]}>{getIdentityLabel(member.userID)}</Text>
-            <Text style={commonStyles.metaText}>Role: {member.role}</Text>
+            <Text style={styles.memberRoleText}>({member.role})</Text>
           </View>
           <View style={commonStyles.inlineActionsRow}>
-            <TouchableOpacity style={commonStyles.ghostButton} onPress={() => void onToggleMemberRole(member)}>
-              <Text style={commonStyles.ghostButtonText}>{member.role === "owner" ? "Demote" : "Promote"}</Text>
-            </TouchableOpacity>
-            {member.userID !== chat.createdByUserID && (
+            {member.userID !== currentUserID && (
               <TouchableOpacity style={commonStyles.miniDangerButton} onPress={() => onRemoveMember(member)}>
                 <Text style={commonStyles.miniDangerButtonText}>Remove</Text>
               </TouchableOpacity>
@@ -72,7 +75,7 @@ export function AdminSection(props: AdminSectionProps) {
       ))}
 
       <TouchableOpacity style={commonStyles.dangerBlockButton} onPress={onDeleteChat}>
-        <Text style={commonStyles.dangerBlockButtonText}>Delete chat</Text>
+        <Text style={commonStyles.dangerBlockButtonText}>Delete Chat</Text>
       </TouchableOpacity>
     </View>
   );

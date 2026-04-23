@@ -84,14 +84,22 @@ export async function lookupUserByEmail(email: string): Promise<UserIdentity | n
     return null;
   }
 
-  const data = await request<Record<string, unknown>>(`/api/users/by-email?email=${encodeURIComponent(normalizedEmail)}`);
-  const identity = parseUserIdentity(data);
-  if (!identity) {
-    return null;
-  }
+  try {
+    const data = await request<Record<string, unknown>>(`/api/users/by-email?email=${encodeURIComponent(normalizedEmail)}`);
+    const identity = parseUserIdentity(data);
+    if (!identity) {
+      return null;
+    }
 
-  cacheIdentity(identity);
-  return identity;
+    cacheIdentity(identity);
+    return identity;
+  } catch (error: any) {
+    const message = TypescriptUtils.parseString(error?.message) ?? "";
+    if (message.toLowerCase().includes("endpoint not found")) {
+      throw new Error("User lookup endpoint is unavailable. Restart/refresh the API server and try again.");
+    }
+    throw error;
+  }
 }
 
 export async function hydrateUserIdentities(userIDs: string[]): Promise<void> {

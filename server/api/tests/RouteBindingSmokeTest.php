@@ -10,6 +10,7 @@ use BedrockStarter\ValidationException;
 use BedrockStarter\requests\account\DeleteAccountRequest;
 use BedrockStarter\requests\account\EditAccountRequest;
 use BedrockStarter\requests\account\GetAccountRequest;
+use BedrockStarter\requests\auth\CheckEmailExistsRequest;
 use BedrockStarter\requests\auth\LogoutRequest;
 use BedrockStarter\requests\auth\RefreshSessionRequest;
 use BedrockStarter\requests\framework\RouteBinder;
@@ -144,6 +145,11 @@ function run(): void
     $_POST = ['email' => 'person@example.com', 'password' => 'Password1!'];
     $login = LoginUserRequest::tryBind('POST', '/api/auth/login');
     assertTrue($login !== null, 'POST /api/auth/login should bind LoginUserRequest');
+
+    resetRequestState();
+    $_GET = ['email' => 'person@example.com'];
+    $emailExists = CheckEmailExistsRequest::tryBind('GET', '/api/auth/email-exists');
+    assertTrue($emailExists !== null, 'GET /api/auth/email-exists should bind CheckEmailExistsRequest');
 
     resetRequestState();
     $_POST = ['refreshToken' => 'refresh-token'];

@@ -14,6 +14,9 @@ export const pollDetailStyles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  optionLeading: {
+    marginRight: 10,
+  },
   optionRowSelected: {
     borderColor: appColors.accent,
     backgroundColor: appColors.accentSoft,
@@ -21,11 +24,79 @@ export const pollDetailStyles = StyleSheet.create({
   optionText: {
     color: appColors.text,
     fontWeight: "600",
+    flex: 1,
+  },
+  selectionHint: {
+    marginBottom: 8,
+  },
+  freeTextIntro: {
+    marginTop: 8,
+    marginBottom: 10,
+  },
+  singleChoiceRing: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: appColors.textMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  singleChoiceRingSelected: {
+    borderColor: appColors.accent,
+  },
+  singleChoiceDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: appColors.accent,
+  },
+  multiChoiceBox: {
+    width: 18,
+    height: 18,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: appColors.textMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  multiChoiceBoxSelected: {
+    borderColor: appColors.accent,
+    backgroundColor: appColors.accent,
+  },
+  multiChoiceCheck: {
+    color: appColors.background,
+    fontSize: 11,
+    fontWeight: "800",
+    lineHeight: 12,
+  },
+  rankChoiceBadge: {
+    minWidth: 22,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: appColors.textMuted,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 5,
+  },
+  rankChoiceBadgeSelected: {
+    borderColor: appColors.accent,
+    backgroundColor: appColors.accent,
+  },
+  rankChoiceText: {
+    color: appColors.textMuted,
+    fontSize: 11,
+    fontWeight: "700",
+    lineHeight: 12,
+  },
+  rankChoiceTextSelected: {
+    color: appColors.background,
   },
   multilineInput: {
     minHeight: 96,
     textAlignVertical: "top",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   formSwitchRow: {
     marginVertical: 8,

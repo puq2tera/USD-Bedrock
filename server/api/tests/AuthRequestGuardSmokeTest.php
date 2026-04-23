@@ -8,6 +8,7 @@ use BedrockStarter\Auth;
 use BedrockStarter\Request;
 use BedrockStarter\ValidationException;
 use BedrockStarter\requests\account\GetAccountRequest;
+use BedrockStarter\requests\auth\CheckEmailExistsRequest;
 use BedrockStarter\requests\polls\GetPollRequest;
 use BedrockStarter\requests\users\GetUserRequest;
 use BedrockStarter\requests\users\LookupUsersRequest;
@@ -145,6 +146,11 @@ function run(): void
     $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . Auth::issueAccessToken(7, 11);
     $bound = GetPollRequest::tryBind('GET', '/api/polls/10');
     assertTrue($bound !== null, 'Protected route with valid token should bind');
+
+    resetRequestState();
+    $_GET = ['email' => 'person@example.com'];
+    $emailExists = CheckEmailExistsRequest::tryBind('GET', '/api/auth/email-exists');
+    assertTrue($emailExists !== null, 'Public email check route should bind without auth token');
 
     fwrite(STDOUT, "PASS: Auth request guard smoke tests\n");
 }

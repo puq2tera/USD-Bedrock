@@ -25,6 +25,7 @@ type UsePollDetailStateResult = {
   error: string | null;
   selectedOptionIDs: string[];
   textResponse: string;
+  savingTextResponse: boolean;
   editing: boolean;
   editQuestion: string;
   editAllowChangeVote: boolean;
@@ -42,7 +43,7 @@ type UsePollDetailStateResult = {
   setEditOptions: (value: string[]) => void;
   loadPoll: () => Promise<void>;
   toggleOptionSelection: (option: PollOption) => Promise<void>;
-  submitVoteSelection: () => Promise<void>;
+  autosaveTextResponse: (force?: boolean) => Promise<void>;
   removeParticipation: () => Promise<void>;
   submitPollEdit: (overrides?: Partial<EditPollInput>) => Promise<void>;
   confirmReplaceOptions: () => void;
@@ -62,6 +63,8 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
 
   const [selectedOptionIDs, setSelectedOptionIDs] = useState<string[]>([]);
   const [textResponse, setTextResponse] = useState("");
+  const [lastSavedTextResponse, setLastSavedTextResponse] = useState("");
+  const [savingTextResponse, setSavingTextResponse] = useState(false);
 
   const [editing, setEditing] = useState(false);
   const [editQuestion, setEditQuestion] = useState("");
@@ -93,7 +96,9 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
       if (pollData.type === "free_text") {
         // Free-text payloads include all responses. Keep only the current user's response in edit state.
         const ownResponse = pollData.responses.find((response) => response.userID === currentUserID);
-        setTextResponse(ownResponse?.textValue ?? "");
+        const normalizedExisting = ownResponse?.textValue ?? "";
+        setTextResponse(normalizedExisting);
+        setLastSavedTextResponse(normalizedExisting.trim());
       }
 
       const participationData = await getPollParticipation(resolvedPollID);
@@ -144,27 +149,32 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
     }
   }, [loadPoll, poll, selectedOptionIDs]);
 
-  const submitVoteSelection = useCallback(async () => {
+  const autosaveTextResponse = useCallback(async (force = false) => {
     if (!poll || poll.type !== "free_text") {
       return;
     }
 
     const normalized = textResponse.trim();
     if (!normalized) {
-      Alert.alert("Missing response", "Please enter your response.");
       return;
     }
+    if (!force && normalized === lastSavedTextResponse) {
+      return;
+    }
+
+    setSavingTextResponse(true);
     setBusy(true);
     try {
       await submitPollTextResponse(poll.pollID, normalized);
-      await loadPoll();
+      setLastSavedTextResponse(normalized);
     } catch (e: any) {
-      Alert.alert("Response failed", e?.message || "Refreshing poll state.");
+      Alert.alert("Auto-Save Failed", e?.message || "Refreshing poll state.");
       await loadPoll();
     } finally {
+      setSavingTextResponse(false);
       setBusy(false);
     }
-  }, [loadPoll, poll, textResponse]);
+  }, [lastSavedTextResponse, loadPoll, poll, textResponse]);
 
   const removeParticipation = useCallback(async () => {
     if (!poll) {
@@ -176,6 +186,7 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
       await deletePollVotes(poll.pollID);
       setSelectedOptionIDs([]);
       setTextResponse("");
+      setLastSavedTextResponse("");
       await loadPoll();
     } catch (e: any) {
       Alert.alert("Remove failed", e?.message || "Refreshing poll state.");
@@ -290,6 +301,7 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
     error,
     selectedOptionIDs,
     textResponse,
+    savingTextResponse,
     editing,
     editQuestion,
     editAllowChangeVote,
@@ -307,7 +319,7 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
     setEditOptions,
     loadPoll,
     toggleOptionSelection,
-    submitVoteSelection,
+    autosaveTextResponse,
     removeParticipation,
     submitPollEdit,
     confirmReplaceOptions,

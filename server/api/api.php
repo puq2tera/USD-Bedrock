@@ -10,6 +10,7 @@ require __DIR__ . '/vendor/autoload.php';
 use BedrockStarter\Log;
 use BedrockStarter\Request;
 use BedrockStarter\config\Env;
+use BedrockStarter\requests\auth\CheckEmailExistsRequest;
 use BedrockStarter\requests\auth\LogoutRequest;
 use BedrockStarter\requests\auth\RefreshSessionRequest;
 use BedrockStarter\requests\account\DeleteAccountRequest;
@@ -90,6 +91,7 @@ $requestTypes = [
     SubmitPollTextResponseRequest::class,
     CreateUserRequest::class,
     LoginUserRequest::class,
+    CheckEmailExistsRequest::class,
     RefreshSessionRequest::class,
     LogoutRequest::class,
     GetAccountRequest::class,

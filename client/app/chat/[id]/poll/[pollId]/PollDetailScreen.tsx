@@ -1,6 +1,7 @@
 import { useCallback, useLayoutEffect } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Redirect, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { KeyboardAwareScrollView } from "../../../../../components/KeyboardAwareScrollView";
 import TypescriptUtils from "../../../../../lib/TypescriptUtils";
 import { getIdentityLabel } from "../../../../../lib/api";
 import { useAuth } from "../../../../../lib/auth";
@@ -67,7 +68,7 @@ export function PollDetailScreen() {
   }
 
   return (
-    <ScrollView
+    <KeyboardAwareScrollView
       style={commonStyles.screen}
       contentContainerStyle={commonStyles.screenContent}
       refreshControl={<RefreshControl refreshing={state.refreshing} onRefresh={() => {
@@ -90,14 +91,15 @@ export function PollDetailScreen() {
         selectedOptionIDs={state.selectedOptionIDs}
         textResponse={state.textResponse}
         busy={state.busy}
+        savingTextResponse={state.savingTextResponse}
         onToggleOption={state.toggleOptionSelection}
         onTextResponseChange={state.setTextResponse}
-        onSubmit={state.submitVoteSelection}
+        onAutosaveTextResponse={state.autosaveTextResponse}
         onRemoveParticipation={state.removeParticipation}
       />
 
       <ParticipationSummarySection participation={state.participation} />
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 

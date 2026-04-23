@@ -1,7 +1,7 @@
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { canManageMessage, ChatMessage, getIdentityLabel } from "../../../lib/api";
 import { chatDetailStyles as styles } from "./chatDetailStyles";
-import { commonStyles } from "../../../lib/styles";
+import { appColors, commonStyles } from "../../../lib/styles";
 
 type MessagesSectionProps = {
   messages: ChatMessage[];
@@ -86,7 +86,7 @@ export function MessagesSection(props: MessagesSectionProps) {
 
       {nextBeforeMessageID && (
         <TouchableOpacity style={commonStyles.ghostButton} disabled={loadingMoreMessages} onPress={() => void onLoadOlderMessages()}>
-          <Text style={commonStyles.ghostButtonText}>{loadingMoreMessages ? "Loading..." : "Load older messages"}</Text>
+          <Text style={commonStyles.ghostButtonText}>{loadingMoreMessages ? "Loading..." : "Load Older Messages"}</Text>
         </TouchableOpacity>
       )}
 
@@ -95,10 +95,11 @@ export function MessagesSection(props: MessagesSectionProps) {
         value={messageDraft}
         onChangeText={onChangeMessageDraft}
         placeholder="Write a message"
+        placeholderTextColor={appColors.textSubtle}
         multiline
       />
       <TouchableOpacity style={commonStyles.primaryButton} disabled={busy} onPress={() => void onSendMessage()}>
-        <Text style={commonStyles.primaryButtonText}>Send message</Text>
+        <Text style={commonStyles.primaryButtonText}>Send Message</Text>
       </TouchableOpacity>
     </View>
   );

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { Redirect, useRouter } from "expo-router";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 
 import { useAuth } from "../lib/auth";
 import { appColors, commonStyles } from "../lib/styles";
@@ -14,9 +14,10 @@ export default function RegisterScreen() {
   }
 
   const router = useRouter();
+  const { email: prefilledEmail } = useLocalSearchParams<{ email?: string }>();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(TypescriptUtils.parseString(prefilledEmail) ?? "");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -58,19 +59,20 @@ export default function RegisterScreen() {
 
   return (
     <View style={commonStyles.authScreen}>
-      <Text style={commonStyles.authTitle}>Create account</Text>
+      <Text style={commonStyles.authTitle}>Create Account</Text>
       <Text style={styles.subtitle}>Set up your profile to start creating chats.</Text>
 
       <Text style={styles.fieldLabel}>First name</Text>
-      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="Ava" value={firstName} onChangeText={setFirstName} />
+      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="Ava" placeholderTextColor={appColors.textSubtle} value={firstName} onChangeText={setFirstName} />
       <Text style={styles.fieldLabel}>Last name</Text>
-      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="Nguyen" value={lastName} onChangeText={setLastName} />
+      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="Nguyen" placeholderTextColor={appColors.textSubtle} value={lastName} onChangeText={setLastName} />
       <Text style={styles.fieldLabel}>Email</Text>
       <TextInput
         style={[commonStyles.input, styles.inputSpacing]}
         autoCapitalize="none"
         keyboardType="email-address"
         placeholder="name@company.com"
+        placeholderTextColor={appColors.textSubtle}
         value={email}
         onChangeText={setEmail}
       />
@@ -78,12 +80,13 @@ export default function RegisterScreen() {
       <TextInput
         style={[commonStyles.input, styles.inputSpacing]}
         placeholder="At least 8 characters"
+        placeholderTextColor={appColors.textSubtle}
         secureTextEntry
         value={password}
         onChangeText={setPassword}
       />
       <TouchableOpacity style={commonStyles.primaryButton} disabled={submitting} onPress={submit}>
-        <Text style={commonStyles.primaryButtonText}>{submitting ? "Creating..." : "Create account"}</Text>
+        <Text style={commonStyles.primaryButtonText}>{submitting ? "Creating..." : "Create Account"}</Text>
       </TouchableOpacity>
     </View>
   );

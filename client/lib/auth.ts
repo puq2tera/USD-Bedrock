@@ -34,6 +34,7 @@ type AuthSnapshot = {
 
 type AuthContextValue = AuthSnapshot & {
   isAuthenticated: boolean;
+  checkEmailExists: (email: string) => Promise<boolean>;
   login: (email: string, password: string) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
@@ -340,6 +341,16 @@ export async function login(email: string, password: string): Promise<void> {
   await applyLoginResponse(response);
 }
 
+export async function checkEmailExists(email: string): Promise<boolean> {
+  const normalizedEmail = TypescriptUtils.parseString(email)?.trim() ?? "";
+  if (TypescriptUtils.isNullOrWhiteSpace(normalizedEmail)) {
+    throw new Error("Email is required");
+  }
+
+  const response = await fetchJson<{ exists?: unknown }>(`/api/auth/email-exists?email=${encodeURIComponent(normalizedEmail)}`);
+  return TypescriptUtils.parseBoolean(response.exists) ?? false;
+}
+
 export async function register(input: RegisterInput): Promise<void> {
   const normalizedEmail = TypescriptUtils.parseString(input.email)?.trim() ?? "";
   const normalizedFirstName = TypescriptUtils.parseString(input.firstName)?.trim() ?? "";
@@ -450,6 +461,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       ...snapshot,
       isAuthenticated: snapshot.status === "authenticated",
+      checkEmailExists,
       login,
       register,
       logout,

@@ -1,9 +1,10 @@
 import { useCallback } from "react";
-import { Alert, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Redirect, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { KeyboardAwareScrollView } from "../../../../../components/KeyboardAwareScrollView";
 import TypescriptUtils from "../../../../../lib/TypescriptUtils";
 import { useAuth } from "../../../../../lib/auth";
-import { commonStyles } from "../../../../../lib/styles";
+import { appColors, commonStyles } from "../../../../../lib/styles";
 import { usePollDetailState } from "./usePollDetailState";
 
 export default function PollSettingsScreen() {
@@ -33,7 +34,7 @@ export default function PollSettingsScreen() {
   }
 
   return (
-    <ScrollView style={commonStyles.screen} contentContainerStyle={commonStyles.screenContent}>
+    <KeyboardAwareScrollView style={commonStyles.screen} contentContainerStyle={commonStyles.screenContent}>
       <View style={commonStyles.sectionCard}>
         <Text style={commonStyles.sectionTitle}>Poll Settings</Text>
         <Text style={commonStyles.metaText}>Changes save instantly.</Text>
@@ -61,6 +62,7 @@ export default function PollSettingsScreen() {
           value={state.editExpiresAt}
           onChangeText={state.setEditExpiresAt}
           placeholder="2026-05-01T18:00"
+          placeholderTextColor={appColors.textSubtle}
         />
 
         {state.poll.type !== "free_text" && (
@@ -79,44 +81,44 @@ export default function PollSettingsScreen() {
               />
             ))}
             <TouchableOpacity style={commonStyles.ghostButton} onPress={() => void state.confirmReplaceOptions()}>
-              <Text style={commonStyles.ghostButtonText}>Save option changes</Text>
+              <Text style={commonStyles.ghostButtonText}>Save Option Changes</Text>
             </TouchableOpacity>
           </>
         )}
 
         <TouchableOpacity style={[commonStyles.primaryButton, styles.saveButton]} onPress={() => void state.submitPollEdit()}>
-          <Text style={commonStyles.primaryButtonText}>Save poll settings</Text>
+          <Text style={commonStyles.primaryButtonText}>Save Poll Settings</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.bottomActions}>
         {state.poll.status === "open" ? (
           <TouchableOpacity style={commonStyles.ghostButton} onPress={() => state.transitionStatus("closed")}>
-            <Text style={commonStyles.ghostButtonText}>Close poll</Text>
+            <Text style={commonStyles.ghostButtonText}>Close Poll</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={commonStyles.ghostButton} onPress={() => state.transitionStatus("open")}>
-            <Text style={commonStyles.ghostButtonText}>Reopen poll</Text>
+            <Text style={commonStyles.ghostButtonText}>Reopen Poll</Text>
           </TouchableOpacity>
         )}
 
         <TouchableOpacity
           style={commonStyles.ghostButton}
           onPress={() =>
-            Alert.alert("Reset my vote", "Remove your current participation?", [
+            Alert.alert("Reset My Vote", "Remove your current participation?", [
               { text: "Cancel", style: "cancel" },
               { text: "Reset", style: "destructive", onPress: () => void state.removeParticipation() },
             ])
           }
         >
-          <Text style={commonStyles.ghostButtonText}>Reset my vote</Text>
+          <Text style={commonStyles.ghostButtonText}>Reset My Vote</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={commonStyles.miniDangerButton} onPress={() => state.removePoll()}>
-          <Text style={commonStyles.miniDangerButtonText}>Delete poll</Text>
+          <Text style={commonStyles.miniDangerButtonText}>Delete Poll</Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 

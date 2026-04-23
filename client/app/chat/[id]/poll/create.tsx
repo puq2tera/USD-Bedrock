@@ -4,7 +4,6 @@ import {
   KeyboardAvoidingView,
   PanResponder,
   Platform,
-  ScrollView,
   StyleSheet,
   Switch,
   Text,
@@ -13,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
+import { KeyboardAwareScrollView } from "../../../../components/KeyboardAwareScrollView";
 import { CreatePollInput, PollType, createPoll } from "../../../../lib/api";
 import TypescriptUtils from "../../../../lib/TypescriptUtils";
 import { useAuth } from "../../../../lib/auth";
@@ -163,9 +163,16 @@ export default function CreateChatPollScreen() {
 
   return (
     <KeyboardAvoidingView style={commonStyles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={commonStyles.screenContent}>
+      <KeyboardAwareScrollView contentContainerStyle={commonStyles.screenContent}>
         <Text style={commonStyles.sectionLabel}>Question</Text>
-        <TextInput style={commonStyles.input} multiline value={question} onChangeText={setQuestion} placeholder="What should we decide?" />
+        <TextInput
+          style={commonStyles.input}
+          multiline
+          value={question}
+          onChangeText={setQuestion}
+          placeholder="What should we decide?"
+          placeholderTextColor={appColors.textSubtle}
+        />
 
         <Text style={commonStyles.sectionLabel}>Type</Text>
         <View style={styles.segmentedContainer}>
@@ -197,6 +204,7 @@ export default function CreateChatPollScreen() {
           value={expiresAtInput}
           onChangeText={setExpiresAtInput}
           placeholder="2026-05-01T18:00"
+          placeholderTextColor={appColors.textSubtle}
           autoCapitalize="none"
         />
 
@@ -228,6 +236,7 @@ export default function CreateChatPollScreen() {
                     setOptions(next);
                   }}
                   placeholder={`Option ${index + 1}`}
+                  placeholderTextColor={appColors.textSubtle}
                 />
                 <TouchableOpacity style={styles.inlineButton} onPress={() => moveOption(index, index - 1)}>
                   <Text style={styles.inlineButtonText}>↑</Text>
@@ -261,9 +270,9 @@ export default function CreateChatPollScreen() {
           disabled={submitting}
           onPress={submit}
         >
-          <Text style={commonStyles.primaryButtonLargeText}>{submitting ? "Creating..." : "Create poll"}</Text>
+          <Text style={commonStyles.primaryButtonLargeText}>{submitting ? "Creating..." : "Create Poll"}</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </KeyboardAvoidingView>
   );
 }

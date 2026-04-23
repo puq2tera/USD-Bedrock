@@ -18,7 +18,7 @@ struct PollsTest : tpunit::TestFixture {
             TEST(PollsTest::testEditPollMissingEditableFields),
             TEST(PollsTest::testEditPollRejectsOptionsForFreeText),
             TEST(PollsTest::testRankedChoiceSubmitAndGet),
-            TEST(PollsTest::testRankedChoiceRequiresFullRanking),
+            TEST(PollsTest::testRankedChoiceAllowsPartialRanking),
             TEST(PollsTest::testGetPollParticipationNonAnonymous),
             TEST(PollsTest::testGetPollParticipationAnonymousHidesIDs),
             TEST(PollsTest::testManualCloseCreatesSummaryMessageOnce),
@@ -327,7 +327,7 @@ struct PollsTest : tpunit::TestFixture {
         ASSERT_EQUAL(SParseJSONObject(options.front()).at("voteCount"), "1");
     }
 
-    void testRankedChoiceRequiresFullRanking() {
+    void testRankedChoiceAllowsPartialRanking() {
         BedrockTester tester = TestHelpers::createTester();
         const string creatorID = TestHelpers::createUserID(tester, "ranked-incomplete-owner", "Ranked", "Owner");
         const string voterID = TestHelpers::createUserID(tester, "ranked-incomplete-voter", "Ranked", "Voter");
@@ -349,7 +349,13 @@ struct PollsTest : tpunit::TestFixture {
             {optionIDs.front(), *next(optionIDs.begin())},
             voterID
         );
-        ASSERT_TRUE(SStartsWith(submitResp.methodLine, "400"));
+        ASSERT_TRUE(SStartsWith(submitResp.methodLine, "200 OK"));
+        ASSERT_EQUAL(submitResp["submittedCount"], "2");
+
+        const SData pollResp = TestHelpers::getPoll(tester, pollID, creatorID);
+        ASSERT_TRUE(SStartsWith(pollResp.methodLine, "200 OK"));
+        ASSERT_EQUAL(pollResp["totalVotes"], "1");
+        ASSERT_EQUAL(pollResp["totalVoters"], "1");
     }
 
     void testGetPollParticipationNonAnonymous() {

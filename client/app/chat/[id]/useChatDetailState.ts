@@ -15,10 +15,13 @@ import {
   editChatMessage,
   getChat,
   getChatMessages,
+  getPoll,
   listChatMembers,
   listChatPolls,
+  PollOption,
   PollSummary,
   removeChatMember,
+  submitPollTextResponse,
 } from "../../../lib/api";
 
 type UseChatDetailStateResult = {
@@ -27,6 +30,9 @@ type UseChatDetailStateResult = {
   nextBeforeMessageID: string | null;
   members: ChatMember[];
   polls: PollSummary[];
+  pollOptionsByPollID: Record<string, PollOption[]>;
+  freeTextResponseByPollID: Record<string, string>;
+  savingFreeTextByPollID: Record<string, boolean>;
   loading: boolean;
   refreshing: boolean;
   loadingMoreMessages: boolean;
@@ -40,12 +46,14 @@ type UseChatDetailStateResult = {
   isOwner: boolean;
   setRefreshing: (value: boolean) => void;
   setMessageDraft: (value: string) => void;
+  setFreeTextResponseDraft: (pollID: string, value: string) => void;
   setEditMessageID: (value: string | null) => void;
   setEditMessageBody: (value: string) => void;
   setNewChatTitle: (value: string) => void;
   setMemberUserIDDraft: (value: string) => void;
   loadAll: () => Promise<void>;
   createOrEditMessage: () => Promise<void>;
+  autosaveFreeTextResponse: (pollID: string, force?: boolean) => Promise<void>;
   saveEditedMessage: () => Promise<void>;
   removeMessage: (messageID: string) => void;
   loadOlderMessages: () => Promise<void>;
@@ -56,7 +64,7 @@ type UseChatDetailStateResult = {
   removeChat: () => void;
 };
 
-export function useChatDetailState(chatID: string): UseChatDetailStateResult {
+export function useChatDetailState(chatID: string, currentUserID: string): UseChatDetailStateResult {
   const router = useRouter();
 
   const [chat, setChat] = useState<ChatDetail | null>(null);
@@ -64,6 +72,10 @@ export function useChatDetailState(chatID: string): UseChatDetailStateResult {
   const [nextBeforeMessageID, setNextBeforeMessageID] = useState<string | null>(null);
   const [members, setMembers] = useState<ChatMember[]>([]);
   const [polls, setPolls] = useState<PollSummary[]>([]);
+  const [pollOptionsByPollID, setPollOptionsByPollID] = useState<Record<string, PollOption[]>>({});
+  const [freeTextResponseByPollID, setFreeTextResponseByPollID] = useState<Record<string, string>>({});
+  const [lastSavedFreeTextByPollID, setLastSavedFreeTextByPollID] = useState<Record<string, string>>({});
+  const [savingFreeTextByPollID, setSavingFreeTextByPollID] = useState<Record<string, boolean>>({});
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -102,6 +114,44 @@ export function useChatDetailState(chatID: string): UseChatDetailStateResult {
       setNextBeforeMessageID(messagePage.nextBeforeMessageID);
       setPolls(pollData);
 
+      // Poll list payload does not include option labels, so hydrate details once per visible poll.
+      if (pollData.length > 0) {
+        const hydratedEntries = await Promise.all(
+          pollData.map(async (poll) => {
+            try {
+              const detail = await getPoll(poll.pollID);
+              const ownFreeText = detail.type === "free_text"
+                ? (detail.responses.find((response) => response.userID === currentUserID)?.textValue ?? "")
+                : "";
+              return [poll.pollID, detail.options as PollOption[], ownFreeText] as const;
+            } catch {
+              return [poll.pollID, [] as PollOption[], ""] as const;
+            }
+          })
+        );
+        setPollOptionsByPollID(Object.fromEntries(hydratedEntries.map(([pollID, options]) => [pollID, options])));
+
+        const nextSaved = Object.fromEntries(
+          hydratedEntries
+            .filter(([pollID]) => pollData.some((poll) => poll.pollID === pollID && poll.type === "free_text"))
+            .map(([pollID, _options, ownFreeText]) => [pollID, ownFreeText.trim()])
+        );
+        setLastSavedFreeTextByPollID(nextSaved);
+        setFreeTextResponseByPollID((prev) => {
+          const merged: Record<string, string> = {};
+          for (const [pollID, _options, ownFreeText] of hydratedEntries) {
+            const localDraft = prev[pollID];
+            merged[pollID] = typeof localDraft === "string" ? localDraft : ownFreeText;
+          }
+          return merged;
+        });
+      } else {
+        setPollOptionsByPollID({});
+        setFreeTextResponseByPollID({});
+        setLastSavedFreeTextByPollID({});
+        setSavingFreeTextByPollID({});
+      }
+
       if (canManageChat(chatData)) {
         setMembers(await listChatMembers(chatID));
       } else {
@@ -113,7 +163,32 @@ export function useChatDetailState(chatID: string): UseChatDetailStateResult {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [chatID]);
+  }, [chatID, currentUserID]);
+
+  const setFreeTextResponseDraft = useCallback((pollID: string, value: string) => {
+    setFreeTextResponseByPollID((prev) => ({ ...prev, [pollID]: value }));
+  }, []);
+
+  const autosaveFreeTextResponse = useCallback(async (pollID: string, force = false) => {
+    const normalized = (freeTextResponseByPollID[pollID] ?? "").trim();
+    if (!normalized) {
+      return;
+    }
+    if (!force && normalized === (lastSavedFreeTextByPollID[pollID] ?? "")) {
+      return;
+    }
+
+    setSavingFreeTextByPollID((prev) => ({ ...prev, [pollID]: true }));
+    try {
+      await submitPollTextResponse(pollID, normalized);
+      setLastSavedFreeTextByPollID((prev) => ({ ...prev, [pollID]: normalized }));
+    } catch (e: any) {
+      Alert.alert("Auto-Save Failed", e?.message || "Please retry.");
+      await loadAll();
+    } finally {
+      setSavingFreeTextByPollID((prev) => ({ ...prev, [pollID]: false }));
+    }
+  }, [freeTextResponseByPollID, lastSavedFreeTextByPollID, loadAll]);
 
   const createOrEditMessage = useCallback(async () => {
     if (!chatID || !messageDraft.trim()) {
@@ -317,6 +392,9 @@ export function useChatDetailState(chatID: string): UseChatDetailStateResult {
     nextBeforeMessageID,
     members,
     polls,
+    pollOptionsByPollID,
+    freeTextResponseByPollID,
+    savingFreeTextByPollID,
     loading,
     refreshing,
     loadingMoreMessages,
@@ -330,12 +408,14 @@ export function useChatDetailState(chatID: string): UseChatDetailStateResult {
     isOwner,
     setRefreshing,
     setMessageDraft,
+    setFreeTextResponseDraft,
     setEditMessageID,
     setEditMessageBody,
     setNewChatTitle,
     setMemberUserIDDraft,
     loadAll,
     createOrEditMessage,
+    autosaveFreeTextResponse,
     saveEditedMessage,
     removeMessage,
     loadOlderMessages,
