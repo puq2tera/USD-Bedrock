@@ -129,9 +129,31 @@ fi
 
 # Create installation directory structure
 info "[9/10] Setting up installation directories..."
+# Stop services before replacing installed files so reruns do not fail with
+# "Text file busy" when copying the running bedrock binary.
+systemctl stop bedrock.service || true
+systemctl stop nginx.service || true
+systemctl stop php8.4-fpm.service || true
+
+# Preserve the current API env file so reruns keep JWT/auth config.
+API_ENV_BACKUP=""
+if [[ -f "$INSTALL_DIR/server/api/.env" ]]; then
+    API_ENV_BACKUP="$(mktemp)"
+    cp "$INSTALL_DIR/server/api/.env" "$API_ENV_BACKUP"
+fi
+
 mkdir -p "$INSTALL_DIR"
+rm -rf "$INSTALL_DIR/Bedrock" "$INSTALL_DIR/server"
 cp -r "$BEDROCK_DIR" "$INSTALL_DIR/"
-cp -r "$PROJECT_DIR/server" "$INSTALL_DIR/"
+mkdir -p "$INSTALL_DIR/server"
+# Copy server sources but skip host-mounted vendor tree; dependencies are
+# reinstalled inside the VM via Composer below.
+tar -C "$PROJECT_DIR/server" --exclude='api/vendor' --exclude='core/.build' -cf - . | tar -C "$INSTALL_DIR/server" -xf -
+
+if [[ -n "$API_ENV_BACKUP" ]]; then
+    install -m 0640 "$API_ENV_BACKUP" "$INSTALL_DIR/server/api/.env"
+    rm -f "$API_ENV_BACKUP"
+fi
 
 # Ensure Bedrock binary exists at the systemd ExecStart path and is executable
 # (Fixes systemd status=203/EXEC when the binary is missing or not +x)
@@ -147,6 +169,9 @@ install -m 0755 "$BEDROCK_BIN_SRC" "$INSTALL_DIR/Bedrock/bedrock"
 # Build Core plugin
 info "[10/10] Building Core plugin..."
 export BEDROCK_DIR="$INSTALL_DIR/Bedrock"
+# CMake cache captures absolute source paths. Always rebuild this directory
+# in-place under /opt to avoid source-path mismatch errors on reruns.
+rm -rf "$INSTALL_DIR/server/core/.build"
 mkdir -p "$INSTALL_DIR/server/core/.build"
 cd "$INSTALL_DIR/server/core/.build"
 cmake -G Ninja ..
@@ -187,13 +212,42 @@ API_DIR="$INSTALL_DIR/server/api"
 # Ensure bedrock user owns the API directory (especially vendor/) before running composer
 chown -R bedrock:bedrock "$API_DIR"
 
-sudo -u bedrock -H bash -lc "
+# Ensure composer cache/home path is writable by the bedrock user on reruns.
+COMPOSER_HOME_DIR="/tmp/composer-bedrock"
+rm -rf "$COMPOSER_HOME_DIR"
+install -d -m 0755 -o bedrock -g bedrock "$COMPOSER_HOME_DIR"
+
+# Keep API_DIR expansion inside the target shell by passing it via env.
+# This avoids empty-path failures when setup.sh is invoked from nested shells.
+sudo -u bedrock -H env API_DIR="$API_DIR" COMPOSER_HOME_DIR="$COMPOSER_HOME_DIR" bash -lc '
   set -e
-  export COMPOSER_HOME=/tmp/composer
-  mkdir -p \"$COMPOSER_HOME\"
-  cd \"$API_DIR\"
+  export COMPOSER_HOME="$COMPOSER_HOME_DIR"
+  mkdir -p "$COMPOSER_HOME"
+  chmod 0755 "$COMPOSER_HOME"
+  cd "$API_DIR"
   composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
-"
+'
+
+# Ensure API runtime env exists. Login/session token issuance requires
+# BEDROCK_API_JWT_SECRET, so generate one automatically for first-time setups.
+if [[ ! -f "$API_DIR/.env" ]]; then
+    JWT_SECRET="$(openssl rand -hex 32 2>/dev/null || true)"
+    if [[ -z "$JWT_SECRET" ]]; then
+        JWT_SECRET="$(date +%s%N)-bedrock-starter-dev-secret"
+    fi
+    if [[ -f "$API_DIR/.env.example" ]]; then
+        cp "$API_DIR/.env.example" "$API_DIR/.env"
+        sed -i "s|^BEDROCK_API_JWT_SECRET=.*|BEDROCK_API_JWT_SECRET=$JWT_SECRET|" "$API_DIR/.env"
+    else
+        cat > "$API_DIR/.env" <<EOF
+BEDROCK_API_JWT_SECRET=$JWT_SECRET
+BEDROCK_API_JWT_ISSUER=bedrock-starter
+BEDROCK_API_JWT_AUDIENCE=bedrock-mobile
+BEDROCK_API_ACCESS_TOKEN_TTL_SECONDS=900
+BEDROCK_API_REFRESH_TOKEN_TTL_SECONDS=2592000
+EOF
+    fi
+fi
 
 # Permissions: keep code owned by bedrock; allow webserver group access; ensure runtime dirs writable
 chgrp -R www-data "$API_DIR" || true
@@ -205,6 +259,11 @@ for d in "$API_DIR/storage" "$API_DIR/bootstrap/cache"; do
     chmod -R 2775 "$d"
   fi
 done
+
+if [[ -f "$API_DIR/.env" ]]; then
+  chown bedrock:www-data "$API_DIR/.env"
+  chmod 0640 "$API_DIR/.env"
+fi
 
 echo
 success "=========================================="
@@ -225,4 +284,3 @@ echo "To view logs:"
 echo "  sudo journalctl -u bedrock -f"
 echo "  sudo tail -f /var/log/nginx/api_error.log"
 echo
-

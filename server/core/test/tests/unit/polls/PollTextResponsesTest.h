@@ -10,7 +10,7 @@ struct PollTextResponsesTest : tpunit::TestFixture {
             TEST(PollTextResponsesTest::testSubmitTextResponseRequiresChatMembership),
             TEST(PollTextResponsesTest::testSubmitTextResponseWrongTypeForChoicePoll),
             TEST(PollTextResponsesTest::testSubmitTextResponseRejectsBlankText),
-            TEST(PollTextResponsesTest::testSubmitTextResponseRespectsAllowChangeVote),
+            TEST(PollTextResponsesTest::testSubmitTextResponseAlwaysAllowsEditing),
             TEST(PollTextResponsesTest::testSubmitTextResponseRejectsClosedPoll),
             TEST(PollTextResponsesTest::testAnonymousPollHidesResponderIdentity)
         ) { }
@@ -99,27 +99,21 @@ struct PollTextResponsesTest : tpunit::TestFixture {
         ASSERT_TRUE(SStartsWith(resp.methodLine, "400"));
     }
 
-    void testSubmitTextResponseRespectsAllowChangeVote() {
+    void testSubmitTextResponseAlwaysAllowsEditing() {
         BedrockTester tester = TestHelpers::createTester();
         const string creatorID = TestHelpers::createUserID(tester, "text-change-owner", "Text", "Owner");
         const string responderID = TestHelpers::createUserID(tester, "text-change-responder", "Text", "Responder");
 
+        // Even when allowChangeVote is false, free-text responses remain editable.
         const string noChangePollID = createFreeTextPoll(tester, creatorID, false, false);
-        const SData firstNoChange = TestHelpers::submitTextResponse(tester, noChangePollID, responderID, "First");
-        ASSERT_TRUE(SStartsWith(firstNoChange.methodLine, "200 OK"));
-
-        const SData secondNoChange = TestHelpers::submitTextResponse(tester, noChangePollID, responderID, "Second");
-        ASSERT_TRUE(SStartsWith(secondNoChange.methodLine, "409"));
-
-        const string allowChangePollID = createFreeTextPoll(tester, creatorID, true, false);
-        const SData firstAllow = TestHelpers::submitTextResponse(tester, allowChangePollID, responderID, "One");
+        const SData firstAllow = TestHelpers::submitTextResponse(tester, noChangePollID, responderID, "One");
         ASSERT_TRUE(SStartsWith(firstAllow.methodLine, "200 OK"));
 
-        const SData secondAllow = TestHelpers::submitTextResponse(tester, allowChangePollID, responderID, "Two");
+        const SData secondAllow = TestHelpers::submitTextResponse(tester, noChangePollID, responderID, "Two");
         ASSERT_TRUE(SStartsWith(secondAllow.methodLine, "200 OK"));
         ASSERT_EQUAL(secondAllow["replaced"], "true");
 
-        const SData allowPollResp = TestHelpers::getPoll(tester, allowChangePollID, creatorID);
+        const SData allowPollResp = TestHelpers::getPoll(tester, noChangePollID, creatorID);
         ASSERT_TRUE(SStartsWith(allowPollResp.methodLine, "200 OK"));
         ASSERT_EQUAL(allowPollResp["responseCount"], "1");
         list<string> responses = SParseJSONArray(allowPollResp["responses"]);

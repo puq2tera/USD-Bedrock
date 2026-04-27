@@ -2,18 +2,16 @@
 
 declare(strict_types=1);
 
-namespace BedrockStarter\requests\users;
+namespace BedrockStarter\requests\account;
 
 use BedrockStarter\Auth;
-use BedrockStarter\Request;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
+use BedrockStarter\responses\account\DeleteAccountResponse;
 use BedrockStarter\responses\framework\RouteResponse;
-use BedrockStarter\responses\users\DeleteUserResponse;
-use BedrockStarter\ValidationException;
 
-final class DeleteUserRequest extends RouteBoundRequestBase
+final class DeleteAccountRequest extends RouteBoundRequestBase
 {
-    private const PATH_PATTERN = '#^/api/users/(?P<userID>\d+)$#';
+    private const PATH_PATTERN = '#^/api/account$#';
     private const ALLOWED_METHODS = ['DELETE'];
 
     public function __construct(private readonly int $userID)
@@ -37,14 +35,7 @@ final class DeleteUserRequest extends RouteBoundRequestBase
 
     protected static function bindFromRouteMatch(array $routeParams): self
     {
-        $routeUserID = Request::requireRouteInt($routeParams, 'userID');
-        // Account deletion is also self-only for the same reason as read/edit: the bearer token is
-        // the source of caller identity, and the route ID must match it exactly.
-        if ($routeUserID !== Auth::requireAuthenticatedContext()->userID) {
-            throw new ValidationException('Forbidden', 403);
-        }
-
-        return new self($routeUserID);
+        return new self(Auth::requireAuthenticatedUserID());
     }
 
     public function toBedrockParams(): array
@@ -54,6 +45,6 @@ final class DeleteUserRequest extends RouteBoundRequestBase
 
     public function transformResponse(array $bedrockResponse): RouteResponse
     {
-        return new DeleteUserResponse($bedrockResponse);
+        return new DeleteAccountResponse($bedrockResponse);
     }
 }

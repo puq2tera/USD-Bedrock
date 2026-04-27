@@ -1,10 +1,20 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { useEffect } from "react";
 import { useRouter, useSegments } from "expo-router";
 import { AuthProvider, useAuth } from "../lib/auth";
 import { appColors, appStackScreenOptions, commonStyles } from "../lib/styles";
+
+function AccountIconButton() {
+  const router = useRouter();
+
+  return (
+    <TouchableOpacity style={commonStyles.circularIconButton} onPress={() => router.push("/account")}>
+      <Text style={commonStyles.circularIconButtonText}>👤</Text>
+    </TouchableOpacity>
+  );
+}
 
 function RootNavigator() {
   const router = useRouter();
@@ -16,10 +26,12 @@ function RootNavigator() {
     if (status === "loading") {
       return;
     }
+
     if (!isAuthenticated && !inAuthFlow) {
       router.replace("/login");
       return;
     }
+
     if (isAuthenticated && inAuthFlow) {
       router.replace("/");
     }
@@ -36,12 +48,30 @@ function RootNavigator() {
   return (
     <>
       <StatusBar style="dark" />
-      <Stack screenOptions={appStackScreenOptions}>
+      <Stack
+        screenOptions={({ navigation }) => ({
+          ...appStackScreenOptions,
+          headerRight: () => (isAuthenticated ? <AccountIconButton /> : null),
+          headerLeft: navigation.canGoBack()
+            ? () => (
+                <TouchableOpacity style={commonStyles.circularIconButton} onPress={() => navigation.goBack()}>
+                  <Text style={commonStyles.circularIconButtonText}>←</Text>
+                </TouchableOpacity>
+              )
+            : undefined,
+        })}
+      >
         <Stack.Screen name="login" options={{ title: "Login", headerShown: false }} />
         <Stack.Screen name="register" options={{ title: "Register" }} />
-        <Stack.Screen name="index" options={{ title: "Polls" }} />
-        <Stack.Screen name="create" options={{ title: "Create Poll" }} />
-        <Stack.Screen name="poll/[id]" options={{ title: "Poll" }} />
+        <Stack.Screen name="index" options={{ title: "Chats" }} />
+        <Stack.Screen name="chat/create" options={{ title: "Create Chat" }} />
+        <Stack.Screen name="chat/[id]" options={{ title: "Chat" }} />
+        <Stack.Screen name="chat/[id]/settings" options={{ title: "Chat Settings" }} />
+        <Stack.Screen name="chat/[id]/poll/create" options={{ title: "Create Poll" }} />
+        <Stack.Screen name="chat/[id]/poll/[pollId]" options={{ title: "Poll" }} />
+        <Stack.Screen name="chat/[id]/poll/[pollId]/settings" options={{ title: "Poll Settings" }} />
+        <Stack.Screen name="account" options={{ title: "Account" }} />
+        <Stack.Screen name="settings" options={{ title: "Settings" }} />
       </Stack>
     </>
   );

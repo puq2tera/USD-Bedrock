@@ -20,6 +20,8 @@ struct UsersTest : tpunit::TestFixture {
             TEST(UsersTest::testGetUserNotFound),
             TEST(UsersTest::testGetUserInvalidID),
             TEST(UsersTest::testGetUserMissingID),
+            TEST(UsersTest::testLookupUsersReturnsKnownUsers),
+            TEST(UsersTest::testLookupUsersSkipsUnknownUsers),
             TEST(UsersTest::testEditUserPartial),
             TEST(UsersTest::testEditUserEmailNormalization),
             TEST(UsersTest::testEditUserTrimsNames),
@@ -236,6 +238,41 @@ struct UsersTest : tpunit::TestFixture {
         SData resp = TestHelpers::executeSingle(tester, req);
 
         ASSERT_TRUE(SStartsWith(resp.methodLine, "400"));
+    }
+
+    void testLookupUsersReturnsKnownUsers() {
+        BedrockTester tester = TestHelpers::createTester();
+        const string firstUserID = TestHelpers::createUserID(tester, "lookup1", "Lookup", "One");
+        const string secondUserID = TestHelpers::createUserID(tester, "lookup2", "Lookup", "Two");
+
+        SData req("LookupUsers");
+        req["userIDs"] = "[" + firstUserID + "," + secondUserID + "]";
+        SData resp = TestHelpers::executeSingle(tester, req);
+
+        ASSERT_TRUE(SStartsWith(resp.methodLine, "200 OK"));
+        ASSERT_EQUAL(resp["resultCount"], "2");
+
+        const list<string> users = SParseJSONArray(resp["users"]);
+        ASSERT_EQUAL(users.size(), 2u);
+        const STable first = SParseJSONObject(users.front());
+        ASSERT_EQUAL(first.at("userID"), firstUserID);
+    }
+
+    void testLookupUsersSkipsUnknownUsers() {
+        BedrockTester tester = TestHelpers::createTester();
+        const string knownUserID = TestHelpers::createUserID(tester, "lookup3", "Lookup", "Known");
+
+        SData req("LookupUsers");
+        req["userIDs"] = "[" + knownUserID + ",999999]";
+        SData resp = TestHelpers::executeSingle(tester, req);
+
+        ASSERT_TRUE(SStartsWith(resp.methodLine, "200 OK"));
+        ASSERT_EQUAL(resp["resultCount"], "1");
+
+        const list<string> users = SParseJSONArray(resp["users"]);
+        ASSERT_EQUAL(users.size(), 1u);
+        const STable onlyUser = SParseJSONObject(users.front());
+        ASSERT_EQUAL(onlyUser.at("userID"), knownUserID);
     }
 
     void testEditUserPartial() {

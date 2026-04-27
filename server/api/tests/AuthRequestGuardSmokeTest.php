@@ -7,7 +7,12 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 use BedrockStarter\Auth;
 use BedrockStarter\Request;
 use BedrockStarter\ValidationException;
+use BedrockStarter\requests\account\GetAccountRequest;
+use BedrockStarter\requests\auth\CheckEmailExistsRequest;
 use BedrockStarter\requests\polls\GetPollRequest;
+use BedrockStarter\requests\users\GetUserRequest;
+use BedrockStarter\requests\users\LookupUsersRequest;
+use BedrockStarter\requests\users\LookupUserByEmailRequest;
 
 /**
  * Auth route guard smoke checks.
@@ -108,9 +113,44 @@ function run(): void
     );
 
     resetRequestState();
+    assertStatusCode(
+        static fn() => GetAccountRequest::tryBind('GET', '/api/account'),
+        401,
+        'Account route without token should be 401'
+    );
+
+    resetRequestState();
+    assertStatusCode(
+        static fn() => GetUserRequest::tryBind('GET', '/api/users/10'),
+        401,
+        'User lookup route without token should be 401'
+    );
+
+    resetRequestState();
+    $_GET = ['email' => 'person@example.com'];
+    assertStatusCode(
+        static fn() => LookupUserByEmailRequest::tryBind('GET', '/api/users/by-email'),
+        401,
+        'User lookup by email route without token should be 401'
+    );
+
+    resetRequestState();
+    $_POST = ['userIDs' => [10, 11]];
+    assertStatusCode(
+        static fn() => LookupUsersRequest::tryBind('POST', '/api/users/lookup'),
+        401,
+        'User lookup batch route without token should be 401'
+    );
+
+    resetRequestState();
     $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . Auth::issueAccessToken(7, 11);
     $bound = GetPollRequest::tryBind('GET', '/api/polls/10');
     assertTrue($bound !== null, 'Protected route with valid token should bind');
+
+    resetRequestState();
+    $_GET = ['email' => 'person@example.com'];
+    $emailExists = CheckEmailExistsRequest::tryBind('GET', '/api/auth/email-exists');
+    assertTrue($emailExists !== null, 'Public email check route should bind without auth token');
 
     fwrite(STDOUT, "PASS: Auth request guard smoke tests\n");
 }

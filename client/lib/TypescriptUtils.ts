@@ -583,7 +583,7 @@ export default class BedrockUtils {
       return false;
     }
 
-    const firstKeys = Reflect.ownKeys(first);
+    const firstKeys = Reflect.ownKeys(first as object);
     const secondKeys = Reflect.ownKeys(second as object);
     if (firstKeys.length !== secondKeys.length) {
       return false;

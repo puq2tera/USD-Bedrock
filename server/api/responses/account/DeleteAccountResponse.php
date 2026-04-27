@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace BedrockStarter\responses\users;
+namespace BedrockStarter\responses\account;
 
 use BedrockStarter\responses\framework\RouteResponse;
 
-final class DeleteUserResponse implements RouteResponse
+final class DeleteAccountResponse implements RouteResponse
 {
     public function __construct(private readonly array $payload)
     {
@@ -16,7 +16,7 @@ final class DeleteUserResponse implements RouteResponse
     {
         return [
             'userID' => (string)($this->payload['userID'] ?? ''),
-            'result' => (string)($this->payload['result'] ?? ''),
+            'status' => (string)($this->payload['status'] ?? ''),
         ];
     }
 }

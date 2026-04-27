@@ -125,14 +125,8 @@ void SubmitPollTextResponse::process(SQLite& db) {
         );
     }
 
+    // Free-text responses are always editable so users can iterate while drafting.
     const bool hasExisting = !existingResult.empty();
-    if (hasExisting && !poll.allowChangeVote) {
-        CommandError::conflict(
-            "Poll does not allow response changes",
-            "SUBMIT_POLL_TEXT_RESPONSE_CHANGE_NOT_ALLOWED",
-            {{"command", "SubmitPollTextResponse"}, {"pollID", SToStr(input.pollID)}, {"userID", SToStr(input.userID)}}
-        );
-    }
 
     if (hasExisting) {
         // A user can have only one text response per poll. Updating means replacing the old row.

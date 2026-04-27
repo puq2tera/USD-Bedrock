@@ -6,10 +6,9 @@ namespace BedrockStarter\requests\users;
 
 use BedrockStarter\Auth;
 use BedrockStarter\Request;
-use BedrockStarter\ValidationException;
 use BedrockStarter\requests\framework\RouteBoundRequestBase;
 use BedrockStarter\responses\framework\RouteResponse;
-use BedrockStarter\responses\users\GetUserResponse;
+use BedrockStarter\responses\users\GetUserLookupResponse;
 
 final class GetUserRequest extends RouteBoundRequestBase
 {
@@ -37,15 +36,8 @@ final class GetUserRequest extends RouteBoundRequestBase
 
     protected static function bindFromRouteMatch(array $routeParams): self
     {
-        $routeUserID = Request::requireRouteInt($routeParams, 'userID');
-        $authContext = Auth::requireAuthenticatedContext();
-        // Profile routes are intentionally self-only. Allowing a caller-controlled route ID here
-        // would turn a valid bearer token into cross-user data access.
-        if ($routeUserID !== $authContext->userID) {
-            throw new ValidationException('Forbidden', 403);
-        }
-
-        return new self($routeUserID);
+        Auth::requireAuthenticatedContext();
+        return new self(Request::requireRouteInt($routeParams, 'userID'));
     }
 
     public function toBedrockParams(): array
@@ -55,6 +47,6 @@ final class GetUserRequest extends RouteBoundRequestBase
 
     public function transformResponse(array $bedrockResponse): RouteResponse
     {
-        return new GetUserResponse($bedrockResponse);
+        return new GetUserLookupResponse($bedrockResponse);
     }
 }

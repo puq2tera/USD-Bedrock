@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace BedrockStarter\responses\users;
+namespace BedrockStarter\responses\account;
 
 use BedrockStarter\responses\framework\RouteResponse;
 
-final class EditUserResponse implements RouteResponse
+final class GetAccountResponse implements RouteResponse
 {
     public function __construct(private readonly array $payload)
     {
@@ -21,7 +21,6 @@ final class EditUserResponse implements RouteResponse
             'lastName' => (string)($this->payload['lastName'] ?? ''),
             'displayName' => (string)($this->payload['displayName'] ?? ''),
             'createdAt' => (string)($this->payload['createdAt'] ?? ''),
-            'result' => (string)($this->payload['result'] ?? ''),
         ];
     }
 }

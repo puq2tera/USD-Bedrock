@@ -174,19 +174,8 @@ void SubmitPollVotes::process(SQLite& db) {
             );
         }
     }
-    // Ranked-choice uses the caller's array order as rank, so all active options must be present exactly once.
-    if (poll.type == "ranked_choice" && input.optionIDs.size() != validOptionIDs.size()) {
-        CommandError::badRequest(
-            "Ranked-choice polls require a complete ranking of all options",
-            "SUBMIT_POLL_VOTES_RANKED_REQUIRES_ALL_OPTIONS",
-            {
-                {"command", "SubmitPollVotes"},
-                {"pollID", SToStr(input.pollID)},
-                {"submittedOptionCount", SToStr(input.optionIDs.size())},
-                {"requiredOptionCount", SToStr(validOptionIDs.size())}
-            }
-        );
-    }
+    // Ranked-choice supports partial rankings: callers can submit any non-empty ordered subset.
+    // Validation above already guarantees each submitted option is unique and belongs to this poll.
 
     SQResult existingVotes;
     const string existingVotesQuery = fmt::format(
