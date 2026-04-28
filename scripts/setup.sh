@@ -186,6 +186,9 @@ fi
 # Set ownership
 chown -R bedrock:bedrock "$INSTALL_DIR"
 chown -R bedrock:bedrock /var/cache/ccache
+# PHP-FPM runs as www-data and needs execute permission on the install root to reach api.php;
+# individual API files below stay owned by bedrock with group access handled separately.
+chmod 755 "$INSTALL_DIR"
 
 # Create data directory
 mkdir -p "$DATA_DIR"

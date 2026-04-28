@@ -1,7 +1,7 @@
 import { Buffer } from "buffer";
-import * as SecureStore from "expo-secure-store";
 import { createContext, createElement, ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import TypescriptUtils from "./TypescriptUtils";
+import { deleteAuthStorageItem, getAuthStorageItem, setAuthStorageItem } from "./authStorage";
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE || "http://192.168.2.7";
 const AUTH_STORAGE_KEY = "bedrock_auth_state";
@@ -102,7 +102,7 @@ async function persistSnapshot(snapshot: AuthSnapshot) {
     snapshot.accessTokenExpiresAt &&
     snapshot.user
   ) {
-    await SecureStore.setItemAsync(
+    await setAuthStorageItem(
       AUTH_STORAGE_KEY,
       JSON.stringify({
         accessToken: snapshot.accessToken,
@@ -114,7 +114,7 @@ async function persistSnapshot(snapshot: AuthSnapshot) {
     return;
   }
 
-  await SecureStore.deleteItemAsync(AUTH_STORAGE_KEY);
+  await deleteAuthStorageItem(AUTH_STORAGE_KEY);
 }
 
 async function updateSnapshot(snapshot: AuthSnapshot) {
@@ -274,7 +274,7 @@ export async function initializeAuth(): Promise<void> {
   }
 
   bootstrapPromise = (async () => {
-    const storedValue = await SecureStore.getItemAsync(AUTH_STORAGE_KEY);
+    const storedValue = await getAuthStorageItem(AUTH_STORAGE_KEY);
     if (!storedValue) {
       await clearSnapshot();
       return;
