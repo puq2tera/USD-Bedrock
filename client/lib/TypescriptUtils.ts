@@ -444,6 +444,10 @@ export default class BedrockUtils {
       if (Object.is(first, second)) {
         return true;
       }
+
+      if (first == null || second == null) {
+        return false;
+      }
     }
 
     if (typeof first !== typeof second) {
