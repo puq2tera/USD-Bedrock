@@ -1,7 +1,7 @@
 import { Buffer } from "buffer";
 import { createContext, createElement, ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import TypescriptUtils from "./TypescriptUtils";
-import { ApiRequestError } from "./ApiRequestError";
+import { ApiRequestError, parseApiErrorResponse } from "./ApiRequestError";
 import { deleteAuthStorageItem, getAuthStorageItem, setAuthStorageItem } from "./authStorage";
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE || "http://192.168.2.7";
@@ -157,13 +157,7 @@ async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
   const data = await response.json();
 
   if (!response.ok) {
-    const message = typeof data?.error === "string" && data.error.trim().length > 0
-      ? data.error
-      : `Request failed with status ${response.status}`;
-    const field = typeof data?.parameter === "string" && data.parameter.trim().length > 0
-      ? data.parameter
-      : null;
-    throw new ApiRequestError(message, response.status, field);
+    throw parseApiErrorResponse(data, response.status);
   }
 
   return data as T;

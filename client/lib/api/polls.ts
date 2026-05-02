@@ -60,6 +60,10 @@ export async function getPollParticipation(pollID: string): Promise<PollParticip
       const parsed = TypescriptUtils.parseString(item);
       return TypescriptUtils.isNullOrWhiteSpace(parsed) ? null : (parsed as string);
     }),
+    selectedOptionIDs: parseJsonArray(data.selectedOptionIDs, (item) => {
+      const parsed = TypescriptUtils.parseString(item);
+      return TypescriptUtils.isNullOrWhiteSpace(parsed) ? null : (parsed as string);
+    }),
   };
 
   if (!result.isAnonymous) {

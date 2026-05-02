@@ -135,7 +135,7 @@ export default function PollSettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-      optionInput: {
+  optionInput: {
     marginBottom: 8,
   },
   saveButton: {

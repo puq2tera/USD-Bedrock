@@ -1,5 +1,5 @@
 import { authFetch } from "../auth";
-import { ApiRequestError, getApiError } from "../ApiRequestError";
+import { ApiRequestError, getApiError, parseApiErrorResponse } from "../ApiRequestError";
 import { API_BASE } from "./constants";
 
 export { ApiRequestError, getApiError };
@@ -17,13 +17,7 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
 
   const data = await response.json();
   if (!response.ok) {
-    const message = typeof data?.error === "string" && data.error.trim().length > 0
-      ? data.error
-      : `Request failed with status ${response.status}`;
-    const field = typeof data?.parameter === "string" && data.parameter.trim().length > 0
-      ? data.parameter
-      : null;
-    throw new ApiRequestError(message, response.status, field);
+    throw parseApiErrorResponse(data, response.status);
   }
 
   return data as T;

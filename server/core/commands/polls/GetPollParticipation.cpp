@@ -34,6 +34,7 @@ struct GetPollParticipationResponseModel {
     list<string> eligibleUserIDs; // Members of poll chat at read time.
     list<string> votedUserIDs; // Members detected as having submitted a response.
     list<string> notVotedUserIDs; // eligibleUserIDs minus votedUserIDs.
+    list<string> selectedOptionIDs; // Requester's current option selection in rank order when applicable.
 
     void writeTo(SData& response) const {
         ResponseBinding::setInt64(response, "pollID", poll.pollID);
@@ -44,6 +45,7 @@ struct GetPollParticipationResponseModel {
         ResponseBinding::setInt64(response, "eligibleCount", static_cast<int64_t>(eligibleUserIDs.size()));
         ResponseBinding::setInt64(response, "votedCount", static_cast<int64_t>(votedUserIDs.size()));
         ResponseBinding::setInt64(response, "notVotedCount", static_cast<int64_t>(notVotedUserIDs.size()));
+        ResponseBinding::setJSONArray(response, "selectedOptionIDs", selectedOptionIDs);
 
         if (!poll.isAnonymous) {
             // Anonymous polls return only counts; user ID lists are included only for non-anonymous polls.
@@ -162,11 +164,42 @@ void GetPollParticipation::process(SQLite& db) {
         }
     }
 
+    list<string> selectedOptionIDs;
+    if (poll.type != "free_text") {
+        SQResult selectedRows;
+        const string selectedQuery = fmt::format(
+            "SELECT optionID FROM votes WHERE pollID = {} AND userID = {} "
+            "ORDER BY CASE WHEN rank IS NULL THEN 0 ELSE rank END ASC, optionID ASC;",
+            poll.pollID,
+            input.requesterUserID
+        );
+
+        if (!db.read(selectedQuery, selectedRows)) {
+            CommandError::upstreamFailure(
+                db,
+                "Failed to read requester selected options",
+                "GET_POLL_PARTICIPATION_SELECTED_LOOKUP_FAILED",
+                {
+                    {"command", "GetPollParticipation"},
+                    {"pollID", SToStr(poll.pollID)},
+                    {"requesterUserID", SToStr(input.requesterUserID)}
+                }
+            );
+        }
+
+        for (const SQResultRow& row : selectedRows) {
+            if (!row.empty()) {
+                selectedOptionIDs.emplace_back(row[0]);
+            }
+        }
+    }
+
     const GetPollParticipationResponseModel output = {
         poll,
         eligibleUserIDs,
         votedUserIDs,
         notVotedUserIDs,
+        selectedOptionIDs,
     };
     output.writeTo(response);
 }

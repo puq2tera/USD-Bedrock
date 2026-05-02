@@ -13,6 +13,7 @@ import {
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { KeyboardAwareScrollView } from "../../../../components/KeyboardAwareScrollView";
 import { CreatePollInput, PollType, createPoll } from "../../../../lib/api";
+import { parseDateTime } from "../../../../lib/dateTime";
 import TypescriptUtils from "../../../../lib/TypescriptUtils";
 import { useAuth } from "../../../../lib/auth";
 import { appColors, commonStyles } from "../../../../lib/styles";
@@ -132,9 +133,10 @@ export default function CreateChatPollScreen() {
     }
 
     let expiresAt: number | undefined;
-    if (expiresAtInput.trim().length > 0) {
-      const parsedDate = new Date(expiresAtInput.trim());
-      if (Number.isNaN(parsedDate.getTime())) {
+    const trimmedExpiresAt = expiresAtInput.trim();
+    if (trimmedExpiresAt.length > 0) {
+      const parsedDate = parseDateTime(trimmedExpiresAt);
+      if (parsedDate == null) {
         setFormError("Use a valid expiration datetime like 2026-05-01T18:00.");
         return;
       }

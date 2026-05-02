@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
+import { parseDateTime } from "../../../../../lib/dateTime";
 import {
   canManagePoll,
   deleteAllPollVotes,
@@ -77,6 +78,11 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
 
   const isCreator = useMemo(() => (poll ? canManagePoll(poll) : false), [poll]);
 
+  const toDateTimeLocalInput = useCallback((value: unknown): string => {
+    const parsed = parseDateTime(value);
+    return parsed ? parsed.toISOString().slice(0, 16) : "";
+  }, []);
+
   const loadPoll = useCallback(async () => {
     if (!resolvedPollID) {
       setError("Invalid poll ID");
@@ -92,7 +98,7 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
       setEditQuestion(pollData.question);
       setEditAllowChangeVote(pollData.allowChangeVote);
       setEditIsAnonymous(pollData.isAnonymous);
-      setEditExpiresAt(pollData.expiresAt ? new Date(Number(pollData.expiresAt) * 1000).toISOString().slice(0, 16) : "");
+      setEditExpiresAt(pollData.expiresAt ? toDateTimeLocalInput(pollData.expiresAt) : "");
       setEditOptions(pollData.options.map((option) => option.label));
 
       if (pollData.type === "free_text") {
@@ -105,13 +111,14 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
 
       const participationData = await getPollParticipation(resolvedPollID);
       setParticipation(participationData);
+      setSelectedOptionIDs(pollData.type === "free_text" ? [] : participationData.selectedOptionIDs);
     } catch (e: any) {
       setError(e?.message || "Failed to load poll");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [currentUserID, resolvedPollID]);
+  }, [currentUserID, resolvedPollID, toDateTimeLocalInput]);
 
   const toggleOptionSelection = useCallback(async (option: PollOption) => {
     if (!poll || poll.status !== "open") {
@@ -223,11 +230,18 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
       return;
     }
 
+    const trimmedExpiresAt = editExpiresAt.trim();
+    const parsedExpiresAt = trimmedExpiresAt ? parseDateTime(trimmedExpiresAt) : null;
+    if (trimmedExpiresAt && parsedExpiresAt == null) {
+      Alert.alert("Invalid date", "Use a valid date/time (for example 2026-05-01T18:00).");
+      return;
+    }
+
     const payload: EditPollInput = {
       question: editQuestion.trim(),
       allowChangeVote: editAllowChangeVote,
       isAnonymous: editIsAnonymous,
-      expiresAt: editExpiresAt.trim() ? Math.floor(new Date(editExpiresAt.trim()).getTime() / 1000) : null,
+      expiresAt: parsedExpiresAt != null ? Math.floor(parsedExpiresAt.getTime() / 1000) : null,
       ...(poll.type !== "free_text" ? { options: editOptions.map((option) => option.trim()).filter((option) => option.length > 0) } : {}),
       ...overrides,
     };
