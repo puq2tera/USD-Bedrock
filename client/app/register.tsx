@@ -78,12 +78,12 @@ export default function RegisterScreen() {
       <Text style={styles.subtitle}>Set up your profile to start creating chats.</Text>
 
       <Text style={styles.fieldLabel}>First name</Text>
-      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="Ava" placeholderTextColor={appColors.textSubtle} value={firstName} onChangeText={(value) => {
+      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="John" placeholderTextColor={appColors.textSubtle} value={firstName} onChangeText={(value) => {
         setFirstName(value);
         setFormError(null);
       }} />
       <Text style={styles.fieldLabel}>Last name</Text>
-      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="Nguyen" placeholderTextColor={appColors.textSubtle} value={lastName} onChangeText={(value) => {
+      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="Smith" placeholderTextColor={appColors.textSubtle} value={lastName} onChangeText={(value) => {
         setLastName(value);
         setFormError(null);
       }} />

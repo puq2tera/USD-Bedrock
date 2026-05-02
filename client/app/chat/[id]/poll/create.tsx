@@ -252,16 +252,13 @@ export default function CreateChatPollScreen() {
                     <Text style={styles.inlineButtonText}>↓</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={styles.inlineButton}
+                    style={[styles.inlineButton, options.length <= 2 && styles.inlineButtonDisabled]}
+                    disabled={options.length <= 2}
                     onPress={() => {
-                      if (options.length <= 2) {
-                        setFormError("A poll requires at least two options.");
-                        return;
-                      }
                       setOptions(options.filter((_, optionIndex) => optionIndex !== index));
                     }}
                   >
-                    <Text style={styles.inlineButtonText}>-</Text>
+                    <Text style={[styles.inlineButtonText, options.length <= 2 && styles.inlineButtonTextDisabled]}>x</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -324,6 +321,8 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   optionRow: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     marginBottom: 8,
   },
@@ -350,13 +349,19 @@ const styles = StyleSheet.create({
   },
   optionActionRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
+    marginLeft: "auto",
   },
   inlineButtonText: {
     color: appColors.text,
     fontWeight: "600",
     fontSize: 12,
+  },
+  inlineButtonDisabled: {
+    opacity: 0.45,
+  },
+  inlineButtonTextDisabled: {
+    color: appColors.textMuted,
   },
   addOptionButton: {
     marginTop: 8,

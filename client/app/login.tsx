@@ -66,7 +66,12 @@ export default function LoginScreen() {
     } catch (e: any) {
       const apiError = getApiError(e);
       const normalized = apiError.message.toLowerCase();
-      if (apiError.status === 401 || normalized.includes("unauthorized") || normalized.includes("invalid email or password")) {
+      if (
+        apiError.status === 401 ||
+        normalized.includes("unauthorized") ||
+        normalized.includes("invalid email or password") ||
+        normalized.includes("missing required parameter: password")
+      ) {
         setPasswordError("Invalid email or password.");
       } else {
         setFormError(apiError.message || "Unable to login.");

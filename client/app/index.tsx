@@ -96,9 +96,6 @@ export default function ChatListScreen() {
           <Text style={styles.heroTitle}>Chats</Text>
           <Text style={styles.heroSubtitle}>Pick up where your team left off.</Text>
         </View>
-        <TouchableOpacity style={commonStyles.primaryButton} onPress={() => router.push("/chat/create")}>
-          <Text style={commonStyles.primaryButtonText}>New Chat</Text>
-        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -114,10 +111,6 @@ export default function ChatListScreen() {
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No chats yet</Text>
-            <Text style={styles.emptyText}>Create your first chat to start conversations and polls.</Text>
-            <TouchableOpacity style={[commonStyles.primaryButton, styles.emptyAction]} onPress={() => router.push("/chat/create")}>
-              <Text style={commonStyles.primaryButtonText}>Create Chat</Text>
-            </TouchableOpacity>
           </View>
         }
         contentContainerStyle={chats.length < 1 ? styles.emptyContainer : undefined}
@@ -134,6 +127,12 @@ export default function ChatListScreen() {
           </TouchableOpacity>
         )}
       />
+
+      <View style={styles.bottomAction}>
+        <TouchableOpacity style={commonStyles.primaryButton} onPress={() => router.push("/chat/create")}>
+          <Text style={commonStyles.primaryButtonText}>New Chat</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -214,5 +213,10 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginVertical: 16,
+  },
+  bottomAction: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingTop: 8,
   },
 });

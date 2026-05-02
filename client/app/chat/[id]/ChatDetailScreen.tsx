@@ -255,7 +255,7 @@ export function ChatDetailScreen() {
     <KeyboardAvoidingView style={commonStyles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <KeyboardAwareScrollView
         style={styles.thread}
-        contentContainerStyle={styles.threadContent}
+        contentContainerStyle={[styles.threadContent, timeline.length < 1 && styles.threadContentEmpty]}
         onScroll={({ nativeEvent }) => {
           if (nativeEvent.contentOffset.y <= 80) {
             void state.loadOlderMessages();
@@ -474,10 +474,15 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     gap: 0,
   },
+  threadContentEmpty: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   emptyHint: {
     color: appColors.textMuted,
     fontSize: 13,
-    marginBottom: 4,
+    textAlign: "center",
   },
   loadingOlderRow: {
     alignSelf: "center",

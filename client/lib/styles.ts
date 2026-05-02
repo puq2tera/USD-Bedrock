@@ -296,10 +296,20 @@ export const commonStyles = StyleSheet.create({
     borderColor: appColors.borderSoft,
     backgroundColor: appColors.surfaceRaised,
   },
+  successBanner: {
+    borderColor: appColors.accent,
+    backgroundColor: appColors.accentSoft,
+  },
   infoBannerText: {
     color: appColors.textMuted,
     fontSize: 13,
     lineHeight: 18,
+  },
+  successBannerText: {
+    color: appColors.text,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "600",
   },
   retryButton: {
     backgroundColor: appColors.accent,

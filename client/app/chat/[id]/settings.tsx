@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { Alert, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Redirect, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { KeyboardAwareScrollView } from "../../../components/KeyboardAwareScrollView";
 import TypescriptUtils from "../../../lib/TypescriptUtils";
@@ -31,7 +31,9 @@ export default function ChatSettingsScreen() {
   const [chatTitle, setChatTitle] = useState("");
   const [memberEmailDraft, setMemberEmailDraft] = useState("");
   const [memberError, setMemberError] = useState<string | null>(null);
+  const [showSavedBanner, setShowSavedBanner] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -61,6 +63,15 @@ export default function ChatSettingsScreen() {
       void load();
     }, [load])
   );
+
+  useEffect(() => {
+    if (!showSavedBanner) {
+      return;
+    }
+
+    const timeout = setTimeout(() => setShowSavedBanner(false), 2500);
+    return () => clearTimeout(timeout);
+  }, [showSavedBanner]);
 
   if (!isAuthenticated) {
     return <Redirect href="/login" />;
@@ -97,6 +108,7 @@ export default function ChatSettingsScreen() {
     try {
       await editChat(chat.chatID, normalized);
       await load();
+      setShowSavedBanner(true);
     } catch (e: any) {
       Alert.alert("Unable to rename chat", e?.message || "Please retry.");
     } finally {
@@ -143,9 +155,21 @@ export default function ChatSettingsScreen() {
   };
 
   return (
-    <KeyboardAwareScrollView style={commonStyles.screen} contentContainerStyle={commonStyles.screenContent}>
+    <KeyboardAwareScrollView
+      style={commonStyles.screen}
+      contentContainerStyle={commonStyles.screenContent}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => {
+        setRefreshing(true);
+        void load().finally(() => setRefreshing(false));
+      }} />}
+    >
       <View style={commonStyles.sectionCard}>
         <Text style={commonStyles.sectionTitle}>Chat Title</Text>
+        {showSavedBanner && (
+          <View style={[commonStyles.feedbackBanner, commonStyles.successBanner]}>
+            <Text style={commonStyles.successBannerText}>Chat title saved.</Text>
+          </View>
+        )}
 
         <TextInput
           style={commonStyles.input}

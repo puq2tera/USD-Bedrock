@@ -1,5 +1,5 @@
-import { useCallback } from "react";
-import { Alert, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { RefreshControl, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Redirect, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { KeyboardAwareScrollView } from "../../../../../components/KeyboardAwareScrollView";
 import TypescriptUtils from "../../../../../lib/TypescriptUtils";
@@ -14,6 +14,17 @@ export default function PollSettingsScreen() {
   const resolvedPollID = TypescriptUtils.parseString(pollId) ?? "";
 
   const state = usePollDetailState(chatID, resolvedPollID, user?.userID ?? "");
+  const [showSavedBanner, setShowSavedBanner] = useState(false);
+
+  useEffect(() => {
+    if (state.lastPollEditSavedAt < 1) {
+      return;
+    }
+
+    setShowSavedBanner(true);
+    const timeout = setTimeout(() => setShowSavedBanner(false), 2500);
+    return () => clearTimeout(timeout);
+  }, [state.lastPollEditSavedAt]);
 
   useFocusEffect(
     useCallback(() => {
@@ -34,10 +45,22 @@ export default function PollSettingsScreen() {
   }
 
   return (
-    <KeyboardAwareScrollView style={commonStyles.screen} contentContainerStyle={commonStyles.screenContent}>
+    <KeyboardAwareScrollView
+      style={commonStyles.screen}
+      contentContainerStyle={commonStyles.screenContent}
+      refreshControl={<RefreshControl refreshing={state.refreshing} onRefresh={() => {
+        state.setRefreshing(true);
+        void state.loadPoll();
+      }} />}
+    >
       <View style={commonStyles.sectionCard}>
         <Text style={commonStyles.sectionTitle}>Poll Settings</Text>
         <Text style={commonStyles.metaText}>Review your edits, then save changes.</Text>
+        {showSavedBanner && (
+          <View style={[commonStyles.feedbackBanner, commonStyles.successBanner]}>
+            <Text style={commonStyles.successBannerText}>Poll settings saved.</Text>
+          </View>
+        )}
 
         <Text style={commonStyles.sectionLabel}>Question</Text>
         <TextInput
@@ -80,54 +103,11 @@ export default function PollSettingsScreen() {
                 }}
               />
             ))}
-            <TouchableOpacity style={commonStyles.ghostButton} onPress={() => void state.confirmReplaceOptions()}>
-              <Text style={commonStyles.ghostButtonText}>Save Option Changes</Text>
-            </TouchableOpacity>
           </>
         )}
 
-        <TouchableOpacity style={[commonStyles.primaryButton, styles.saveButton]} onPress={() => void state.submitPollEdit()}>
+        <TouchableOpacity style={[commonStyles.primaryButton, styles.saveButton]} onPress={() => void state.submitPollSettings()}>
           <Text style={commonStyles.primaryButtonText}>Save Poll Settings</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.bottomActions}>
-        {state.poll.status === "open" ? (
-          <TouchableOpacity style={commonStyles.ghostButton} onPress={() => state.transitionStatus("closed")}>
-            <Text style={commonStyles.ghostButtonText}>Close Poll</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={commonStyles.ghostButton} onPress={() => state.transitionStatus("open")}>
-            <Text style={commonStyles.ghostButtonText}>Reopen Poll</Text>
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity
-          style={commonStyles.ghostButton}
-          onPress={() =>
-            Alert.alert("Reset My Vote", "Remove your current participation?", [
-              { text: "Cancel", style: "cancel" },
-              { text: "Reset", style: "destructive", onPress: () => void state.removeParticipation() },
-            ])
-          }
-        >
-          <Text style={commonStyles.ghostButtonText}>Reset My Vote</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={commonStyles.ghostButton}
-          onPress={() =>
-            Alert.alert("Reset All Votes", "Delete all participation on this poll?", [
-              { text: "Cancel", style: "cancel" },
-              { text: "Reset All", style: "destructive", onPress: () => void state.removeAllParticipations() },
-            ])
-          }
-        >
-          <Text style={commonStyles.ghostButtonText}>Reset All Votes</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={commonStyles.miniDangerButton} onPress={() => state.removePoll()}>
-          <Text style={commonStyles.miniDangerButtonText}>Delete Poll</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAwareScrollView>
@@ -140,9 +120,5 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginTop: 16,
-  },
-  bottomActions: {
-    marginTop: 12,
-    gap: 10,
   },
 });
