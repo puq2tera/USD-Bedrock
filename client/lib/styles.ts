@@ -17,6 +17,12 @@ export const appColors = {
 } as const;
 
 export const appSpacing = {
+  xxs: 4,
+  xs: 8,
+  sm: 12,
+  md: 16,
+  lg: 24,
+  xl: 32,
   screenPadding: 16,
   formPadding: 20,
   inputInset: 14,
@@ -59,16 +65,44 @@ export const commonStyles = StyleSheet.create({
     backgroundColor: appColors.background,
   },
   authTitle: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: "700",
-    marginBottom: 20,
+    marginBottom: appSpacing.lg,
     color: appColors.text,
+  },
+  heading1: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: "700",
+    color: appColors.text,
+  },
+  heading2: {
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: "700",
+    color: appColors.text,
+  },
+  heading3: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: "700",
+    color: appColors.text,
+  },
+  bodyText: {
+    fontSize: 15,
+    lineHeight: 21,
+    color: appColors.text,
+  },
+  bodyTextMuted: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: appColors.textMuted,
   },
   sectionLabel: {
     fontSize: 15,
     fontWeight: "600",
     color: appColors.textSubtle,
-    marginBottom: 6,
+    marginBottom: appSpacing.xs,
     marginTop: appSpacing.sectionGap,
   },
   input: {
@@ -90,8 +124,8 @@ export const commonStyles = StyleSheet.create({
     borderRadius: appRadii.card,
     borderWidth: 1,
     borderColor: appColors.borderSoft,
-    padding: 14,
-    marginBottom: 14,
+    padding: appSpacing.sm,
+    marginBottom: appSpacing.sm,
   },
   sectionHeaderRow: {
     flexDirection: "row",
@@ -100,18 +134,20 @@ export const commonStyles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "700",
     color: appColors.text,
   },
   pageTitle: {
-    fontSize: 20,
+    fontSize: 24,
+    lineHeight: 30,
     fontWeight: "700",
     color: appColors.text,
   },
   metaText: {
     color: appColors.textMuted,
-    fontSize: 12,
+    fontSize: 13,
+    lineHeight: 18,
   },
   inlineActionsRow: {
     flexDirection: "row",
@@ -235,9 +271,35 @@ export const commonStyles = StyleSheet.create({
     fontWeight: "600",
   },
   errorText: {
-    fontSize: 16,
+    fontSize: 14,
     color: appColors.danger,
-    marginBottom: 12,
+    marginBottom: appSpacing.sm,
+  },
+  feedbackBanner: {
+    borderRadius: appRadii.input,
+    borderWidth: 1,
+    paddingHorizontal: appSpacing.sm,
+    paddingVertical: appSpacing.xs,
+    marginTop: appSpacing.sm,
+  },
+  errorBanner: {
+    borderColor: appColors.danger,
+    backgroundColor: "rgba(255, 74, 87, 0.12)",
+  },
+  errorBannerText: {
+    color: appColors.danger,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "600",
+  },
+  infoBanner: {
+    borderColor: appColors.borderSoft,
+    backgroundColor: appColors.surfaceRaised,
+  },
+  infoBannerText: {
+    color: appColors.textMuted,
+    fontSize: 13,
+    lineHeight: 18,
   },
   retryButton: {
     backgroundColor: appColors.accent,

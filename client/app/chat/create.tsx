@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Redirect, useRouter } from "expo-router";
 import { createChat } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
@@ -10,14 +10,18 @@ export default function CreateChatScreen() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [titleError, setTitleError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   if (!isAuthenticated) {
     return <Redirect href="/login" />;
   }
 
   const handleCreate = async () => {
+    setTitleError(null);
+    setFormError(null);
     if (!title.trim()) {
-      Alert.alert("Missing title", "Please enter a chat title.");
+      setTitleError("Enter a chat title.");
       return;
     }
 
@@ -26,7 +30,7 @@ export default function CreateChatScreen() {
       const created = await createChat(title.trim());
       router.replace(`/chat/${created.chatID}`);
     } catch (e: any) {
-      Alert.alert("Unable to create chat", e?.message || "Please try again.");
+      setFormError(e?.message || "Unable to create chat. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -35,18 +39,28 @@ export default function CreateChatScreen() {
   return (
     <KeyboardAvoidingView style={commonStyles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={commonStyles.screenContent}>
-        <Text style={styles.pageTitle}>Create Chat</Text>
-        <Text style={styles.pageSubtitle}>Start a focused thread for your team, project, or topic.</Text>
+        <Text style={commonStyles.pageTitle}>Create Chat</Text>
+        <Text style={commonStyles.bodyTextMuted}>Start a focused thread for your team, project, or topic.</Text>
 
         <Text style={commonStyles.sectionLabel}>Chat title</Text>
         <TextInput
           style={commonStyles.input}
           value={title}
-          onChangeText={setTitle}
+          onChangeText={(nextTitle) => {
+            setTitle(nextTitle);
+            setTitleError(null);
+            setFormError(null);
+          }}
           placeholder="Team discussion"
           placeholderTextColor={appColors.textSubtle}
           maxLength={255}
         />
+        {titleError && <Text style={commonStyles.errorText}>{titleError}</Text>}
+        {formError && (
+          <View style={[commonStyles.feedbackBanner, commonStyles.errorBanner]}>
+            <Text style={commonStyles.errorBannerText}>{formError}</Text>
+          </View>
+        )}
         <TouchableOpacity
           style={[commonStyles.primaryButtonLarge, styles.submitButton, submitting && commonStyles.primaryButtonDisabled]}
           disabled={submitting}
@@ -60,17 +74,6 @@ export default function CreateChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  pageTitle: {
-    color: appColors.text,
-    fontSize: 24,
-    fontWeight: "700",
-  },
-  pageSubtitle: {
-    color: appColors.textMuted,
-    marginTop: 6,
-    fontSize: 13,
-    lineHeight: 18,
-  },
   submitButton: {
     marginTop: 24,
   },

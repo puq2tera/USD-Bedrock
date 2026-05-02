@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 
 import { useAuth } from "../lib/auth";
 import { appColors, commonStyles } from "../lib/styles";
 import TypescriptUtils from "../lib/TypescriptUtils";
+import { getApiError } from "../lib/ApiRequestError";
 
 export default function RegisterScreen() {
   const { isAuthenticated, register } = useAuth();
@@ -20,8 +21,14 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState(TypescriptUtils.parseString(prefilledEmail) ?? "");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const submit = async () => {
+    setEmailError(null);
+    setPasswordError(null);
+    setFormError(null);
     const normalizedFirstName = TypescriptUtils.parseString(firstName)?.trim() ?? "";
     const normalizedLastName = TypescriptUtils.parseString(lastName)?.trim() ?? "";
     const normalizedEmail = TypescriptUtils.parseString(email)?.trim() ?? "";
@@ -32,12 +39,12 @@ export default function RegisterScreen() {
       TypescriptUtils.isNullOrWhiteSpace(normalizedEmail) ||
       TypescriptUtils.isNullOrEmpty(password)
     ) {
-      Alert.alert("Missing fields", "Fill out all fields.");
+      setFormError("Fill out all fields.");
       return;
     }
 
     if (password.length < 8) {
-      Alert.alert("Weak password", "Password must be at least 8 characters.");
+      setPasswordError("Password must be at least 8 characters.");
       return;
     }
 
@@ -51,7 +58,15 @@ export default function RegisterScreen() {
       });
       router.replace("/");
     } catch (e: any) {
-      Alert.alert("Registration failed", e?.message || "Unable to register.");
+      const apiError = getApiError(e);
+      const normalized = apiError.message.toLowerCase();
+      if (apiError.field === "email" || normalized.includes("email")) {
+        setEmailError(apiError.message);
+      } else if (apiError.field === "password" || normalized.includes("password")) {
+        setPasswordError(apiError.message);
+      } else {
+        setFormError(apiError.message || "Unable to register.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -63,9 +78,15 @@ export default function RegisterScreen() {
       <Text style={styles.subtitle}>Set up your profile to start creating chats.</Text>
 
       <Text style={styles.fieldLabel}>First name</Text>
-      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="Ava" placeholderTextColor={appColors.textSubtle} value={firstName} onChangeText={setFirstName} />
+      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="Ava" placeholderTextColor={appColors.textSubtle} value={firstName} onChangeText={(value) => {
+        setFirstName(value);
+        setFormError(null);
+      }} />
       <Text style={styles.fieldLabel}>Last name</Text>
-      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="Nguyen" placeholderTextColor={appColors.textSubtle} value={lastName} onChangeText={setLastName} />
+      <TextInput style={[commonStyles.input, styles.inputSpacing]} placeholder="Nguyen" placeholderTextColor={appColors.textSubtle} value={lastName} onChangeText={(value) => {
+        setLastName(value);
+        setFormError(null);
+      }} />
       <Text style={styles.fieldLabel}>Email</Text>
       <TextInput
         style={[commonStyles.input, styles.inputSpacing]}
@@ -74,8 +95,13 @@ export default function RegisterScreen() {
         placeholder="name@company.com"
         placeholderTextColor={appColors.textSubtle}
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(value) => {
+          setEmail(value);
+          setEmailError(null);
+          setFormError(null);
+        }}
       />
+      {emailError && <Text style={commonStyles.errorText}>{emailError}</Text>}
       <Text style={styles.fieldLabel}>Password</Text>
       <TextInput
         style={[commonStyles.input, styles.inputSpacing]}
@@ -83,8 +109,14 @@ export default function RegisterScreen() {
         placeholderTextColor={appColors.textSubtle}
         secureTextEntry
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(value) => {
+          setPassword(value);
+          setPasswordError(null);
+          setFormError(null);
+        }}
       />
+      {passwordError && <Text style={commonStyles.errorText}>{passwordError}</Text>}
+      {formError && <Text style={commonStyles.errorText}>{formError}</Text>}
       <TouchableOpacity style={commonStyles.primaryButton} disabled={submitting} onPress={submit}>
         <Text style={commonStyles.primaryButtonText}>{submitting ? "Creating..." : "Create Account"}</Text>
       </TouchableOpacity>

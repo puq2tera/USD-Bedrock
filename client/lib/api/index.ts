@@ -40,6 +40,7 @@ export {
   deletePoll,
   submitPollVotes,
   deletePollVotes,
+  deleteAllPollVotes,
   submitPollTextResponse,
 } from "./polls";
 

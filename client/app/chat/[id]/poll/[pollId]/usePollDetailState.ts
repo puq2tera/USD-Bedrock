@@ -3,6 +3,7 @@ import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import {
   canManagePoll,
+  deleteAllPollVotes,
   deletePoll,
   deletePollVotes,
   EditPollInput,
@@ -45,6 +46,7 @@ type UsePollDetailStateResult = {
   toggleOptionSelection: (option: PollOption) => Promise<void>;
   autosaveTextResponse: (force?: boolean) => Promise<void>;
   removeParticipation: () => Promise<void>;
+  removeAllParticipations: () => Promise<void>;
   submitPollEdit: (overrides?: Partial<EditPollInput>) => Promise<void>;
   confirmReplaceOptions: () => void;
   transitionStatus: (nextStatus: "open" | "closed") => void;
@@ -196,6 +198,26 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
     }
   }, [loadPoll, poll]);
 
+  const removeAllParticipations = useCallback(async () => {
+    if (!poll) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await deleteAllPollVotes(poll.pollID);
+      setSelectedOptionIDs([]);
+      setTextResponse("");
+      setLastSavedTextResponse("");
+      await loadPoll();
+    } catch (e: any) {
+      Alert.alert("Reset failed", e?.message || "Refreshing poll state.");
+      await loadPoll();
+    } finally {
+      setBusy(false);
+    }
+  }, [loadPoll, poll]);
+
   const submitPollEdit = useCallback(async (overrides?: Partial<EditPollInput>) => {
     if (!poll) {
       return;
@@ -321,6 +343,7 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
     toggleOptionSelection,
     autosaveTextResponse,
     removeParticipation,
+    removeAllParticipations,
     submitPollEdit,
     confirmReplaceOptions,
     transitionStatus,

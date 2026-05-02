@@ -400,6 +400,24 @@ export function ChatDetailScreen() {
           onChangeText={state.setMessageDraft}
           placeholder="Type a message"
           placeholderTextColor={appColors.textSubtle}
+          multiline
+          blurOnSubmit={false}
+          onKeyPress={(event) => {
+            const nativeEvent = event.nativeEvent as { key?: string; shiftKey?: boolean };
+            if (nativeEvent.key !== "Enter") {
+              return;
+            }
+
+            if (nativeEvent.shiftKey) {
+              return;
+            }
+
+            // Web chat UX: Enter sends; Shift+Enter keeps newline behavior.
+            if (typeof (event as any).preventDefault === "function") {
+              (event as any).preventDefault();
+            }
+            void state.createOrEditMessage();
+          }}
         />
         <TouchableOpacity style={styles.sendButton} disabled={state.busy} onPress={() => void state.createOrEditMessage()}>
           <Text style={styles.sendButtonText}>➤</Text>

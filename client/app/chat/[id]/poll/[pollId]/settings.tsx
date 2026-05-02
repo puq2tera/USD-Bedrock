@@ -37,7 +37,7 @@ export default function PollSettingsScreen() {
     <KeyboardAwareScrollView style={commonStyles.screen} contentContainerStyle={commonStyles.screenContent}>
       <View style={commonStyles.sectionCard}>
         <Text style={commonStyles.sectionTitle}>Poll Settings</Text>
-        <Text style={commonStyles.metaText}>Changes save instantly.</Text>
+        <Text style={commonStyles.metaText}>Review your edits, then save changes.</Text>
 
         <Text style={commonStyles.sectionLabel}>Question</Text>
         <TextInput
@@ -112,6 +112,18 @@ export default function PollSettingsScreen() {
           }
         >
           <Text style={commonStyles.ghostButtonText}>Reset My Vote</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={commonStyles.ghostButton}
+          onPress={() =>
+            Alert.alert("Reset All Votes", "Delete all participation on this poll?", [
+              { text: "Cancel", style: "cancel" },
+              { text: "Reset All", style: "destructive", onPress: () => void state.removeAllParticipations() },
+            ])
+          }
+        >
+          <Text style={commonStyles.ghostButtonText}>Reset All Votes</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={commonStyles.miniDangerButton} onPress={() => state.removePoll()}>

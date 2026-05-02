@@ -8,6 +8,51 @@ export const pollDetailStyles = StyleSheet.create({
   metaWithTop: {
     marginTop: 2,
   },
+  summaryMetaRow: {
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  summaryStatsRow: {
+    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  summaryStatValue: {
+    color: appColors.text,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  summaryStatLabel: {
+    color: appColors.textMuted,
+    fontSize: 13,
+  },
+  summaryStatDivider: {
+    color: appColors.textMuted,
+    marginHorizontal: 2,
+  },
+  stateChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  stateChipOpen: {
+    borderColor: appColors.accent,
+    backgroundColor: appColors.accentSoft,
+  },
+  stateChipClosed: {
+    borderColor: appColors.border,
+    backgroundColor: appColors.surfaceRaised,
+  },
+  stateChipText: {
+    color: appColors.text,
+    fontSize: 12,
+    fontWeight: "700",
+  },
   optionRow: {
     marginBottom: 8,
     flexDirection: "row",
@@ -108,7 +153,7 @@ export const pollDetailStyles = StyleSheet.create({
     marginBottom: 8,
   },
   countRow: {
-    flexDirection: "row",
+    flexDirection: "column",
     gap: 8,
     marginTop: 8,
   },

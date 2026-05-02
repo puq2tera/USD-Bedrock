@@ -136,6 +136,10 @@ export async function deletePollVotes(pollID: string): Promise<void> {
   await request(`/api/polls/${pollID}/votes`, { method: "DELETE" });
 }
 
+export async function deleteAllPollVotes(pollID: string): Promise<void> {
+  await request(`/api/polls/${pollID}/votes/all`, { method: "DELETE" });
+}
+
 export async function submitPollTextResponse(pollID: string, textValue: string): Promise<void> {
   await request(`/api/polls/${pollID}/responses`, {
     method: "POST",

@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   PanResponder,
   Platform,
@@ -44,6 +43,7 @@ export default function CreateChatPollScreen() {
   const [expiresAtInput, setExpiresAtInput] = useState("");
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const dragStateRef = useRef<{ startIndex: number; currentIndex: number; startPageY: number } | null>(null);
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
@@ -107,26 +107,27 @@ export default function CreateChatPollScreen() {
   };
 
   const submit = async () => {
+    setFormError(null);
     if (TypescriptUtils.isNullOrWhiteSpace(chatID)) {
-      Alert.alert("Invalid chat", "Refresh and try again from the chat screen.");
+      setFormError("Invalid chat context. Return to the chat and try again.");
       return;
     }
 
     const normalizedQuestion = question.trim();
     if (!normalizedQuestion) {
-      Alert.alert("Missing question", "Please enter a poll question.");
+      setFormError("Enter a poll question.");
       return;
     }
 
     const normalizedOptions = options.map((option) => option.trim()).filter((option) => option.length > 0);
     const dedupedOptions = TypescriptUtils.dedupe(normalizedOptions);
     if (requiresOptions && dedupedOptions.length < 2) {
-      Alert.alert("Invalid options", "This poll type requires at least two options.");
+      setFormError("This poll type requires at least two options.");
       return;
     }
 
     if (requiresOptions && dedupedOptions.length !== normalizedOptions.length) {
-      Alert.alert("Duplicate options", "Options must be unique.");
+      setFormError("Options must be unique.");
       return;
     }
 
@@ -134,7 +135,7 @@ export default function CreateChatPollScreen() {
     if (expiresAtInput.trim().length > 0) {
       const parsedDate = new Date(expiresAtInput.trim());
       if (Number.isNaN(parsedDate.getTime())) {
-        Alert.alert("Invalid expiration", "Use a valid date, for example: 2026-05-01T18:00");
+        setFormError("Use a valid expiration datetime like 2026-05-01T18:00.");
         return;
       }
 
@@ -155,7 +156,7 @@ export default function CreateChatPollScreen() {
       const created = await createPoll(chatID, payload);
       router.replace(`/chat/${chatID}/poll/${created.pollID}`);
     } catch (e: any) {
-      Alert.alert("Could not create poll", e?.message || "Please retry.");
+      setFormError(e?.message || "Could not create poll. Please retry.");
     } finally {
       setSubmitting(false);
     }
@@ -164,6 +165,9 @@ export default function CreateChatPollScreen() {
   return (
     <KeyboardAvoidingView style={commonStyles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <KeyboardAwareScrollView contentContainerStyle={commonStyles.screenContent}>
+        <Text style={commonStyles.pageTitle}>Create Poll</Text>
+        <Text style={commonStyles.bodyTextMuted}>Choose a poll format, tune options, and launch it in this chat.</Text>
+
         <Text style={commonStyles.sectionLabel}>Question</Text>
         <TextInput
           style={commonStyles.input}
@@ -238,24 +242,26 @@ export default function CreateChatPollScreen() {
                   placeholder={`Option ${index + 1}`}
                   placeholderTextColor={appColors.textSubtle}
                 />
-                <TouchableOpacity style={styles.inlineButton} onPress={() => moveOption(index, index - 1)}>
-                  <Text style={styles.inlineButtonText}>↑</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.inlineButton} onPress={() => moveOption(index, index + 1)}>
-                  <Text style={styles.inlineButtonText}>↓</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.inlineButton}
-                  onPress={() => {
-                    if (options.length <= 2) {
-                      Alert.alert("Minimum options", "A poll requires at least two options.");
-                      return;
-                    }
-                    setOptions(options.filter((_, optionIndex) => optionIndex !== index));
-                  }}
-                >
-                  <Text style={styles.inlineButtonText}>−</Text>
-                </TouchableOpacity>
+                <View style={styles.optionActionRow}>
+                  <TouchableOpacity style={styles.inlineButton} onPress={() => moveOption(index, index - 1)}>
+                    <Text style={styles.inlineButtonText}>↑</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.inlineButton} onPress={() => moveOption(index, index + 1)}>
+                    <Text style={styles.inlineButtonText}>↓</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.inlineButton}
+                    onPress={() => {
+                      if (options.length <= 2) {
+                        setFormError("A poll requires at least two options.");
+                        return;
+                      }
+                      setOptions(options.filter((_, optionIndex) => optionIndex !== index));
+                    }}
+                  >
+                    <Text style={styles.inlineButtonText}>-</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
 
@@ -263,6 +269,11 @@ export default function CreateChatPollScreen() {
               <Text style={styles.addOptionText}>+ Add option</Text>
             </TouchableOpacity>
           </>
+        )}
+        {formError && (
+          <View style={[commonStyles.feedbackBanner, commonStyles.errorBanner]}>
+            <Text style={commonStyles.errorBannerText}>{formError}</Text>
+          </View>
         )}
 
         <TouchableOpacity
@@ -311,9 +322,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   optionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
+    gap: 8,
     marginBottom: 8,
   },
   optionRowDragging: {
@@ -328,18 +337,24 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   inlineButton: {
-    width: 30,
-    height: 30,
+    minHeight: 36,
     borderRadius: 6,
     borderWidth: 1,
     borderColor: appColors.border,
+    paddingHorizontal: 12,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: appColors.surfaceRaised,
   },
+  optionActionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
   inlineButtonText: {
     color: appColors.text,
-    fontWeight: "700",
+    fontWeight: "600",
+    fontSize: 12,
   },
   addOptionButton: {
     marginTop: 8,

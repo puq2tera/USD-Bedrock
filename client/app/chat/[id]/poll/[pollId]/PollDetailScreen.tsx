@@ -78,12 +78,19 @@ export function PollDetailScreen() {
     >
       <View style={commonStyles.sectionCard}>
         <Text style={[commonStyles.pageTitle, styles.question]}>{state.poll.question}</Text>
-        <Text style={[commonStyles.metaText, styles.metaWithTop]}>
-          {state.poll.status === "open" ? "Active" : "Closed"} • by {getIdentityLabel(state.poll.creatorUserID)}
-        </Text>
-        <Text style={[commonStyles.metaText, styles.metaWithTop]}>
-          {state.poll.totalVotes} votes • {state.poll.totalVoters} voters
-        </Text>
+        <View style={styles.summaryMetaRow}>
+          <View style={[styles.stateChip, state.poll.status === "open" ? styles.stateChipOpen : styles.stateChipClosed]}>
+            <Text style={styles.stateChipText}>{state.poll.status === "open" ? "Active" : "Closed"}</Text>
+          </View>
+          <Text style={commonStyles.metaText}>by {getIdentityLabel(state.poll.creatorUserID)}</Text>
+        </View>
+        <View style={styles.summaryStatsRow}>
+          <Text style={styles.summaryStatValue}>{state.poll.totalVotes}</Text>
+          <Text style={styles.summaryStatLabel}>total votes</Text>
+          <Text style={styles.summaryStatDivider}>•</Text>
+          <Text style={styles.summaryStatValue}>{state.poll.totalVoters}</Text>
+          <Text style={styles.summaryStatLabel}>participants</Text>
+        </View>
       </View>
 
       <ParticipationSection

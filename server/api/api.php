@@ -31,6 +31,7 @@ use BedrockStarter\requests\chats\DeleteChatMessageRequest;
 use BedrockStarter\requests\chats\EditChatMessageRequest;
 use BedrockStarter\requests\chats\GetChatMessagesRequest;
 use BedrockStarter\requests\polls\CreatePollRequest;
+use BedrockStarter\requests\polls\DeleteAllPollVotesRequest;
 use BedrockStarter\requests\polls\DeletePollVotesRequest;
 use BedrockStarter\requests\polls\DeletePollRequest;
 use BedrockStarter\requests\polls\EditPollRequest;
@@ -87,6 +88,7 @@ $requestTypes = [
     EditPollRequest::class,
     DeletePollRequest::class,
     SubmitPollVotesRequest::class,
+    DeleteAllPollVotesRequest::class,
     DeletePollVotesRequest::class,
     SubmitPollTextResponseRequest::class,
     CreateUserRequest::class,

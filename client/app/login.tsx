@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Redirect, useRouter } from "expo-router";
 
 import { useAuth } from "../lib/auth";
 import { appColors, commonStyles } from "../lib/styles";
 import TypescriptUtils from "../lib/TypescriptUtils";
+import { getApiError } from "../lib/ApiRequestError";
 
 export default function LoginScreen() {
   const { isAuthenticated, checkEmailExists, login } = useAuth();
@@ -19,11 +20,17 @@ export default function LoginScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [needsPassword, setNeedsPassword] = useState(false);
   const [checkedEmail, setCheckedEmail] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const submit = async () => {
+    setEmailError(null);
+    setPasswordError(null);
+    setFormError(null);
     const normalizedEmail = TypescriptUtils.parseString(email)?.trim() ?? "";
     if (TypescriptUtils.isNullOrWhiteSpace(normalizedEmail)) {
-      Alert.alert("Missing Email", "Enter your email.");
+      setEmailError("Enter your email.");
       return;
     }
 
@@ -39,7 +46,8 @@ export default function LoginScreen() {
         setCheckedEmail(normalizedEmail);
         setNeedsPassword(true);
       } catch (e: any) {
-        Alert.alert("Unable To Continue", e?.message || "Please retry.");
+        const apiError = getApiError(e);
+        setFormError(apiError.message || "Unable to continue. Please retry.");
       } finally {
         setSubmitting(false);
       }
@@ -47,7 +55,7 @@ export default function LoginScreen() {
     }
 
     if (TypescriptUtils.isNullOrEmpty(password)) {
-      Alert.alert("Missing Password", "Enter your password.");
+      setPasswordError("Enter your password.");
       return;
     }
 
@@ -56,7 +64,13 @@ export default function LoginScreen() {
       await login(normalizedEmail, password);
       router.replace("/");
     } catch (e: any) {
-      Alert.alert("Login Failed", e?.message || "Unable to login.");
+      const apiError = getApiError(e);
+      const normalized = apiError.message.toLowerCase();
+      if (apiError.status === 401 || normalized.includes("unauthorized") || normalized.includes("invalid email or password")) {
+        setPasswordError("Invalid email or password.");
+      } else {
+        setFormError(apiError.message || "Unable to login.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -76,12 +90,16 @@ export default function LoginScreen() {
         value={email}
         onChangeText={(nextEmail) => {
           setEmail(nextEmail);
+          setEmailError(null);
+          setFormError(null);
           if (needsPassword && nextEmail.trim() !== checkedEmail) {
             setNeedsPassword(false);
             setPassword("");
+            setPasswordError(null);
           }
         }}
       />
+      {emailError && <Text style={commonStyles.errorText}>{emailError}</Text>}
       {needsPassword && (
         <>
           <Text style={styles.fieldLabel}>Password</Text>
@@ -91,10 +109,16 @@ export default function LoginScreen() {
             placeholderTextColor={appColors.textSubtle}
             secureTextEntry
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(nextPassword) => {
+              setPassword(nextPassword);
+              setPasswordError(null);
+              setFormError(null);
+            }}
           />
+          {passwordError && <Text style={commonStyles.errorText}>{passwordError}</Text>}
         </>
       )}
+      {formError && <Text style={commonStyles.errorText}>{formError}</Text>}
       <TouchableOpacity style={commonStyles.primaryButton} disabled={submitting} onPress={submit}>
         <Text style={commonStyles.primaryButtonText}>
           {submitting ? "Working..." : (needsPassword ? "Login" : "Continue")}

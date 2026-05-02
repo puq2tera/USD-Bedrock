@@ -18,6 +18,7 @@ import {
 } from "../../../lib/api";
 import { useAuth } from "../../../lib/auth";
 import { appColors, commonStyles } from "../../../lib/styles";
+import { getApiError } from "../../../lib/ApiRequestError";
 
 export default function ChatSettingsScreen() {
   const { isAuthenticated, user } = useAuth();
@@ -29,6 +30,7 @@ export default function ChatSettingsScreen() {
   const [members, setMembers] = useState<ChatMember[]>([]);
   const [chatTitle, setChatTitle] = useState("");
   const [memberEmailDraft, setMemberEmailDraft] = useState("");
+  const [memberError, setMemberError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,23 +105,38 @@ export default function ChatSettingsScreen() {
   };
 
   const addMemberByEmail = async () => {
-    if (!memberEmailDraft.trim()) {
-      Alert.alert("Missing email", "Enter a member email.");
+    const normalizedEmail = memberEmailDraft.trim();
+    if (!normalizedEmail) {
+      setMemberError("Enter a member email.");
       return;
     }
+    setMemberError(null);
 
     setBusy(true);
     try {
-      const identity = await lookupUserByEmail(memberEmailDraft.trim());
+      const identity = await lookupUserByEmail(normalizedEmail);
       if (!identity?.userID) {
-        Alert.alert("User not found", "No account exists for this email.");
+        setMemberError("No account exists for this email.");
         return;
       }
       await addChatMember(chat.chatID, identity.userID, "member");
       setMemberEmailDraft("");
+      setMemberError(null);
       await load();
     } catch (e: any) {
-      Alert.alert("Unable to add member", e?.message || "Please retry.");
+      const apiError = getApiError(e);
+      const normalized = apiError.message.toLowerCase();
+      if (apiError.status === 404 || normalized.includes("user not found")) {
+        setMemberError("No account exists for this email.");
+      } else if (apiError.status === 409 || normalized.includes("already a member")) {
+        setMemberError("User is already a member of this chat.");
+      } else if (apiError.status === 400 || normalized.includes("invalid parameter: email")) {
+        setMemberError("Enter a valid email address.");
+      } else if (apiError.status === 403) {
+        setMemberError("Only chat owners can add members.");
+      } else {
+        setMemberError(apiError.message || "Unable to add member. Please retry.");
+      }
     } finally {
       setBusy(false);
     }
@@ -156,7 +173,10 @@ export default function ChatSettingsScreen() {
             <TextInput
               style={[commonStyles.input, styles.addInput]}
               value={memberEmailDraft}
-              onChangeText={setMemberEmailDraft}
+              onChangeText={(nextValue) => {
+                setMemberEmailDraft(nextValue);
+                setMemberError(null);
+              }}
               placeholder="name@company.com"
               placeholderTextColor={appColors.textSubtle}
               autoCapitalize="none"
@@ -166,6 +186,7 @@ export default function ChatSettingsScreen() {
               <Text style={commonStyles.miniPrimaryButtonText}>Add</Text>
             </TouchableOpacity>
           </View>
+          {memberError && <Text style={commonStyles.errorText}>{memberError}</Text>}
 
           {members.map((member) => (
             <View key={member.userID} style={[commonStyles.outlinedRow, styles.memberRow]}>

@@ -191,7 +191,7 @@ export function useChatDetailState(chatID: string, currentUserID: string): UseCh
   }, [freeTextResponseByPollID, lastSavedFreeTextByPollID, loadAll]);
 
   const createOrEditMessage = useCallback(async () => {
-    if (!chatID || !messageDraft.trim()) {
+    if (busy || !chatID || !messageDraft.trim()) {
       return;
     }
 
@@ -205,7 +205,7 @@ export function useChatDetailState(chatID: string, currentUserID: string): UseCh
     } finally {
       setBusy(false);
     }
-  }, [chatID, loadAll, messageDraft]);
+  }, [busy, chatID, loadAll, messageDraft]);
 
   const saveEditedMessage = useCallback(async () => {
     if (!chatID || !editMessageID || !editMessageBody.trim()) {
