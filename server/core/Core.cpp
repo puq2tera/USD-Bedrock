@@ -19,6 +19,7 @@
 #include "commands/chats/GetChatMessages.h"
 #include "commands/polls/CreatePoll.h"
 #include "commands/polls/DeletePoll.h"
+#include "commands/polls/DeleteAllPollVotes.h"
 #include "commands/polls/DeletePollVotes.h"
 #include "commands/polls/EditPoll.h"
 #include "commands/polls/GetPoll.h"
@@ -138,6 +139,9 @@ unique_ptr<BedrockCommand> BedrockPlugin_Core::getCommand(SQLiteCommand&& baseCo
     }
     if (SIEquals(baseCommand.request.methodLine, "DeletePollVotes")) {
         return make_unique<DeletePollVotes>(std::move(baseCommand), this);
+    }
+    if (SIEquals(baseCommand.request.methodLine, "DeleteAllPollVotes")) {
+        return make_unique<DeleteAllPollVotes>(std::move(baseCommand), this);
     }
     if (SIEquals(baseCommand.request.methodLine, "SubmitPollTextResponse")) {
         return make_unique<SubmitPollTextResponse>(std::move(baseCommand), this);

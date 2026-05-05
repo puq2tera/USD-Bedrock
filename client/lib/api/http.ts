@@ -1,5 +1,8 @@
 import { authFetch } from "../auth";
+import { ApiRequestError, getApiError, parseApiErrorResponse } from "../ApiRequestError";
 import { API_BASE } from "./constants";
+
+export { ApiRequestError, getApiError };
 
 export async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
@@ -14,7 +17,7 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || `Request failed with status ${response.status}`);
+    throw parseApiErrorResponse(data, response.status);
   }
 
   return data as T;

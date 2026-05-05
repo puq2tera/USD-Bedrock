@@ -114,10 +114,18 @@ export function useChatDetailState(chatID: string, currentUserID: string): UseCh
       setNextBeforeMessageID(messagePage.nextBeforeMessageID);
       setPolls(pollData);
 
-      // Poll list payload does not include option labels, so hydrate details once per visible poll.
+      // Hydrate only newly seen polls (or unseen free-text drafts) to avoid refetching every poll on each refresh.
       if (pollData.length > 0) {
+        const activePollIDSet = new Set(pollData.map((poll) => poll.pollID));
+        const pollsNeedingHydration = pollData.filter((poll) => {
+          if (!pollOptionsByPollID[poll.pollID]) {
+            return true;
+          }
+          return poll.type === "free_text" && !(poll.pollID in freeTextResponseByPollID);
+        });
+
         const hydratedEntries = await Promise.all(
-          pollData.map(async (poll) => {
+          pollsNeedingHydration.map(async (poll) => {
             try {
               const detail = await getPoll(poll.pollID);
               const ownFreeText = detail.type === "free_text"
@@ -129,21 +137,60 @@ export function useChatDetailState(chatID: string, currentUserID: string): UseCh
             }
           })
         );
-        setPollOptionsByPollID(Object.fromEntries(hydratedEntries.map(([pollID, options]) => [pollID, options])));
 
-        const nextSaved = Object.fromEntries(
-          hydratedEntries
-            .filter(([pollID]) => pollData.some((poll) => poll.pollID === pollID && poll.type === "free_text"))
-            .map(([pollID, _options, ownFreeText]) => [pollID, ownFreeText.trim()])
-        );
-        setLastSavedFreeTextByPollID(nextSaved);
-        setFreeTextResponseByPollID((prev) => {
-          const merged: Record<string, string> = {};
-          for (const [pollID, _options, ownFreeText] of hydratedEntries) {
-            const localDraft = prev[pollID];
-            merged[pollID] = typeof localDraft === "string" ? localDraft : ownFreeText;
+        setPollOptionsByPollID((prev) => {
+          const next: Record<string, PollOption[]> = {};
+          for (const poll of pollData) {
+            next[poll.pollID] = prev[poll.pollID] ?? [];
           }
-          return merged;
+          for (const [pollID, options] of hydratedEntries) {
+            next[pollID] = options;
+          }
+          return next;
+        });
+
+        setLastSavedFreeTextByPollID((prev) => {
+          const next: Record<string, string> = {};
+          for (const poll of pollData) {
+            if (poll.type === "free_text" && typeof prev[poll.pollID] === "string") {
+              next[poll.pollID] = prev[poll.pollID];
+            }
+          }
+          for (const [pollID, _options, ownFreeText] of hydratedEntries) {
+            if (pollData.some((poll) => poll.pollID === pollID && poll.type === "free_text")) {
+              next[pollID] = ownFreeText.trim();
+            }
+          }
+          return next;
+        });
+
+        setFreeTextResponseByPollID((prev) => {
+          const next: Record<string, string> = {};
+          for (const poll of pollData) {
+            if (poll.type === "free_text" && typeof prev[poll.pollID] === "string") {
+              next[poll.pollID] = prev[poll.pollID];
+            }
+          }
+          for (const [pollID, _options, ownFreeText] of hydratedEntries) {
+            const poll = pollData.find((entry) => entry.pollID === pollID);
+            if (poll?.type !== "free_text") {
+              continue;
+            }
+            if (typeof next[pollID] !== "string") {
+              next[pollID] = ownFreeText;
+            }
+          }
+          return next;
+        });
+
+        setSavingFreeTextByPollID((prev) => {
+          const next: Record<string, boolean> = {};
+          for (const pollID of Object.keys(prev)) {
+            if (activePollIDSet.has(pollID)) {
+              next[pollID] = prev[pollID];
+            }
+          }
+          return next;
         });
       } else {
         setPollOptionsByPollID({});
@@ -163,7 +210,7 @@ export function useChatDetailState(chatID: string, currentUserID: string): UseCh
       setLoading(false);
       setRefreshing(false);
     }
-  }, [chatID, currentUserID]);
+  }, [chatID, currentUserID, freeTextResponseByPollID, pollOptionsByPollID]);
 
   const setFreeTextResponseDraft = useCallback((pollID: string, value: string) => {
     setFreeTextResponseByPollID((prev) => ({ ...prev, [pollID]: value }));
@@ -191,7 +238,7 @@ export function useChatDetailState(chatID: string, currentUserID: string): UseCh
   }, [freeTextResponseByPollID, lastSavedFreeTextByPollID, loadAll]);
 
   const createOrEditMessage = useCallback(async () => {
-    if (!chatID || !messageDraft.trim()) {
+    if (busy || !chatID || !messageDraft.trim()) {
       return;
     }
 
@@ -205,7 +252,7 @@ export function useChatDetailState(chatID: string, currentUserID: string): UseCh
     } finally {
       setBusy(false);
     }
-  }, [chatID, loadAll, messageDraft]);
+  }, [busy, chatID, loadAll, messageDraft]);
 
   const saveEditedMessage = useCallback(async () => {
     if (!chatID || !editMessageID || !editMessageBody.trim()) {

@@ -31,6 +31,7 @@ use BedrockStarter\requests\chats\DeleteChatMessageRequest;
 use BedrockStarter\requests\chats\EditChatMessageRequest;
 use BedrockStarter\requests\chats\GetChatMessagesRequest;
 use BedrockStarter\requests\polls\CreatePollRequest;
+use BedrockStarter\requests\polls\DeleteAllPollVotesRequest;
 use BedrockStarter\requests\polls\DeletePollVotesRequest;
 use BedrockStarter\requests\polls\DeletePollRequest;
 use BedrockStarter\requests\polls\EditPollRequest;
@@ -87,6 +88,7 @@ $requestTypes = [
     EditPollRequest::class,
     DeletePollRequest::class,
     SubmitPollVotesRequest::class,
+    DeleteAllPollVotesRequest::class,
     DeletePollVotesRequest::class,
     SubmitPollTextResponseRequest::class,
     CreateUserRequest::class,
@@ -101,6 +103,18 @@ $requestTypes = [
     LookupUsersRequest::class,
     LookupUserByEmailRequest::class,
 ];
+
+/**
+ * Infer request parameter name from legacy validation message text.
+ */
+function inferValidationParameter(string $message): ?string
+{
+    if (preg_match('/\b(?:invalid|missing required)\s+(?:route\s+)?parameter:\s*([a-zA-Z0-9_]+)/i', $message, $matches) === 1) {
+        return $matches[1];
+    }
+
+    return null;
+}
 
 try {
     $boundRequest = RouteBinder::tryBind($method, $path, $requestTypes);
@@ -120,7 +134,18 @@ try {
     echo json_encode(['error' => 'Endpoint not found']);
 } catch (ValidationException $exception) {
     http_response_code($exception->getStatusCode());
-    echo json_encode(['error' => $exception->getMessage()]);
+    $payload = ['error' => $exception->getMessage()];
+    $errorCode = $exception->getErrorCode();
+    if ($errorCode !== null && $errorCode !== '') {
+        $payload['errorCode'] = $errorCode;
+    }
+
+    $parameter = $exception->getParameter() ?? inferValidationParameter($exception->getMessage());
+    if ($parameter !== null && $parameter !== '') {
+        $payload['parameter'] = $parameter;
+    }
+
+    echo json_encode($payload);
 } catch (\Throwable $exception) {
     Log::error('Unhandled API exception', ['exception' => $exception->getMessage()]);
     http_response_code(500);

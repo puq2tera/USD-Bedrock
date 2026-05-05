@@ -1,0 +1,59 @@
+<?php
+
+declare(strict_types=1);
+
+namespace BedrockStarter\requests\polls;
+
+use BedrockStarter\Auth;
+use BedrockStarter\Request;
+use BedrockStarter\requests\framework\RouteBoundRequestBase;
+use BedrockStarter\responses\framework\RouteResponse;
+use BedrockStarter\responses\polls\DeletePollVotesResponse;
+
+final class DeleteAllPollVotesRequest extends RouteBoundRequestBase
+{
+    private const PATH_PATTERN = '#^/api/polls/(?P<pollID>\d+)/votes/all$#';
+    private const ALLOWED_METHODS = ['DELETE'];
+
+    public function __construct(
+        private readonly int $pollID,
+        private readonly int $actorUserID
+    ) {
+    }
+
+    public static function pathPattern(): string
+    {
+        return self::PATH_PATTERN;
+    }
+
+    public static function allowedMethods(): array
+    {
+        return self::ALLOWED_METHODS;
+    }
+
+    public static function bedrockCommand(): ?string
+    {
+        return 'DeleteAllPollVotes';
+    }
+
+    protected static function bindFromRouteMatch(array $routeParams): self
+    {
+        return new self(
+            Request::requireRouteInt($routeParams, 'pollID'),
+            Auth::requireAuthenticatedUserID()
+        );
+    }
+
+    public function toBedrockParams(): array
+    {
+        return [
+            'pollID' => (string)$this->pollID,
+            'actorUserID' => (string)$this->actorUserID,
+        ];
+    }
+
+    public function transformResponse(array $bedrockResponse): RouteResponse
+    {
+        return new DeletePollVotesResponse($bedrockResponse);
+    }
+}

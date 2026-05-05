@@ -60,6 +60,10 @@ export async function getPollParticipation(pollID: string): Promise<PollParticip
       const parsed = TypescriptUtils.parseString(item);
       return TypescriptUtils.isNullOrWhiteSpace(parsed) ? null : (parsed as string);
     }),
+    selectedOptionIDs: parseJsonArray(data.selectedOptionIDs, (item) => {
+      const parsed = TypescriptUtils.parseString(item);
+      return TypescriptUtils.isNullOrWhiteSpace(parsed) ? null : (parsed as string);
+    }),
   };
 
   if (!result.isAnonymous) {
@@ -134,6 +138,10 @@ export async function submitPollVotes(pollID: string, payload: PollVotePayload):
 
 export async function deletePollVotes(pollID: string): Promise<void> {
   await request(`/api/polls/${pollID}/votes`, { method: "DELETE" });
+}
+
+export async function deleteAllPollVotes(pollID: string): Promise<void> {
+  await request(`/api/polls/${pollID}/votes/all`, { method: "DELETE" });
 }
 
 export async function submitPollTextResponse(pollID: string, textValue: string): Promise<void> {

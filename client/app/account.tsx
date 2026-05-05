@@ -20,6 +20,7 @@ export default function AccountScreen() {
   const [createdAt, setCreatedAt] = useState("");
   const [deletePhrase, setDeletePhrase] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showSavedBanner, setShowSavedBanner] = useState(false);
 
   useEffect(() => {
     setFirstName(user?.firstName ?? "");
@@ -46,6 +47,15 @@ export default function AccountScreen() {
     }, [isAuthenticated])
   );
 
+  useEffect(() => {
+    if (!showSavedBanner) {
+      return;
+    }
+
+    const timeout = setTimeout(() => setShowSavedBanner(false), 2500);
+    return () => clearTimeout(timeout);
+  }, [showSavedBanner]);
+
   const canPersist = useMemo(
     () => [firstName, lastName, displayName, email].some((value) => value.trim().length > 0),
     [displayName, email, firstName, lastName]
@@ -70,6 +80,7 @@ export default function AccountScreen() {
         email: email.trim() || undefined,
       });
       await refreshAccountProfile();
+      setShowSavedBanner(true);
     } catch (e: any) {
       Alert.alert("Profile update failed", e?.message || "Please retry.");
     } finally {
@@ -119,6 +130,11 @@ export default function AccountScreen() {
           <Text style={commonStyles.sectionTitle}>Profile & Settings</Text>
           {saving && <Text style={commonStyles.metaText}>Saving...</Text>}
         </View>
+        {showSavedBanner && (
+          <View style={[commonStyles.feedbackBanner, commonStyles.successBanner]}>
+            <Text style={commonStyles.successBannerText}>Profile changes saved.</Text>
+          </View>
+        )}
 
         <Text style={commonStyles.sectionLabel}>First name</Text>
         <TextInput style={commonStyles.input} value={firstName} onChangeText={setFirstName} />

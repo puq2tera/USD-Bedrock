@@ -11,6 +11,11 @@ export function ParticipationSummarySection({ participation }: ParticipationSumm
   return (
     <View style={commonStyles.sectionCard}>
       <Text style={commonStyles.sectionTitle}>Participation Summary</Text>
+      {!participation && (
+        <View style={[commonStyles.feedbackBanner, commonStyles.infoBanner]}>
+          <Text style={commonStyles.infoBannerText}>No participation data yet. Ask members to vote to populate this summary.</Text>
+        </View>
+      )}
       {participation && (
         <>
           <View style={styles.countRow}>
@@ -30,8 +35,10 @@ export function ParticipationSummarySection({ participation }: ParticipationSumm
           {!participation.isAnonymous ? (
             <>
               <Text style={commonStyles.listTitle}>Voted users</Text>
+              {participation.votedUserIDs.length < 1 && <Text style={commonStyles.metaText}>No votes yet.</Text>}
               {participation.votedUserIDs.map((userID) => <Text key={`voted-${userID}`} style={commonStyles.metaText}>• {getIdentityLabel(userID)}</Text>)}
               <Text style={commonStyles.listTitle}>Not voted users</Text>
+              {participation.notVotedUserIDs.length < 1 && <Text style={commonStyles.metaText}>Everyone has voted.</Text>}
               {participation.notVotedUserIDs.map((userID) => <Text key={`not-voted-${userID}`} style={commonStyles.metaText}>• {getIdentityLabel(userID)}</Text>)}
             </>
           ) : (

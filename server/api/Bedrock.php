@@ -85,7 +85,12 @@ class Bedrock
                 'errorCode' => $errorCode,
                 'response' => $response,
             ]);
-            throw new ValidationException($errorMessage, $statusCode);
+            throw new ValidationException(
+                $errorMessage,
+                $statusCode,
+                $errorCode !== '' ? $errorCode : null,
+                self::extractParameterFromErrorMessage($bodyError !== '' ? $bodyError : $errorMessage)
+            );
         } catch (ValidationException $exception) {
             throw $exception;
         } catch (\Throwable $exception) {
@@ -114,6 +119,19 @@ class Bedrock
         }
 
         return '';
+    }
+
+    private static function extractParameterFromErrorMessage(string $message): ?string
+    {
+        if ($message === '') {
+            return null;
+        }
+
+        if (preg_match('/\b(?:invalid|missing required)\s+parameter:\s*([a-zA-Z0-9_]+)/i', $message, $matches) === 1) {
+            return $matches[1];
+        }
+
+        return null;
     }
 
     /**

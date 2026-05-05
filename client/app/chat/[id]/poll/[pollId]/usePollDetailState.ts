@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
+import { parseDateTime } from "../../../../../lib/dateTime";
 import {
   canManagePoll,
+  deleteAllPollVotes,
   deletePoll,
   deletePollVotes,
   EditPollInput,
@@ -32,6 +34,7 @@ type UsePollDetailStateResult = {
   editIsAnonymous: boolean;
   editExpiresAt: string;
   editOptions: string[];
+  lastPollEditSavedAt: number;
   isCreator: boolean;
   setRefreshing: (value: boolean) => void;
   setTextResponse: (value: string) => void;
@@ -45,7 +48,9 @@ type UsePollDetailStateResult = {
   toggleOptionSelection: (option: PollOption) => Promise<void>;
   autosaveTextResponse: (force?: boolean) => Promise<void>;
   removeParticipation: () => Promise<void>;
+  removeAllParticipations: () => Promise<void>;
   submitPollEdit: (overrides?: Partial<EditPollInput>) => Promise<void>;
+  submitPollSettings: () => Promise<void>;
   confirmReplaceOptions: () => void;
   transitionStatus: (nextStatus: "open" | "closed") => void;
   removePoll: () => void;
@@ -72,8 +77,14 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
   const [editIsAnonymous, setEditIsAnonymous] = useState(false);
   const [editExpiresAt, setEditExpiresAt] = useState("");
   const [editOptions, setEditOptions] = useState<string[]>([]);
+  const [lastPollEditSavedAt, setLastPollEditSavedAt] = useState(0);
 
   const isCreator = useMemo(() => (poll ? canManagePoll(poll) : false), [poll]);
+
+  const toDateTimeLocalInput = useCallback((value: unknown): string => {
+    const parsed = parseDateTime(value);
+    return parsed ? parsed.toISOString().slice(0, 16) : "";
+  }, []);
 
   const loadPoll = useCallback(async () => {
     if (!resolvedPollID) {
@@ -90,7 +101,7 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
       setEditQuestion(pollData.question);
       setEditAllowChangeVote(pollData.allowChangeVote);
       setEditIsAnonymous(pollData.isAnonymous);
-      setEditExpiresAt(pollData.expiresAt ? new Date(Number(pollData.expiresAt) * 1000).toISOString().slice(0, 16) : "");
+      setEditExpiresAt(pollData.expiresAt ? toDateTimeLocalInput(pollData.expiresAt) : "");
       setEditOptions(pollData.options.map((option) => option.label));
 
       if (pollData.type === "free_text") {
@@ -103,13 +114,14 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
 
       const participationData = await getPollParticipation(resolvedPollID);
       setParticipation(participationData);
+      setSelectedOptionIDs(pollData.type === "free_text" ? [] : participationData.selectedOptionIDs);
     } catch (e: any) {
       setError(e?.message || "Failed to load poll");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [currentUserID, resolvedPollID]);
+  }, [currentUserID, resolvedPollID, toDateTimeLocalInput]);
 
   const toggleOptionSelection = useCallback(async (option: PollOption) => {
     if (!poll || poll.status !== "open") {
@@ -196,8 +208,35 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
     }
   }, [loadPoll, poll]);
 
+  const removeAllParticipations = useCallback(async () => {
+    if (!poll) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await deleteAllPollVotes(poll.pollID);
+      setSelectedOptionIDs([]);
+      setTextResponse("");
+      setLastSavedTextResponse("");
+      await loadPoll();
+    } catch (e: any) {
+      Alert.alert("Reset failed", e?.message || "Refreshing poll state.");
+      await loadPoll();
+    } finally {
+      setBusy(false);
+    }
+  }, [loadPoll, poll]);
+
   const submitPollEdit = useCallback(async (overrides?: Partial<EditPollInput>) => {
     if (!poll) {
+      return;
+    }
+
+    const trimmedExpiresAt = editExpiresAt.trim();
+    const parsedExpiresAt = trimmedExpiresAt ? parseDateTime(trimmedExpiresAt) : null;
+    if (trimmedExpiresAt && parsedExpiresAt == null) {
+      Alert.alert("Invalid date", "Use a valid date/time (for example 2026-05-01T18:00).");
       return;
     }
 
@@ -205,7 +244,7 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
       question: editQuestion.trim(),
       allowChangeVote: editAllowChangeVote,
       isAnonymous: editIsAnonymous,
-      expiresAt: editExpiresAt.trim() ? Math.floor(new Date(editExpiresAt.trim()).getTime() / 1000) : null,
+      expiresAt: parsedExpiresAt != null ? Math.floor(parsedExpiresAt.getTime() / 1000) : null,
       ...(poll.type !== "free_text" ? { options: editOptions.map((option) => option.trim()).filter((option) => option.length > 0) } : {}),
       ...overrides,
     };
@@ -225,6 +264,7 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
       await editPoll(poll.pollID, payload);
       setEditing(false);
       await loadPoll();
+      setLastPollEditSavedAt(Date.now());
     } catch (e: any) {
       Alert.alert("Poll update failed", e?.message || "Please retry.");
     } finally {
@@ -242,6 +282,38 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
       },
     ]);
   }, [submitPollEdit]);
+
+  const submitPollSettings = useCallback(async () => {
+    if (!poll || poll.type === "free_text") {
+      await submitPollEdit();
+      return;
+    }
+
+    const existingOptions = poll.options
+      .filter((option) => option.isActive)
+      .sort((left, right) => left.ord - right.ord)
+      .map((option) => option.label.trim());
+    const nextOptions = editOptions
+      .map((option) => option.trim())
+      .filter((option) => option.length > 0);
+
+    const optionsChanged = existingOptions.length !== nextOptions.length
+      || existingOptions.some((label, index) => label !== nextOptions[index]);
+
+    if (!optionsChanged) {
+      await submitPollEdit();
+      return;
+    }
+
+    Alert.alert("Replace options", "Replacing options resets existing votes. Continue?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Continue",
+        style: "destructive",
+        onPress: () => void submitPollEdit(),
+      },
+    ]);
+  }, [editOptions, poll, submitPollEdit]);
 
   const transitionStatus = useCallback((nextStatus: "open" | "closed") => {
     Alert.alert(
@@ -308,6 +380,7 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
     editIsAnonymous,
     editExpiresAt,
     editOptions,
+    lastPollEditSavedAt,
     isCreator,
     setRefreshing,
     setTextResponse,
@@ -321,7 +394,9 @@ export function usePollDetailState(chatID: string, resolvedPollID: string, curre
     toggleOptionSelection,
     autosaveTextResponse,
     removeParticipation,
+    removeAllParticipations,
     submitPollEdit,
+    submitPollSettings,
     confirmReplaceOptions,
     transitionStatus,
     removePoll,

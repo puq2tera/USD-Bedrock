@@ -255,7 +255,7 @@ export function ChatDetailScreen() {
     <KeyboardAvoidingView style={commonStyles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <KeyboardAwareScrollView
         style={styles.thread}
-        contentContainerStyle={styles.threadContent}
+        contentContainerStyle={[styles.threadContent, timeline.length < 1 && styles.threadContentEmpty]}
         onScroll={({ nativeEvent }) => {
           if (nativeEvent.contentOffset.y <= 80) {
             void state.loadOlderMessages();
@@ -400,6 +400,24 @@ export function ChatDetailScreen() {
           onChangeText={state.setMessageDraft}
           placeholder="Type a message"
           placeholderTextColor={appColors.textSubtle}
+          multiline
+          blurOnSubmit={false}
+          onKeyPress={(event) => {
+            const nativeEvent = event.nativeEvent as { key?: string; shiftKey?: boolean };
+            if (nativeEvent.key !== "Enter") {
+              return;
+            }
+
+            if (nativeEvent.shiftKey) {
+              return;
+            }
+
+            // Web chat UX: Enter sends; Shift+Enter keeps newline behavior.
+            if (typeof (event as any).preventDefault === "function") {
+              (event as any).preventDefault();
+            }
+            void state.createOrEditMessage();
+          }}
         />
         <TouchableOpacity style={styles.sendButton} disabled={state.busy} onPress={() => void state.createOrEditMessage()}>
           <Text style={styles.sendButtonText}>➤</Text>
@@ -456,10 +474,15 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     gap: 0,
   },
+  threadContentEmpty: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   emptyHint: {
     color: appColors.textMuted,
     fontSize: 13,
-    marginBottom: 4,
+    textAlign: "center",
   },
   loadingOlderRow: {
     alignSelf: "center",

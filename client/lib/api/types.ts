@@ -104,6 +104,7 @@ export type PollParticipation = {
   eligibleUserIDs: string[];
   votedUserIDs: string[];
   notVotedUserIDs: string[];
+  selectedOptionIDs: string[];
 };
 
 export type CreatePollInput = {

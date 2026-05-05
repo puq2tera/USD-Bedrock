@@ -12,6 +12,35 @@
 - Prefer targeted validation over broad validation when the repo supports it. Use the narrowest check that reliably covers the changed area before escalating to larger suites.
 - If the right validation command is still unclear after checking the repo, ask instead of guessing.
 
+### Known validation commands (current repo)
+- Core plugin tests: `./scripts/test-cpp.sh`
+- Core plugin static analysis: `./scripts/clang-tidy.sh`
+- Shell script lint: `./scripts/shellcheck.sh`
+- Core plugin rebuild in VM: `./scripts/build-core-plugin.sh`
+- Mobile client scripts (run in `client/`): `npm run start`, `npm run dev-client`, `npm run ios`, `npm run android`, `npm run web`
+
+### Known setup/run/ops commands (current repo)
+- Initial VM bootstrap and environment setup: `./scripts/launch.sh`
+- Full VM setup/rerun from host: `multipass exec bedrock-starter -- sudo bash /bedrock-starter/scripts/setup.sh`
+- SSH into VM: `multipass shell bedrock-starter`
+- Service restarts from host: `multipass exec bedrock-starter -- sudo systemctl restart bedrock`, `multipass exec bedrock-starter -- sudo systemctl restart nginx`, `multipass exec bedrock-starter -- sudo systemctl restart php8.4-fpm`
+- Service status checks from host: `multipass exec bedrock-starter -- systemctl status bedrock`, `multipass exec bedrock-starter -- systemctl status nginx`, `multipass exec bedrock-starter -- systemctl status php8.4-fpm`
+- Log viewing: `./scripts/watch-logs.sh`, `./scripts/watch-logs.sh -s nginx`, `./scripts/watch-logs.sh -s php`
+- Health checks: `multipass exec bedrock-starter -- bash -lc 'printf "Status\n" | nc -w 2 127.0.0.1 8888'`, `multipass exec bedrock-starter -- bash -lc 'curl -i -m 10 http://127.0.0.1/api/status'`
+
+### Validation selection rules
+- C++ changes under `server/core/`: run `./scripts/test-cpp.sh`; run `./scripts/clang-tidy.sh` when the change affects non-trivial logic or shared headers.
+- Script changes under `scripts/`: run `./scripts/shellcheck.sh`.
+- Mobile client changes under `client/`: run the narrowest relevant `npm run ...` script in `client/` that validates the changed flow.
+- Cross-layer changes (for example C++ + scripts, or API + mobile): run checks for each touched layer.
+- If a required tool is unavailable locally, state the exact missing tool and the command that was skipped.
+
+### Execution context rules (host vs VM)
+- Run `./scripts/build-core-plugin.sh` from the host only; it is a host wrapper that calls `multipass`.
+- For service control and runtime diagnostics, prefer `multipass exec bedrock-starter -- ...` from the host.
+- For CMake cache path mismatch issues, clear the relevant build dir (`server/core/.build` locally or `/opt/bedrock/server/core/.build` in VM) before retrying builds/tests.
+- When API dependency/runtime issues appear (`vendor` missing, `.env` missing), prefer rerunning setup via `sudo bash /bedrock-starter/scripts/setup.sh` rather than ad-hoc manual fixes.
+
 ## Instruction priority and conflict resolution
 - Apply instructions in this order:
 - direct user instructions in the current thread
@@ -48,6 +77,8 @@
 - Prefer project-provided scripts/README commands instead of ad-hoc commands.
 - Treat script names and locations as discoverable and changeable; verify what currently exists before running.
 - If command intent is unclear or ambiguous, ask instead of guessing.
+- For API development in `server/api/`, restart `nginx` after API routing/config changes.
+- For mobile development in `client/`, keep `client/.env` `EXPO_PUBLIC_API_BASE` aligned with the current VM IP.
 
 ## Scope and safety boundaries
 ### Always do
@@ -67,6 +98,7 @@
 - Broad refactors, speculative cleanup, or feature expansion beyond the requested scope.
 - Destructive actions such as hard resets, forceful data removal, or reverting unrelated user changes.
 - Editing generated artifacts directly when the source-of-truth file or generation path should be changed instead.
+- Adding new dependencies or changing lockfiles when dependency work was not requested.
 
 ## Clarifications and questions
 - Do not guess on ambiguous requirements that could alter behavior or contracts.
@@ -84,6 +116,13 @@
 - Prefer extending existing patterns over introducing brand-new frameworks.
 - Avoid editing third-party/external dependency code unless explicitly requested.
 - Avoid committing generated/build artifacts unless intentionally part of the task.
+
+### Generated and vendor artifacts
+- Treat these as generated/vendor and avoid manual edits unless the task explicitly targets them:
+- `Bedrock/` (upstream submodule/dependency code)
+- `server/core/.build/`
+- `server/api/vendor/`
+- `client/.expo/`, `client/ios/`, `client/android/` (except when the task explicitly requires native project changes)
 
 ### Cross-layer change completeness
 - When adding, renaming, or changing a field, contract, auth rule, or data shape, trace the impact through every affected layer instead of stopping at the first compiling boundary.
@@ -168,6 +207,24 @@ function fetchItemsById(id: number) {}
 - For backend/API changes, run targeted syntax/unit/integration checks appropriate to scope.
 - For script changes, run shell linting where configured.
 - Always state what was run; if checks were skipped, state why.
+
+## Done means
+- The requested change is implemented and scoped to the task.
+- Relevant validation commands for touched areas were run and results were recorded.
+- Behavior, contract, or schema implications were checked across affected layers.
+- Any skipped checks are explicitly called out with a concrete reason.
+- Diff was reviewed for unintended edits, secrets, and unrelated file churn.
+
+## Review checklist
+- Commands used are real repo commands and were run from the correct directory.
+- Changed code follows nearby patterns and keeps interfaces/contracts stable unless the task requested a change.
+- Input validation, error handling, and logging are consistent with local conventions.
+- No generated/vendor files were hand-edited unless explicitly required.
+- Risks, assumptions, and follow-up work are documented in the final summary.
+
+## Extended workflows
+- For AGENTS quality updates, use the `edit-agents-md` skill and `~/.codex/best_practices_for_agents.md` as the rubric.
+- Keep this file focused on durable repo guidance; place repeated task-specific workflows in skills and large multi-step execution in plan artifacts.
 
 ## Security and safety
 - Never log secrets or sensitive data.

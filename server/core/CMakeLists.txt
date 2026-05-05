@@ -60,6 +60,7 @@ set(SOURCES
     commands/chats/EditChatMessage.cpp
     commands/chats/GetChatMessages.cpp
     commands/polls/CreatePoll.cpp
+    commands/polls/DeleteAllPollVotes.cpp
     commands/polls/DeletePoll.cpp
     commands/polls/DeletePollVotes.cpp
     commands/polls/EditPoll.cpp

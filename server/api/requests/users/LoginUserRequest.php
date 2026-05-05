@@ -42,7 +42,8 @@ final class LoginUserRequest extends RouteBoundRequestBase
     {
         return new self(
             Request::requireString('email', 1, 256),
-            Request::requireString('password', 8, 128)
+            // Accept any non-empty password here so incorrect credentials consistently surface as auth failures.
+            Request::requireString('password', 1, 128)
         );
     }
 
